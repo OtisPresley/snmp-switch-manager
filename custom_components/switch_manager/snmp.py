@@ -8,12 +8,11 @@ from typing import Dict, List
 from pysnmp.hlapi.asyncio import (
     CommunityData,
     ContextData,
-    ObjectIdentity,
     ObjectType,
     SnmpEngine,
     UdpTransportTarget,
+    bulkCmd,
     getCmd,
-    nextCmd,
     setCmd,
 )
 from pysnmp.smi.rfc1902 import Integer, OctetString
@@ -76,16 +75,21 @@ class SwitchSnmpClient:
         start_oid = oid
 
         async with self._lock:
-            next_oid: ObjectIdentity | None = ObjectIdentity(start_oid)
-
-            while next_oid is not None:
-                err_indication, err_status, err_index, var_binds = await nextCmd(
+            next_index = 0
+            while True:
+                base_oid = (
+                    ObjectIdentity(f"{start_oid}.{next_index}")
+                    if next_index
+                    else ObjectIdentity(start_oid)
+                )
+                err_indication, err_status, err_index, var_binds = await bulkCmd(
                     self._engine,
                     self._auth,
                     self._target,
                     self._context,
-                    ObjectType(next_oid),
-                    lexicographicMode=False,
+                    0,
+                    25,
+                    ObjectType(base_oid),
                 )
 
                 _raise_on_error(err_indication, err_status, err_index)
@@ -93,12 +97,11 @@ class SwitchSnmpClient:
                 if not var_binds:
                     break
 
-                next_oid = None
-
+                finished = False
                 for fetched_oid, value in var_binds:
                     fetched_oid_str = str(fetched_oid)
                     if not fetched_oid_str.startswith(start_oid):
-                        next_oid = None
+                        finished = True
                         break
                     try:
                         index = int(fetched_oid_str.split(".")[-1])
@@ -106,7 +109,10 @@ class SwitchSnmpClient:
                         _LOGGER.debug("Skipping non-integer OID %s", fetched_oid_str)
                         continue
                     result[index] = str(value)
-                    next_oid = ObjectIdentity(fetched_oid)
+                    next_index = index + 1
+
+                if finished:
+                    break
 
         return result
 
@@ -155,3 +161,5 @@ def _raise_on_error(err_indication, err_status, err_index) -> None:
         )
 
 
+# We import ObjectIdentity lazily to avoid heavy imports for tests and type checking.
+from pysnmp.hlapi.asyncio import ObjectIdentity  # noqa: E402  # isort:skip
