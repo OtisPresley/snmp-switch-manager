@@ -3,9 +3,8 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from importlib import import_module
 import logging
-from typing import Any, Dict, List, Sequence, Tuple
+from typing import Any, Dict, List, Tuple
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,26 +38,87 @@ class SnmpDependencyError(SnmpError):
     """Raised when pysnmp helpers cannot be loaded."""
 
 
-def _import_first_available(module_names: Sequence[str], attribute: str | None = None) -> Any:
-    """Try importing modules until one succeeds."""
+ASYNC_IMPORT_ERROR: Exception | None = None
+SYNC_IMPORT_ERROR: Exception | None = None
+INTEGER_IMPORT_ERROR: Exception | None = None
 
-    last_error: Exception | None = None
-    for module_name in module_names:
-        try:
-            module = import_module(module_name)
-        except Exception as err:  # pragma: no cover - import shim
-            last_error = err
-            continue
-        if attribute is None:
-            return module
-        try:
-            return getattr(module, attribute)
-        except AttributeError as err:  # pragma: no cover - import shim
-            last_error = err
-            continue
-    raise SnmpDependencyError(
-        f"Unable to import {attribute or 'module'} from {module_names!r}"
-    ) from last_error
+try:  # pragma: no cover - import availability is environment dependent
+    from pysnmp.hlapi.asyncio import (
+        CommunityData as AsyncCommunityData,
+        ContextData as AsyncContextData,
+        ObjectIdentity as AsyncObjectIdentity,
+        ObjectType as AsyncObjectType,
+        SnmpEngine as AsyncSnmpEngine,
+        UdpTransportTarget as AsyncUdpTransportTarget,
+        getCmd as async_getCmd,
+        nextCmd as async_nextCmd,
+        setCmd as async_setCmd,
+    )
+    ASYNC_HELPERS_AVAILABLE = True
+except Exception as err:  # pragma: no cover - availability shim
+    ASYNC_HELPERS_AVAILABLE = False
+    ASYNC_IMPORT_ERROR = err
+    AsyncCommunityData = None
+    AsyncContextData = None
+    AsyncObjectIdentity = None
+    AsyncObjectType = None
+    AsyncSnmpEngine = None
+    AsyncUdpTransportTarget = None
+    async_getCmd = None
+    async_nextCmd = None
+    async_setCmd = None
+
+
+try:  # pragma: no cover - import availability is environment dependent
+    from pysnmp.hlapi import (
+        CommunityData as SyncCommunityData,
+        ContextData as SyncContextData,
+        ObjectIdentity as SyncObjectIdentity,
+        ObjectType as SyncObjectType,
+        SnmpEngine as SyncSnmpEngine,
+        UdpTransportTarget as SyncUdpTransportTarget,
+        getCmd as sync_getCmd,
+        nextCmd as sync_nextCmd,
+        setCmd as sync_setCmd,
+    )
+    SYNC_HELPERS_AVAILABLE = True
+except Exception as err:  # pragma: no cover - availability shim
+    SYNC_HELPERS_AVAILABLE = False
+    SYNC_IMPORT_ERROR = err
+    SyncCommunityData = None
+    SyncContextData = None
+    SyncObjectIdentity = None
+    SyncObjectType = None
+    SyncSnmpEngine = None
+    SyncUdpTransportTarget = None
+    sync_getCmd = None
+    sync_nextCmd = None
+    sync_setCmd = None
+
+
+INTEGER_CLS: Any | None = None
+OCTET_STRING_CLS: Any | None = None
+
+try:  # pragma: no cover - availability shim
+    from pysnmp.proto.rfc1902 import Integer as ProtoInteger, OctetString as ProtoOctetString
+
+    INTEGER_CLS = ProtoInteger
+    OCTET_STRING_CLS = ProtoOctetString
+except Exception as err:  # pragma: no cover - availability shim
+    INTEGER_IMPORT_ERROR = err
+    try:
+        from pysnmp.smi.rfc1902 import (  # type: ignore[no-redef]
+            Integer as SmiInteger,
+            OctetString as SmiOctetString,
+        )
+
+        INTEGER_CLS = SmiInteger
+        OCTET_STRING_CLS = SmiOctetString
+        INTEGER_IMPORT_ERROR = None
+    except Exception as inner_err:  # pragma: no cover - availability shim
+        INTEGER_IMPORT_ERROR = inner_err
+        INTEGER_CLS = None
+        OCTET_STRING_CLS = None
 
 
 def _load_helpers() -> _SnmpHelpers:
@@ -68,60 +128,55 @@ def _load_helpers() -> _SnmpHelpers:
     if _HELPERS is not None:
         return _HELPERS
 
-    try:
-        module = import_module("pysnmp.hlapi.asyncio")
+    if INTEGER_CLS is None or OCTET_STRING_CLS is None:
+        raise SnmpDependencyError(
+            "pysnmp type helpers are unavailable"
+        ) from INTEGER_IMPORT_ERROR
+
+    if ASYNC_HELPERS_AVAILABLE:
         helpers = _SnmpHelpers(
             is_async=True,
-            community_cls=module.CommunityData,
-            context_cls=module.ContextData,
-            object_identity_cls=module.ObjectIdentity,
-            object_type_cls=module.ObjectType,
-            snmp_engine_cls=module.SnmpEngine,
-            transport_target_cls=module.UdpTransportTarget,
-            get_cmd=getattr(module, "getCmd"),
-            next_cmd=getattr(module, "nextCmd"),
-            set_cmd=getattr(module, "setCmd"),
-            integer_cls=_import_first_available(
-                ("pysnmp.proto.rfc1902", "pysnmp.smi.rfc1902"), "Integer"
-            ),
-            octet_string_cls=_import_first_available(
-                ("pysnmp.proto.rfc1902", "pysnmp.smi.rfc1902"), "OctetString"
-            ),
+            community_cls=AsyncCommunityData,
+            context_cls=AsyncContextData,
+            object_identity_cls=AsyncObjectIdentity,
+            object_type_cls=AsyncObjectType,
+            snmp_engine_cls=AsyncSnmpEngine,
+            transport_target_cls=AsyncUdpTransportTarget,
+            get_cmd=async_getCmd,
+            next_cmd=async_nextCmd,
+            set_cmd=async_setCmd,
+            integer_cls=INTEGER_CLS,
+            octet_string_cls=OCTET_STRING_CLS,
         )
         _HELPERS = helpers
         return helpers
-    except Exception as err:  # pragma: no cover - import shim
-        _LOGGER.debug("pysnmp asyncio helpers unavailable: %s", err)
 
-    try:
-        module = import_module("pysnmp.hlapi")
+    if SYNC_HELPERS_AVAILABLE:
+        if ASYNC_IMPORT_ERROR is not None:
+            _LOGGER.debug("pysnmp asyncio helpers unavailable: %s", ASYNC_IMPORT_ERROR)
         helpers = _SnmpHelpers(
             is_async=False,
-            community_cls=module.CommunityData,
-            context_cls=module.ContextData,
-            object_identity_cls=module.ObjectIdentity,
-            object_type_cls=module.ObjectType,
-            snmp_engine_cls=module.SnmpEngine,
-            transport_target_cls=module.UdpTransportTarget,
-            get_cmd=getattr(module, "getCmd"),
-            next_cmd=getattr(module, "nextCmd"),
-            set_cmd=getattr(module, "setCmd"),
-            integer_cls=_import_first_available(
-                ("pysnmp.proto.rfc1902", "pysnmp.smi.rfc1902"), "Integer"
-            ),
-            octet_string_cls=_import_first_available(
-                ("pysnmp.proto.rfc1902", "pysnmp.smi.rfc1902"), "OctetString"
-            ),
+            community_cls=SyncCommunityData,
+            context_cls=SyncContextData,
+            object_identity_cls=SyncObjectIdentity,
+            object_type_cls=SyncObjectType,
+            snmp_engine_cls=SyncSnmpEngine,
+            transport_target_cls=SyncUdpTransportTarget,
+            get_cmd=sync_getCmd,
+            next_cmd=sync_nextCmd,
+            set_cmd=sync_setCmd,
+            integer_cls=INTEGER_CLS,
+            octet_string_cls=OCTET_STRING_CLS,
         )
         _HELPERS = helpers
         _LOGGER.warning(
             "pysnmp asyncio helpers unavailable; falling back to threaded SNMP calls"
         )
         return helpers
-    except Exception as err:  # pragma: no cover - import shim
-        raise SnmpDependencyError(
-            "pysnmp getCmd helpers are unavailable in both asyncio and sync variants"
-        ) from err
+
+    raise SnmpDependencyError(
+        "pysnmp getCmd helpers are unavailable in both asyncio and sync variants"
+    ) from (ASYNC_IMPORT_ERROR or SYNC_IMPORT_ERROR)
 
 
 class SwitchSnmpClient:
