@@ -1,14 +1,41 @@
 # Switch Manager for Home Assistant
 
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://hacs.xyz/)
-[![GitHub release](https://img.shields.io/github/v/release/OtisPresley/switch-manager?style=for-the-badge)](https://github.com/OtisPresley/switch-manager/releases)
-[![GitHub issues](https://img.shields.io/github/issues/OtisPresley/switch-manager?style=for-the-badge)](https://github.com/OtisPresley/switch-manager/issues)
-[![License](https://img.shields.io/github/license/OtisPresley/switch-manager?style=for-the-badge)](LICENSE)
+<p align="center">
+  <a href="https://hacs.xyz/">
+    <img src="https://img.shields.io/badge/HACS-Custom-41BDF5?style=for-the-badge&logo=homeassistant" alt="HACS Custom" />
+  </a>
+  <a href="https://github.com/OtisPresley/switch-manager/releases">
+    <img src="https://img.shields.io/github/v/release/OtisPresley/switch-manager?style=for-the-badge&logo=github" alt="GitHub release" />
+  </a>
+  <a href="https://github.com/OtisPresley/switch-manager/issues">
+    <img src="https://img.shields.io/github/issues/OtisPresley/switch-manager?style=for-the-badge&logo=github" alt="GitHub issues" />
+  </a>
+  <a href="https://github.com/OtisPresley/switch-manager/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/OtisPresley/switch-manager?style=for-the-badge" alt="License" />
+  </a>
+</p>
 
-[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20the%20project-FF5E5B?style=for-the-badge&logo=ko-fi)](https://ko-fi.com/otispresley)
-[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal)](https://paypal.me/OtisPresley)
+<p align="center">
+  <a href="https://ko-fi.com/otispresley">
+    <img src="https://img.shields.io/badge/Ko--fi-Support%20the%20project-FF5E5B?style=for-the-badge&logo=ko-fi" alt="Ko-fi" />
+  </a>
+  <a href="https://paypal.me/OtisPresley">
+    <img src="https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal" alt="PayPal" />
+  </a>
+</p>
 
-Switch Manager discovers an SNMP-enabled switch and exposes every port to Home Assistant with live status, descriptions, and administrative control. Pair it with the included Lovelace card for a rich dashboard visualisation of your hardware.
+Switch Manager discovers an SNMP-enabled switch and exposes each port to Home Assistant with live status, descriptions, and administrative control. Pair it with the included Lovelace card for a rich dashboard visualisation of your hardware.
+
+## Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Lovelace card](#lovelace-card)
+- [Services](#services)
+- [Troubleshooting](#troubleshooting)
+- [Support](#support)
 
 ## Features
 
@@ -45,21 +72,6 @@ Switch Manager discovers an SNMP-enabled switch and exposes every port to Home A
 2. Enter the switch hostname/IP address, the SNMP community string, and optionally a friendly name or non-standard SNMP port.
 3. Once the flow completes, Home Assistant adds one `switch` entity per discovered interface. Entities follow the pattern `switch.<device_name>_port_<index>`.
 
-### Update a port description
-
-Use the `switch_manager.set_port_description` service to change an interface alias:
-
-```yaml
-service: switch_manager.set_port_description
-data:
-  entity_id: switch.core_switch_port_5
-  description: Uplink to router
-```
-
-### Toggle administrative state
-
-The state of each port entity reflects the interface's administrative status. Turning it **on** sets the port to *up*; turning it **off** sets it to *down*. Entity attributes include both administrative and operational status direct from SNMP.
-
 ## Lovelace card
 
 1. Add the card JavaScript as a resource under **Settings → Dashboards → Resources**:
@@ -82,6 +94,23 @@ The state of each port entity reflects the interface's administrative status. Tu
    ```
 
 Clicking a port opens a dialog with quick actions to toggle the port or edit its description.
+
+## Services
+
+### Update a port description
+
+Use the `switch_manager.set_port_description` service to change an interface alias:
+
+```yaml
+service: switch_manager.set_port_description
+data:
+  entity_id: switch.core_switch_port_5
+  description: Uplink to router
+```
+
+### Toggle administrative state
+
+The state of each port entity reflects the interface's administrative status. Turning it **on** sets the port to *up*; turning it **off** sets it to *down*. Entity attributes include both administrative and operational status direct from SNMP.
 
 ## Troubleshooting
 
