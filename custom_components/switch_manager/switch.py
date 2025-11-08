@@ -47,12 +47,8 @@ class SwitchManagerPort(CoordinatorEntity[SwitchCoordinator], SwitchEntity):
         self.index = index
         self._attr_unique_id = f"{entry.entry_id}:{index}"
         self._attr_name = f"Port {index}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            manufacturer="Unknown",
-            name=entry.title,
-            configuration_url=f"snmp://{entry.data[CONF_HOST]}",
-        )
+        self._identifier = (DOMAIN, entry.entry_id)
+        self._configuration_url = f"snmp://{entry.data[CONF_HOST]}"
 
     @property
     def is_on(self) -> bool:
@@ -75,6 +71,23 @@ class SwitchManagerPort(CoordinatorEntity[SwitchCoordinator], SwitchEntity):
     @property
     def available(self) -> bool:
         return super().available and self._port_data is not None
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        info = self.coordinator.data.get("device_info", {}) if self.coordinator.data else {}
+        manufacturer = info.get("manufacturer")
+        model = info.get("model")
+        firmware = info.get("firmware")
+        name = info.get("name") or self.entry.title
+
+        return DeviceInfo(
+            identifiers={self._identifier},
+            manufacturer=manufacturer,
+            model=model,
+            sw_version=firmware,
+            name=name,
+            configuration_url=self._configuration_url,
+        )
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self.coordinator.async_set_admin_state(self.index, True)

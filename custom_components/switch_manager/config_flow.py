@@ -26,12 +26,13 @@ class SwitchManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(f"{user_input[CONF_HOST]}:{port}")
             self._abort_if_unique_id_configured()
 
-            client = SwitchSnmpClient(
-                host=user_input[CONF_HOST],
-                community=user_input[CONF_COMMUNITY],
-                port=port,
-            )
+            client: SwitchSnmpClient | None = None
             try:
+                client = SwitchSnmpClient(
+                    host=user_input[CONF_HOST],
+                    community=user_input[CONF_COMMUNITY],
+                    port=port,
+                )
                 ports = await client.async_get_port_data()
             except SnmpDependencyError:
                 errors["base"] = "missing_dependency"
@@ -49,7 +50,8 @@ class SwitchManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     }
                     return self.async_create_entry(title=title, data=data)
             finally:
-                await client.async_close()
+                if client is not None:
+                    await client.async_close()
 
         data_schema = vol.Schema(
             {

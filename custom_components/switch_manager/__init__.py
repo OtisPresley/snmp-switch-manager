@@ -124,11 +124,13 @@ class SwitchCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         try:
             ports = await self.client.async_get_port_data()
+            system = await self.client.async_get_system_info()
         except SnmpError as err:
             raise UpdateFailed(f"Failed to update switch data: {err}") from err
 
         return {
             "ports": ports,
+            "device_info": system,
         }
 
     async def async_set_description(self, entity_id: str, description: str) -> None:
