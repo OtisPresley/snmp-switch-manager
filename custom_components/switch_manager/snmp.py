@@ -125,9 +125,13 @@ def _raise_on_error(err_indication, err_status, err_index) -> None:
 class SwitchSnmpClient:
     """Simple SNMP v2 client for polling switch information."""
 
-    def __init__(self, host: str, community: str, port: int = 161) -> None:
-        helpers = _ensure_helpers()
-
+    def __init__(
+        self,
+        helpers: Dict[str, Any],
+        host: str,
+        community: str,
+        port: int = 161,
+    ) -> None:
         self._CommunityData = helpers["CommunityData"]
         self._ContextData = helpers["ContextData"]
         self._ObjectIdentity = helpers["ObjectIdentity"]
@@ -150,6 +154,15 @@ class SwitchSnmpClient:
         self._auth = self._CommunityData(self._community, mpModel=1)
         self._context = self._ContextData()
         self._lock = asyncio.Lock()
+
+    @classmethod
+    async def async_create(
+        cls, host: str, community: str, port: int = 161
+    ) -> "SwitchSnmpClient":
+        """Build a client after loading pysnmp helpers off the event loop."""
+
+        helpers = await asyncio.to_thread(_ensure_helpers)
+        return cls(helpers, host, community, port)
 
     async def async_close(self) -> None:
         """Close the SNMP engine dispatcher."""

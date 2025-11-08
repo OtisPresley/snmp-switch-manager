@@ -51,10 +51,10 @@ class SwitchManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             client: SwitchSnmpClient | None = None
             try:
-                client = SwitchSnmpClient(
-                    host=user_input[CONF_HOST],
-                    community=user_input[CONF_COMMUNITY],
-                    port=port,
+                client = await SwitchSnmpClient.async_create(
+                    user_input[CONF_HOST],
+                    user_input[CONF_COMMUNITY],
+                    port,
                 )
                 ports = await client.async_get_port_data()
             except SnmpDependencyError:

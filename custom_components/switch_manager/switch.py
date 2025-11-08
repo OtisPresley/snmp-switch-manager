@@ -40,6 +40,7 @@ class SwitchManagerPort(CoordinatorEntity[SwitchCoordinator], SwitchEntity):
 
     _attr_should_poll = False
     _attr_has_entity_name = True
+    _attr_icon = "mdi:ethernet"
 
     def __init__(self, coordinator: SwitchCoordinator, entry: ConfigEntry, index: int) -> None:
         super().__init__(coordinator)

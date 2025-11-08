@@ -45,10 +45,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
     except Exception as err:  # pragma: no cover - depends on runtime
         raise ConfigEntryNotReady(f"Unable to install pysnmp requirements: {err}") from err
 
-    client = SwitchSnmpClient(
-        host=entry.data[CONF_HOST],
-        community=entry.data[CONF_COMMUNITY],
-        port=entry.data.get(CONF_PORT, DEFAULT_PORT),
+    client = await SwitchSnmpClient.async_create(
+        entry.data[CONF_HOST],
+        entry.data[CONF_COMMUNITY],
+        entry.data.get(CONF_PORT, DEFAULT_PORT),
     )
 
     coordinator = SwitchCoordinator(hass, client, entry)
