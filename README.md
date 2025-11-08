@@ -20,6 +20,7 @@ Switch Manager discovers an SNMP-enabled switch and exposes each port to [Home A
 - [Lovelace card](#lovelace-card)
 - [Services](#services)
 - [Troubleshooting](#troubleshooting)
+- [Changelog](https://github.com/OtisPresley/switch-manager/blob/main/CHANGELOG.md)
 - [Support](#support)
 
 ## Highlights
