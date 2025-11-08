@@ -1,33 +1,13 @@
-# Switch Manager for Home Assistant
+# Switch Manager: Home Assistant Custom Integration
 
-<p align="center">
-  <a href="https://hacs.xyz/">
-    <img src="https://img.shields.io/badge/HACS-Custom-41BDF5?style=for-the-badge&logo=homeassistant" alt="HACS Custom" />
-  </a>
-  <a href="https://github.com/OtisPresley/switch-manager/actions/workflows/ci.yaml">
-    <img src="https://img.shields.io/github/actions/workflow/status/OtisPresley/switch-manager/ci.yaml?branch=main&label=CI&style=for-the-badge&logo=github" alt="Continuous integration" />
-  </a>
-  <a href="https://github.com/OtisPresley/switch-manager/actions/workflows/hassfest.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/OtisPresley/switch-manager/hassfest.yml?branch=main&label=hassfest&style=for-the-badge&logo=homeassistant" alt="Validate with hassfest" />
-  </a>
-  <a href="https://github.com/OtisPresley/switch-manager/actions/workflows/hacs.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/OtisPresley/switch-manager/hacs.yml?branch=main&label=HACS&style=for-the-badge&logo=homeassistant" alt="Validate with HACS" />
-  </a>
-  <a href="https://github.com/OtisPresley/switch-manager/releases">
-    <img src="https://img.shields.io/github/v/release/OtisPresley/switch-manager?style=for-the-badge&logo=github" alt="Latest release" />
-  </a>
-  <a href="https://github.com/OtisPresley/switch-manager/releases">
-    <img src="https://img.shields.io/github/downloads/OtisPresley/switch-manager/total?style=for-the-badge&logo=github" alt="GitHub downloads" />
-  </a>
-  <a href="https://github.com/OtisPresley/switch-manager/issues">
-    <img src="https://img.shields.io/github/issues/OtisPresley/switch-manager?style=for-the-badge&logo=github" alt="GitHub issues" />
-  </a>
-  <a href="https://github.com/OtisPresley/switch-manager/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/OtisPresley/switch-manager?style=for-the-badge" alt="License" />
-  </a>
-</p>
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-41BDF5?logo=home-assistant&logoColor=white&style=flat)](https://www.home-assistant.io/)
+[![HACS Badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://hacs.xyz)
+[![License: MIT](https://raw.githubusercontent.com/otispresley/switch-manager/main/assets/license-mit.svg)](https://github.com/OtisPresley/switch-manager/blob/main/LICENSE)
+[![hassfest](https://img.shields.io/github/actions/workflow/status/OtisPresley/switch-manager/hassfest.yaml?branch=main&label=hassfest)](https://github.com/OtisPresley/switch-manager/actions/workflows/hassfest.yaml)
+[![HACS](https://img.shields.io/github/actions/workflow/status/OtisPresley/switch-manager/hacs.yaml?branch=main&label=HACS)](https://github.com/OtisPresley/switch-manager/actions/workflows/hacs.yaml)
+[![CI](https://img.shields.io/github/actions/workflow/status/OtisPresley/switch-manager/ci.yaml?branch=main&event=push)](https://github.com/OtisPresley/switch-manager/actions/workflows/ci.yaml)
 
-Switch Manager discovers an SNMP-enabled switch and exposes each port to Home Assistant with live status, descriptions, and administrative control. Pair it with the included Lovelace card for a rich dashboard visualisation of your hardware.
+Switch Manager discovers an SNMP-enabled switch and exposes each port to [Home Assistant](https://www.home-assistant.io/) with live status, descriptions, and administrative control. Pair it with the included Lovelace card for a rich dashboard visualisation of your hardware.
 
 ## Contents
 
@@ -123,13 +103,10 @@ The state of each port entity reflects the interface's administrative status. Tu
 
 ## Support
 
-Need help or have a feature request? Open an issue on the [GitHub tracker](https://github.com/OtisPresley/switch-manager/issues) and we’ll take a look.
+- Open an issue on the [GitHub tracker](https://github.com/OtisPresley/switch-manager/issues) if you run into problems or have feature requests.
+- Contributions and feedback are welcome!
 
-<p align="center">
-  <a href="https://ko-fi.com/otispresley">
-    <img src="https://img.shields.io/badge/Ko--fi-Support%20the%20project-FF5E5B?style=for-the-badge&logo=ko-fi" alt="Ko-fi" />
-  </a>
-  <a href="https://paypal.me/OtisPresley">
-    <img src="https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal" alt="PayPal" />
-  </a>
-</p>
+If you find this integration useful and want to support development, you can:
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Support-Buy%20Me%20a%20Coffee-orange)](https://www.buymeacoffee.com/OtisPresley)
+[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/OtisPresley)
