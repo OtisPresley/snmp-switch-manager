@@ -33,54 +33,39 @@ HELPER_SYMBOLS = (
     "setCmd",
 )
 
-HELPER_MODULES = (
-    "pysnmp.hlapi",
-    "pysnmp.hlapi.cmdgen",
-    "pysnmp.hlapi.sync",
-    "pysnmp.hlapi.sync.cmdgen",
-    "pysnmp.hlapi.api",
-    "pysnmp.hlapi.api.cmdgen",
-    "pysnmp.hlapi.api.sync",
-    "pysnmp.hlapi.api.sync.cmdgen",
-    "pysnmp.hlapi.v1arch",
-    "pysnmp.hlapi.v1arch.cmdgen",
-    "pysnmp.hlapi.v3arch",
-    "pysnmp.hlapi.v3arch.cmdgen",
-)
-
-
 def _load_helper_symbols() -> Dict[str, Any]:
-    """Locate pysnmp helper attributes across multiple module layouts."""
+    """Import the pysnmp helper attributes from the canonical modules."""
+
+    try:
+        hlapi = import_module("pysnmp.hlapi")
+    except ImportError as err:  # pragma: no cover - depends on runtime env
+        raise SnmpDependencyError("pysnmp is not installed") from err
 
     helpers: Dict[str, Any] = {}
-    errors: List[Exception] = []
+    missing: List[str] = []
 
-    for module_name in HELPER_MODULES:
-        try:
-            module = import_module(module_name)
-        except Exception as err:  # pragma: no cover - depends on runtime layout
-            errors.append(err)
+    for symbol in HELPER_SYMBOLS:
+        attr = getattr(hlapi, symbol, None)
+        if attr is None:
+            missing.append(symbol)
             continue
+        helpers[symbol] = attr
 
-        for symbol in HELPER_SYMBOLS:
-            if symbol in helpers:
-                continue
-            attr = getattr(module, symbol, None)
-            if attr is not None:
-                helpers[symbol] = attr
-
-        if len(helpers) == len(HELPER_SYMBOLS):
-            break
-
-    missing = [symbol for symbol in HELPER_SYMBOLS if symbol not in helpers]
     if missing:
-        if errors:
-            last_error = errors[-1]
-        else:  # pragma: no cover - defensive
-            last_error = ImportError("pysnmp helpers unavailable")
         raise SnmpDependencyError(
             "pysnmp missing attributes: " + ", ".join(missing)
-        ) from last_error
+        )
+
+    try:
+        proto = import_module("pysnmp.proto.rfc1902")
+    except ImportError as err:  # pragma: no cover - defensive
+        raise SnmpDependencyError("pysnmp proto helpers unavailable") from err
+
+    try:
+        helpers["Integer"] = getattr(proto, "Integer")
+        helpers["OctetString"] = getattr(proto, "OctetString")
+    except AttributeError as err:  # pragma: no cover - unexpected layout
+        raise SnmpDependencyError("pysnmp proto helpers unavailable") from err
 
     return helpers
 
@@ -99,9 +84,6 @@ def _ensure_helpers() -> Dict[str, Any]:
 
     try:  # pragma: no cover - depends on runtime environment
         helpers = _load_helper_symbols()
-        proto = import_module("pysnmp.proto.rfc1902")
-        helpers["Integer"] = getattr(proto, "Integer")
-        helpers["OctetString"] = getattr(proto, "OctetString")
     except Exception as err:  # pragma: no cover - handled by config flow
         IMPORT_ERROR = err
         raise SnmpDependencyError("pysnmp is not available") from err
