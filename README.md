@@ -1,28 +1,11 @@
 # Switch Manager for Home Assistant
 
-<p align="left">
-  <a href="https://hacs.xyz/">
-    <img src="https://img.shields.io/badge/HACS-Custom-41BDF5?style=flat&logo=homeassistant" alt="HACS Custom" />
-  </a>
-  <a href="https://github.com/OtisPresley/switch-manager/releases">
-    <img src="https://img.shields.io/github/v/release/OtisPresley/switch-manager?style=flat&logo=github" alt="GitHub release" />
-  </a>
-  <a href="https://github.com/OtisPresley/switch-manager/issues">
-    <img src="https://img.shields.io/github/issues/OtisPresley/switch-manager?style=flat&logo=github" alt="GitHub issues" />
-  </a>
-  <a href="https://github.com/OtisPresley/switch-manager/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/OtisPresley/switch-manager?style=flat" alt="License" />
-  </a>
-</p>
-
-<p align="left">
-  <a href="https://ko-fi.com/otispresley">
-    <img src="https://img.shields.io/badge/Ko--fi-Support%20the%20project-FF5E5B?style=flat&logo=ko-fi" alt="Ko-fi" />
-  </a>
-  <a href="https://paypal.me/OtisPresley">
-    <img src="https://img.shields.io/badge/PayPal-Donate-00457C?style=flat&logo=paypal" alt="PayPal" />
-  </a>
-</p>
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-41BDF5?logo=home-assistant&logoColor=white&style=flat)](https://www.home-assistant.io/)
+[![HACS Badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://hacs.xyz)
+[![License: MIT](https://img.shields.io/github/license/OtisPresley/switch-manager?style=flat)](https://github.com/OtisPresley/switch-manager/blob/main/LICENSE)
+[![hassfest](https://img.shields.io/github/actions/workflow/status/OtisPresley/switch-manager/hassfest.yaml?branch=main&label=hassfest)](https://github.com/OtisPresley/switch-manager/actions/workflows/hassfest.yaml)
+[![HACS](https://img.shields.io/github/actions/workflow/status/OtisPresley/switch-manager/hacs.yaml?branch=main&label=HACS)](https://github.com/OtisPresley/switch-manager/actions/workflows/hacs.yaml)
+[![CI](https://img.shields.io/github/actions/workflow/status/OtisPresley/switch-manager/ci.yaml?branch=main&event=push)](https://github.com/OtisPresley/switch-manager/actions/workflows/ci.yaml)
 
 Switch Manager discovers an SNMP-enabled switch and exposes each port to Home Assistant with live status, descriptions, and administrative control. Pair it with the included Lovelace card for a rich dashboard visualisation of your hardware.
 
@@ -120,4 +103,10 @@ The state of each port entity reflects the interface's administrative status. Tu
 
 ## Support
 
-Open an issue on the [GitHub tracker](https://github.com/OtisPresley/switch-manager/issues) if you run into problems or have feature requests. Contributions and feedback are welcome!
+- Open an issue on the [GitHub tracker](https://github.com/OtisPresley/switch-manager/issues) if you run into problems or have feature requests.
+- Contributions and feedback are welcome!
+
+If you find this integration useful and want to support development, you can:
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Support-Buy%20Me%20a%20Coffee-orange)](https://www.buymeacoffee.com/OtisPresley)
+[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/OtisPresley)
