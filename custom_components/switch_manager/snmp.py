@@ -34,10 +34,17 @@ HELPER_SYMBOLS: Sequence[str] = (
 )
 
 HELPER_MODULES: Sequence[str] = (
+    # Core synchronous helpers shipped with pysnmp 4.x.
     "pysnmp.hlapi",
     "pysnmp.hlapi.v3arch",
     "pysnmp.hlapi.v1arch",
     "pysnmp.hlapi.cmdgen",
+    # Asyncio shims introduced in newer pysnmp releases expose the same helpers
+    # but under different module paths. We probe them here so installations that
+    # only ship the asyncio layout still work without forcing a downgrade.
+    "pysnmp.hlapi.asyncio",
+    "pysnmp.hlapi.v3arch.asyncio",
+    "pysnmp.hlapi.asyncio.cmdgen",
 )
 
 PROTO_MODULES: Sequence[str] = (
