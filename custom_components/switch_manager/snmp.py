@@ -6,6 +6,7 @@ from typing import Iterable, Tuple, Any
 __all__ = [
     "SnmpError",
     "SnmpDependencyError",
+    "SwitchSnmpClient",
     "ensure_snmp_available",
     "validate_environment_or_raise",
     "snmp_get",
@@ -14,8 +15,9 @@ __all__ = [
 ]
 
 
-# ---- Exceptions (backward compatible) ---------------------------------------
-
+# -----------------------------------------------------------------------------
+# Exceptions (backward compatible)
+# -----------------------------------------------------------------------------
 
 class SnmpError(RuntimeError):
     """Base SNMP error for this integration."""
@@ -25,8 +27,9 @@ class SnmpDependencyError(SnmpError):
     """Raised when pysnmp cannot be imported/used."""
 
 
-# ---- Lazy HLAPI import (works with pysnmp-lextudio>=5 and pysnmp 4.x) -------
-
+# -----------------------------------------------------------------------------
+# Lazy HLAPI import (works with pysnmp-lextudio>=5 and pysnmp 4.x)
+# -----------------------------------------------------------------------------
 
 def _imports():
     """
@@ -64,8 +67,9 @@ def _imports():
     )
 
 
-# ---- Public helpers ----------------------------------------------------------
-
+# -----------------------------------------------------------------------------
+# Public helpers
+# -----------------------------------------------------------------------------
 
 def ensure_snmp_available() -> None:
     """Used by config_flow to verify HLAPI availability once."""
@@ -178,3 +182,35 @@ def snmp_set_octet_string(
     if err_stat:
         where = var_binds[int(err_idx) - 1][0] if err_idx else "?"
         raise SnmpError(f"{err_stat.prettyPrint()} at {where}")
+
+
+# -----------------------------------------------------------------------------
+# Backward-compatible client wrapper (used elsewhere in the integration)
+# -----------------------------------------------------------------------------
+
+class SwitchSnmpClient:
+    """
+    Thin wrapper preserved for compatibility with existing modules.
+
+    Provides simple get/walk/set methods bound to a host/community/port.
+    """
+
+    def __init__(self, host: str, community: str, port: int = 161) -> None:
+        self._host = host
+        self._community = community
+        self._port = int(port)
+
+    # Optional classmethod so callers can force dependency check explicitly
+    @classmethod
+    def ensure_available(cls) -> None:
+        ensure_snmp_available()
+
+    # Instance helpers used by the integration
+    def get(self, oid: str) -> Any:
+        return snmp_get(self._host, self._community, self._port, oid)
+
+    def walk(self, base_oid: str) -> Iterable[Tuple[str, Any]]:
+        return snmp_walk(self._host, self._community, self._port, base_oid)
+
+    def set_octet_string(self, oid: str, value) -> None:
+        snmp_set_octet_string(self._host, self._community, self._port, oid, value)
