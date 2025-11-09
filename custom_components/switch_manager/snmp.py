@@ -52,45 +52,50 @@ class _SnmpBackend:
 class _HlapiBackend(_SnmpBackend):
     """Backend using the pysnmp high level API."""
 
-    def __init__(self) -> None:
-        try:
-            from pysnmp.hlapi import (
-                CommunityData,
-                ObjectIdentity,
-                ObjectType,
-                SnmpEngine,
-                UdpTransportTarget,
-                getCmd,
-                nextCmd,
-                setCmd,
-            )
-        except ImportError as err:  # pragma: no cover - depends on runtime env
-            raise SnmpDependencyError("pysnmp.hlapi is not available") from err
-        except AttributeError as err:  # pragma: no cover - depends on runtime env
-            raise SnmpDependencyError(
-                "pysnmp.hlapi missing helpers: SnmpEngine, CommunityData, UdpTransportTarget, "
-                "ObjectType, ObjectIdentity, getCmd, nextCmd, setCmd"
-            ) from err
+    _MODULE_CANDIDATES = (
+        "pysnmp.hlapi",
+        "pysnmp.hlapi.v3arch",
+        "pysnmp.hlapi.v1arch",
+    )
 
-        try:  # ContextData was introduced later and might be missing
-            from pysnmp.hlapi import ContextData  # type: ignore
-        except (ImportError, AttributeError):  # pragma: no cover - optional helper
-            ContextData = None
+    def __init__(self) -> None:
+        modules = []
+        for name in self._MODULE_CANDIDATES:
+            try:
+                modules.append(import_module(name))
+            except ImportError:
+                continue
+
+        if not modules:  # pragma: no cover - depends on runtime env
+            raise SnmpDependencyError("pysnmp.hlapi is not available")
+
+        def resolve_helper(symbol: str, *aliases: str, required: bool = True) -> Any:
+            names = (symbol, *aliases)
+            for module in modules:
+                for attr in names:
+                    value = getattr(module, attr, None)
+                    if value is not None:
+                        return value
+            if required:
+                raise SnmpDependencyError(
+                    "pysnmp.hlapi missing helper: " + "/".join(names)
+                )
+            return None
+
+        self._SnmpEngine = resolve_helper("SnmpEngine")
+        self._CommunityData = resolve_helper("CommunityData")
+        self._UdpTransportTarget = resolve_helper("UdpTransportTarget")
+        self._ContextData = resolve_helper("ContextData", required=False)
+        self._ObjectType = resolve_helper("ObjectType")
+        self._ObjectIdentity = resolve_helper("ObjectIdentity")
+        self._getCmd = resolve_helper("getCmd", "get")
+        self._nextCmd = resolve_helper("nextCmd", "next")
+        self._setCmd = resolve_helper("setCmd", "set")
 
         try:
             from pysnmp.proto.rfc1902 import Integer, OctetString
         except ImportError as err:  # pragma: no cover - depends on runtime env
             raise SnmpDependencyError("pysnmp.proto.rfc1902 missing value helpers") from err
-
-        self._SnmpEngine = SnmpEngine
-        self._CommunityData = CommunityData
-        self._UdpTransportTarget = UdpTransportTarget
-        self._ContextData = ContextData
-        self._ObjectType = ObjectType
-        self._ObjectIdentity = ObjectIdentity
-        self._getCmd = getCmd
-        self._nextCmd = nextCmd
-        self._setCmd = setCmd
 
         self.integer_cls = Integer
         self.octet_string_cls = OctetString
