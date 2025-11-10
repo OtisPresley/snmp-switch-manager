@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+from typing import Any, Dict
+
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -9,11 +11,43 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 
+def _resolve_coordinator(hass, entry):
+    """Return the DataUpdateCoordinator regardless of how it's stored."""
+    # Common pattern: hass.data[DOMAIN][entry_id] is a dict with "coordinator"
+    dom: Dict[str, Any] | None = hass.data.get(DOMAIN)
+    if isinstance(dom, dict):
+        node = dom.get(entry.entry_id)
+        if node is not None:
+            if isinstance(node, dict) and "coordinator" in node:
+                return node["coordinator"]
+            # Some integrations put the coordinator directly at the entry_id key
+            if hasattr(node, "async_request_refresh") and hasattr(node, "data"):
+                return node
+
+    # Newer pattern: coordinator is attached to runtime_data
+    runtime = getattr(entry, "runtime_data", None)
+    if runtime is not None:
+        if hasattr(runtime, "async_request_refresh") and hasattr(runtime, "data"):
+            return runtime
+        if hasattr(runtime, "coordinator"):
+            return getattr(runtime, "coordinator")
+
+    # Last resort: log what's actually present to help debugging
+    _LOGGER.error(
+        "Could not resolve coordinator for entry_id=%s; hass.data keys: %s; node=%s; runtime_data=%s",
+        entry.entry_id,
+        list((dom or {}).keys()) if isinstance(dom, dict) else type(dom).__name__,
+        (dom or {}).get(entry.entry_id) if isinstance(dom, dict) else None,
+        type(runtime).__name__ if runtime is not None else None,
+    )
+    raise KeyError(entry.entry_id)
+
+
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up Switch Manager port switches."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
-    ports = coordinator.data.get("ports", {})
+    coordinator = _resolve_coordinator(hass, entry)
 
+    ports = coordinator.data.get("ports", {})
     entities: list[SwitchManagerPort] = []
 
     # Accept both dict[int, dict] and list[dict] or list[int]
@@ -22,12 +56,20 @@ async def async_setup_entry(hass, entry, async_add_entities):
     else:
         iterable = ports
 
+    count = 0
     for port in iterable:
         if isinstance(port, dict):
             idx = port.get("index") or port.get("ifIndex") or 0
+            name = port.get("name") or f"Port {idx}"
         else:
             idx = int(port)
-        entities.append(SwitchManagerPort(coordinator, entry, idx))
+            name = f"Port {idx}"
+        entities.append(SwitchManagerPort(coordinator, entry, idx, name))
+        count += 1
+
+    _LOGGER.debug("Adding %s Switch Manager port entities", count)
+    if not entities:
+        _LOGGER.warning("No ports found in coordinator data: %s", coordinator.data)
 
     async_add_entities(entities)
 
@@ -37,43 +79,52 @@ class SwitchManagerPort(CoordinatorEntity, SwitchEntity):
 
     _attr_should_poll = False
 
-    def __init__(self, coordinator, entry, port_index: int):
+    def __init__(self, coordinator, entry, port_index: int, friendly_name: str):
         """Initialize the switch port entity."""
         super().__init__(coordinator)
         self._entry = entry
         self._port_index = port_index
         self._attr_unique_id = f"{entry.entry_id}_{port_index}"
-        self._attr_name = f"Port {port_index}"
+        self._attr_name = friendly_name
 
     @property
     def is_on(self) -> bool:
-        """Return True if port is administratively up."""
+        """Return True if port is administratively up (and ideally operational)."""
         ports = self.coordinator.data.get("ports", {})
-        port = ports.get(self._port_index)
+        port = ports.get(self._port_index) if isinstance(ports, dict) else None
         if isinstance(port, dict):
             admin = port.get("admin")
             oper = port.get("oper")
-            return admin == 1 and oper == 1
+            # Consider "on" when admin is up; oper up is a bonus
+            return admin == 1
         return False
 
     async def async_turn_on(self, **kwargs) -> None:
-        """Enable the switch port."""
-        client = self.coordinator.client
+        """Enable the switch port (ifAdminStatus = up(1))."""
+        client = getattr(self.coordinator, "client", None)
+        if client is None:
+            _LOGGER.error("No SNMP client available for port %s", self._port_index)
+            return
         try:
+            # ifAdminStatus.<index> = up(1)
             await client.async_set_octet_string(
                 f"1.3.6.1.2.1.2.2.1.7.{self._port_index}", 1
-            )  # ifAdminStatus.1 = up(1)
+            )
             await self.coordinator.async_request_refresh()
         except Exception as err:
             _LOGGER.error("Failed to enable port %s: %s", self._port_index, err)
 
     async def async_turn_off(self, **kwargs) -> None:
-        """Disable the switch port."""
-        client = self.coordinator.client
+        """Disable the switch port (ifAdminStatus = down(2))."""
+        client = getattr(self.coordinator, "client", None)
+        if client is None:
+            _LOGGER.error("No SNMP client available for port %s", self._port_index)
+            return
         try:
+            # ifAdminStatus.<index> = down(2)
             await client.async_set_octet_string(
                 f"1.3.6.1.2.1.2.2.1.7.{self._port_index}", 2
-            )  # ifAdminStatus.1 = down(2)
+            )
             await self.coordinator.async_request_refresh()
         except Exception as err:
             _LOGGER.error("Failed to disable port %s: %s", self._port_index, err)
@@ -82,13 +133,13 @@ class SwitchManagerPort(CoordinatorEntity, SwitchEntity):
     def extra_state_attributes(self) -> dict[str, str | int]:
         """Expose additional port attributes."""
         ports = self.coordinator.data.get("ports", {})
-        port = ports.get(self._port_index)
+        port = ports.get(self._port_index) if isinstance(ports, dict) else None
         if not isinstance(port, dict):
-            return {}
+            return {"index": self._port_index}
         return {
+            "index": port.get("index", self._port_index),
             "name": port.get("name"),
             "alias": port.get("alias"),
             "admin": port.get("admin"),
             "oper": port.get("oper"),
-            "index": port.get("index"),
         }
