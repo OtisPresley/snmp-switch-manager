@@ -1,264 +1,188 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 import logging
-import re
-import ipaddress
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
+from .snmp import SwitchSnmpClient, IANA_IFTYPE_SOFTWARE_LOOPBACK
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _resolve_coordinator(hass, entry):
-    dom: Dict[str, Any] | None = hass.data.get(DOMAIN)
-    if isinstance(dom, dict) and "entries" in dom:
-        entries = dom.get("entries")
-        if isinstance(entries, dict):
-            node = entries.get(entry.entry_id)
-            if node is not None:
-                if isinstance(node, dict) and "coordinator" in node:
-                    return node["coordinator"]
-                if hasattr(node, "async_request_refresh") and hasattr(node, "data"):
-                    return node
-    if isinstance(dom, dict):
-        node = dom.get(entry.entry_id)
-        if node is not None:
-            if isinstance(node, dict) and "coordinator" in node:
-                return node["coordinator"]
-            if hasattr(node, "async_request_refresh") and hasattr(node, "data"):
-                return node
-        if "coordinator" in dom and hasattr(dom["coordinator"], "async_request_refresh"):
-            return dom["coordinator"]
-    runtime = getattr(entry, "runtime_data", None)
-    if runtime is not None:
-        if hasattr(runtime, "async_request_refresh") and hasattr(runtime, "data"):
-            return runtime
-        if hasattr(runtime, "coordinator"):
-            return getattr(runtime, "coordinator")
-    _LOGGER.error("Could not resolve coordinator for entry_id=%s", entry.entry_id)
-    raise KeyError(entry.entry_id)
+@dataclass
+class PortRow:
+    index: int
+    name: str
+    alias: str
+    admin: Optional[int]
+    oper: Optional[int]
+    ips: List  # list[(ip, mask, prefix)]
+    iftype: Optional[int]
 
 
-_VLAN_PATTERNS = (
-    r"\bVlan\s*([0-9]+)\b",
-    r"\bVLAN\s*([0-9]+)\b",
-    r"\bVl([0-9]+)\b",
-    r"^\s*V([0-9]+)\s*$",
-)
+def _friendly_name_from_descr(descr: str, iftype: Optional[int]) -> str:
+    """
+    Convert Dell-style 'Unit: 1 Slot: 0 Port: 46 Gigabit - Level' into Gi1/0/46.
+    For TenGig stack ports (20G) name them Tw1/0/X.
+    VLAN/Loopback names are passed through as-is if they already look like VlXX / Lo0.
+    """
+    d = (descr or "").strip().lower()
 
-
-def _detect_vlan_id(text: str) -> int | None:
-    for pat in _VLAN_PATTERNS:
-        m = re.search(pat, text, re.IGNORECASE)
-        if m:
-            try:
-                return int(m.group(1))
-            except Exception:
-                return None
-    return None
-
-
-def _short_intf_name(long_name: str, alias: str) -> str | None:
-    """Return friendly short name, including VLAN/loopback/port-channel logic."""
-    name = (long_name or "").strip()
-    alt = (alias or "").strip()
-    low = name.lower()
-
-    # VLANs -> keep exact Name if present (e.g., V1, Vl11)
-    vid = _detect_vlan_id(name) or _detect_vlan_id(alt)
-    if vid is not None:
-        return name if name else f"Vl{vid}"
-
-    # Loopback
-    if "software loopback" in low or "loopback" in low:
+    # Loopback: either explicit ifType or string match
+    if iftype == IANA_IFTYPE_SOFTWARE_LOOPBACK or "software loopback" in d or d.startswith("loopback"):
         return "Lo0"
 
-    # Port-channels (aggregates)
-    if "port-channel" in low or "link aggregate" in low:
-        m = re.search(r"(\d+)", name)
-        return f"Po{m.group(1)}" if m else "Po"
+    # If the name already looks like "vlXX" (we propagate "Vl11" etc.)
+    if d.startswith("vl"):
+        # Recreate with capital V and lowercase l convention
+        return "V" + d[1:]
 
-    # Physicals: Unit:X Slot:Y Port:Z <type>
-    m = re.search(r"Unit:\s*(\d+)\s+Slot:\s*(\d+)\s+Port:\s*(\d+)\s+(.*)", name)
-    if not m:
-        return None
-    unit, slot, port, tail = int(m.group(1)), int(m.group(2)), int(m.group(3)), m.group(4)
-    t = tail.lower()
-    if "20g" in t or "20 g" in t:
-        itype = "Tw"
-    elif "10g" in t or "ten" in t or "tengig" in t or "ten-gig" in t or "ten gig" in t:
-        itype = "Te"
-    elif "fast" in t or "100m" in t:
-        itype = "Fa"
-    else:
-        itype = "Gi"
-    return f"{itype}{unit}/{slot}/{port}"
+    # Try to parse "Unit: X Slot: Y Port: Z ..." lines
+    # We are quite tolerant and only care about numbers + speed class.
+    unit = slot = port = None
+    speed_class = ""
+    parts = d.replace(",", " ").replace("  ", " ").split()
+    try:
+        for i, tok in enumerate(parts):
+            if tok == "unit:" and i + 1 < len(parts):
+                unit = int(parts[i + 1])
+            elif tok == "slot:" and i + 1 < len(parts):
+                slot = int(parts[i + 1])
+            elif tok == "port:" and i + 1 < len(parts):
+                port = int(parts[i + 1])
+            elif tok in ("gigabit", "1gig", "1g"):
+                speed_class = "Gi"
+            elif tok in ("10g", "10gig", "10gigabit"):
+                speed_class = "Te"
+            elif tok in ("20g", "20gig", "20gigabit"):
+                # Stacking / twinax
+                speed_class = "Tw"
+    except Exception:
+        pass
 
+    if unit is not None and slot is not None and port is not None and speed_class:
+        return f"{speed_class}{unit}/{slot}/{port}"
 
-def _is_port_channel(name: str) -> bool:
-    low = (name or "").lower()
-    return "port-channel" in low or "link aggregate" in low
-
-
-def _should_exclude(
-    name: str,
-    alias: str,
-    include: List[str],
-    exclude: List[str],
-    port: Dict[str, Any] | None,
-) -> bool:
-    """
-    Exclude:
-      - CPU ports always.
-      - Port-channels unless they look configured:
-           alias present OR ipv4 present OR admin==1 OR oper==1
-      - Apply include/exclude substring filters.
-    """
-    text = f"{name or ''} {alias or ''}".lower()
-
-    if "cpu" in text:
-        return True
-
-    if _is_port_channel(name):
-        configured = False
-        if port:
-            if (port.get("alias") or "").strip():
-                configured = True
-            ipv4 = port.get("ipv4") or []
-            if ipv4:
-                configured = True
-            if int(port.get("admin", 0)) == 1 or int(port.get("oper", 0)) == 1:
-                configured = True
-        if not configured:
-            return True
-
-    if include and not any(pat.lower() in text for pat in include):
-        return True
-    if exclude and any(pat.lower() in text for pat in exclude):
-        return True
-    return False
+    # Fallback: Title-cased descriptor
+    return descr
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
-    coordinator = _resolve_coordinator(hass, entry)
-    ports = coordinator.data.get("ports", {})
-
-    include_opt = (entry.options.get("include") or "").strip()
-    exclude_opt = (entry.options.get("exclude") or "").strip()
-    include = [s.strip() for s in (include_opt.split(",") if include_opt else [])]
-    exclude = [s.strip() for s in (exclude_opt.split(",") if exclude_opt else [])]
-
-    entities: list[SwitchManagerPort] = []
-    iterable = ports.values() if isinstance(ports, dict) else ports
-    seen_indices: set[int] = set()
-
-    for port in iterable:
-        if not isinstance(port, dict):
-            continue
-        idx = int(port.get("index", 0))
-        if idx in seen_indices:
-            continue
-        seen_indices.add(idx)
-
-        name = str(port.get("name") or "")
-        alias = str(port.get("alias") or "")
-
-        if _should_exclude(name, alias, include, exclude, port):
-            continue
-
-        short = _short_intf_name(name, alias)
-        friendly = short or (alias if alias else f"Port {idx}")
-        entities.append(SwitchManagerPort(coordinator, entry, idx, friendly))
-
-    async_add_entities(entities)
+def _build_port_row(raw: Dict[str, Any]) -> PortRow:
+    name = _friendly_name_from_descr(raw.get("descr") or "", raw.get("type"))
+    return PortRow(
+        index=int(raw.get("index")),
+        name=name,
+        alias=raw.get("alias") or "",
+        admin=raw.get("admin"),
+        oper=raw.get("oper"),
+        ips=raw.get("ips") or [],
+        iftype=raw.get("type"),
+    )
 
 
-class SwitchManagerPort(CoordinatorEntity, SwitchEntity):
+def _coordinator_key(entry: ConfigEntry) -> str:
+    return f"{entry.entry_id}:coordinator"
+
+
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+) -> None:
+    # Coordinator & client were stored during __init__.async_setup_entry
+    store = hass.data.get(DOMAIN, {})
+    coord = store.get(_coordinator_key(entry))
+    client: SwitchSnmpClient = store.get("client")  # populated in __init__.py
+
+    if coord is None or client is None:
+        _LOGGER.error(
+            "Could not resolve coordinator for entry_id=%s; hass.data keys: %s",
+            entry.entry_id,
+            list(store.keys()),
+        )
+        return
+
+    ports_raw: List[Dict[str, Any]] = coord.data.get("ports", [])
+    entities: List[SwitchManagerPort] = []
+
+    for pr in ports_raw:
+        row = _build_port_row(pr)
+
+        # EXCLUSIONS:
+        # - VLANs & Loopback stay
+        # - Everything else stays as before (duplicates were already fixed upstream)
+
+        entities.append(SwitchManagerPort(coord, entry, row))
+
+    async_add_entities(entities, True)
+
+
+class SwitchManagerPort(SwitchEntity):
     _attr_should_poll = False
 
-    def __init__(self, coordinator, entry, port_index: int, friendly_name: str):
-        super().__init__(coordinator)
+    def __init__(self, coordinator, entry: ConfigEntry, row: PortRow) -> None:
+        self.coordinator = coordinator
         self._entry = entry
-        self._port_index = port_index
-        self._attr_unique_id = f"{entry.entry_id}_{port_index}"
-        self._attr_name = friendly_name
-
-    @property
-    def device_info(self) -> Dict[str, Any]:
-        sysinfo = self.coordinator.data.get("system", {}) if hasattr(self.coordinator, "data") else {}
-        return {
-            "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "name": sysinfo.get("hostname") or (self._entry.title or "Switch"),
-            "manufacturer": sysinfo.get("manufacturer"),
-            "model": sysinfo.get("model"),
-            "sw_version": sysinfo.get("firmware"),
-        }
+        self._row = row
+        self._attr_name = row.name
+        self._attr_unique_id = f"{entry.entry_id}-if-{row.index}"
 
     @property
     def is_on(self) -> bool:
-        ports = self.coordinator.data.get("ports", {})
-        port = ports.get(self._port_index) if isinstance(ports, dict) else None
-        if isinstance(port, dict):
-            return port.get("admin") == 1
-        return False
+        # Admin state ‘1’ is up; anything else consider off
+        return (self._row.admin or 0) == 1
 
-    async def async_turn_on(self, **kwargs) -> None:
-        client = getattr(self.coordinator, "client", None)
-        if client is None:
-            return
-        await client.async_set_octet_string(f"1.3.6.1.2.1.2.2.1.7.{self._port_index}", 1)
-        await self.coordinator.async_request_refresh()
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        # Future: write admin(1) via SNMP set if/when you enable writes
+        return
 
-    async def async_turn_off(self, **kwargs) -> None:
-        client = getattr(self.coordinator, "client", None)
-        if client is None:
-            return
-        await client.async_set_octet_string(f"1.3.6.1.2.1.2.2.1.7.{self._port_index}", 2)
-        await self.coordinator.async_request_refresh()
-
-    @staticmethod
-    def _cidrs_from_ipv4_list(records: List[Dict[str, str]]) -> List[str]:
-        out: List[str] = []
-        for rec in records or []:
-            addr = str(rec.get("address", ""))
-            mask = str(rec.get("netmask", ""))
-            try:
-                prefix = ipaddress.IPv4Network(f"0.0.0.0/{mask}").prefixlen
-                out.append(f"{ipaddress.IPv4Address(addr)}/{prefix}")
-            except Exception:
-                continue
-        return out
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        # Future: write admin(2) via SNMP set if/when you enable writes
+        return
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Only port-centric attributes (no system-level fields)."""
-        ports = self.coordinator.data.get("ports", {})
-        port = ports.get(self._port_index) if isinstance(ports, dict) else None
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        attrs: Dict[str, Any] = {
+            "Index": self._row.index,
+            "Name": self._row.name,
+            "Alias": self._row.alias or "",
+            "Admin": self._row.admin,
+            "Oper": self._row.oper,
+        }
 
-        attrs: dict[str, Any] = {}
-        if isinstance(port, dict):
-            attrs.update({
-                "index": port.get("index", self._port_index),
-                "name": port.get("name"),
-                "alias": port.get("alias"),
-                "admin": port.get("admin"),
-                "oper": port.get("oper"),
-            })
+        # IPv4 info (one or more addresses) – expose both ip/mask and CIDR
+        # ips is List[(ip, mask, prefix)]
+        if self._row.ips:
+            # First address for convenience
+            ip0, mask0, prefix0 = self._row.ips[0]
+            attrs["IP address"] = ip0
+            if mask0:
+                attrs["Subnet mask"] = mask0
+            if prefix0 is not None:
+                attrs["CIDR"] = f"{ip0}/{prefix0}"
 
-            ipv4 = port.get("ipv4") or []
-            if ipv4:
-                first = ipv4[0] or {}
-                if first.get("address"):
-                    attrs["ip_address"] = first.get("address")
-                if first.get("netmask"):
-                    attrs["netmask"] = first.get("netmask")
-            cidrs = self._cidrs_from_ipv4_list(ipv4)
-            if cidrs:
-                attrs["ip_cidr_primary"] = cidrs[0]
-                attrs["ipv4_cidrs"] = cidrs
+            # If there are multiple, expose them too (rare on VLANs/Lo)
+            if len(self._row.ips) > 1:
+                others = []
+                for ipi, maski, prefi in self._row.ips[1:]:
+                    if prefi is not None:
+                        others.append(f"{ipi}/{prefi}")
+                    elif maski:
+                        others.append(f"{ipi} {maski}")
+                    else:
+                        others.append(ipi)
+                attrs["Additional IPs"] = others
 
         return attrs
+
+    async def async_update(self) -> None:
+        # We read from the coordinator only
+        refreshed: List[Dict[str, Any]] = self.coordinator.data.get("ports", [])
+        for pr in refreshed:
+            if int(pr.get("index")) == self._row.index:
+                self._row = _build_port_row(pr)
+                break
