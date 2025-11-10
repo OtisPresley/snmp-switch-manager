@@ -7,7 +7,31 @@ from typing import Dict, List, Optional, Tuple
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
-# We use the classic pysnmp HLAPI for broad HA compatibility.
+__all__ = [
+    "SnmpError",
+    "SnmpDependencyError",
+    "ensure_snmp_available",
+    "validate_environment_or_raise",
+    "reset_backend_cache",
+    "SwitchSnmpClient",
+    # constants some modules import
+    "IANA_IFTYPE_LAG",
+    "IANA_IFTYPE_SOFTWARE_LOOPBACK",
+]
+
+_LOGGER = logging.getLogger(__name__)
+
+# --------------------------
+# pysnmp import + error types
+# --------------------------
+class SnmpError(HomeAssistantError):
+    """Generic SNMP error for this integration."""
+
+
+class SnmpDependencyError(SnmpError):
+    """Raised when pysnmp is not available."""
+
+
 try:
     from pysnmp.hlapi import (
         CommunityData,
@@ -20,24 +44,24 @@ try:
         nextCmd,
     )
     _PYSNMP_IMPORT_OK = True
+    _PYSNMP_IMPORT_ERR = None
 except Exception as exc:  # pragma: no cover
     _PYSNMP_IMPORT_OK = False
     _PYSNMP_IMPORT_ERR = exc
 
-_LOGGER = logging.getLogger(__name__)
-
 # --------------------------
 # Back-compat helper shims
 # --------------------------
-
 def ensure_snmp_available() -> None:
     """Compat shim used by config_flow; raises if pysnmp is not importable."""
     if not _PYSNMP_IMPORT_OK:
-        raise HomeAssistantError(f"pysnmp.hlapi import failed: {_PYSNMP_IMPORT_ERR}")
+        raise SnmpDependencyError(f"pysnmp.hlapi import failed: {_PYSNMP_IMPORT_ERR}")
+
 
 def validate_environment_or_raise() -> None:
     """Older code path alias."""
     ensure_snmp_available()
+
 
 def reset_backend_cache() -> None:
     """Compat no-op used by earlier versions/tests."""
@@ -86,11 +110,9 @@ def _snmp_walk(host: str, port: int, community: str, base_oid: str) -> List[Tupl
         engine, auth, target, ctx, ObjectType(ObjectIdentity(base_oid)), lexicographicMode=False
     ):
         if err_ind:
-            raise HomeAssistantError(f"SNMP walk error: {err_ind}")
+            raise SnmpError(f"SNMP walk error: {err_ind}")
         if err_stat:
-            raise HomeAssistantError(
-                f"SNMP walk error: {err_stat.prettyPrint()} at {err_idx}"
-            )
+            raise SnmpError(f"SNMP walk error: {err_stat.prettyPrint()} at {err_idx}")
         for var_bind in var_binds:
             oid, val = var_bind
             out.append((str(oid), val.prettyPrint()))
@@ -238,7 +260,7 @@ class SwitchSnmpClient:
                 ip_to_mask[key] = mask
 
             ip_map: Dict[int, List[Tuple[str, str, Optional[int]]]] = {}
-            for ip_oid, ip_val in ip_rows:
+            for _oid, ip_val in ip_rows:
                 ip = ip_val  # already a dotted string from prettyPrint()
                 idx = ip_to_ifidx.get(ip)
                 if idx is None:
