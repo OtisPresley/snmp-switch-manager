@@ -1,160 +1,91 @@
-"""Home Assistant integration to manage network switches via SNMP."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import timedelta
-from typing import Any
+from typing import Any, Dict
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, CONF_PORT
-from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.typing import ConfigType
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from homeassistant.requirements import async_process_requirements
 
-from .const import (
-    CONF_COMMUNITY,
-    DEFAULT_PORT,
-    DEFAULT_SCAN_INTERVAL,
-    DOMAIN,
-    PLATFORMS,
-    REQUIREMENTS,
-    SERVICE_FIELD_DESCRIPTION,
-    SERVICE_FIELD_ENTITY_ID,
-    SERVICE_SET_PORT_DESCRIPTION,
-)
-from .snmp import SnmpError, SwitchSnmpClient, reset_backend_cache
+from .const import DOMAIN
+from .snmp import SwitchSnmpClient, ensure_snmp_available, SnmpError
 
 _LOGGER = logging.getLogger(__name__)
 
-SwitchManagerConfigEntry = ConfigEntry
+PLATFORMS: list[str] = ["switch", "sensor"]  # make sure we load sensors too
 
 
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the integration via YAML (not supported)."""
-    return True
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up a Switch Manager entry."""
+    await hass.async_add_executor_job(ensure_snmp_available)
 
+    host = entry.data.get("host")
+    community = entry.data.get("community")
+    port = int(entry.data.get("port", 161))
 
-async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry) -> bool:
-    """Set up Switch Manager from a config entry."""
-    domain_data = hass.data.setdefault(DOMAIN, {"entries": {}, "service_registered": False})
+    # Create a client (tolerant factory handles (hass, host, community, port))
+    client = await SwitchSnmpClient.async_create(hass, host, community, port)
 
-    try:
-        await async_process_requirements(hass, DOMAIN, REQUIREMENTS)
-    except Exception as err:  # pragma: no cover - depends on runtime
-        raise ConfigEntryNotReady(f"Unable to install pysnmp requirements: {err}") from err
-    reset_backend_cache()
+    async def _async_update_data() -> Dict[str, Any]:
+        """Fetch system + ports and return a single dict the platforms can use."""
+        try:
+            # Run them in parallel
+            system_task = asyncio.create_task(client.async_get_system_info())
+            ports_task = asyncio.create_task(client.async_get_port_data())
+            system = await system_task
+            ports = await ports_task
 
-    client = await SwitchSnmpClient.async_create(
-        entry.data[CONF_HOST],
-        entry.data[CONF_COMMUNITY],
-        entry.data.get(CONF_PORT, DEFAULT_PORT),
+            # Shape we expect everywhere:
+            #   {"system": {...}, "ports": { ifIndex: {index,name,alias,admin,oper,ipv4:[{address,netmask}]}}}
+            return {"system": system or {}, "ports": ports or {}}
+        except Exception as err:
+            raise UpdateFailed(str(err)) from err
+
+    coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name=f"Switch Manager {entry.title or host}",
+        update_method=_async_update_data,
+        update_interval=timedelta(seconds=30),
     )
 
-    coordinator = SwitchCoordinator(hass, client, entry)
+    # Prime data
     await coordinator.async_config_entry_first_refresh()
 
-    domain_data["entries"][entry.entry_id] = {
-        "client": client,
-        "coordinator": coordinator,
-    }
+    # make the client available to platforms (for set operations)
+    coordinator.client = client  # type: ignore[attr-defined]
 
+    # store in a predictable place
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN].setdefault("entries", {})
+    hass.data[DOMAIN]["entries"][entry.entry_id] = {"coordinator": coordinator}
+    hass.data[DOMAIN]["service_registered"] = True
+
+    # forward to platforms (switch + sensor)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    if not domain_data["service_registered"]:
-        domain_data["service_registered"] = True
-
-        async def _set_description(call: ServiceCall) -> None:
-            entity_id = call.data[SERVICE_FIELD_ENTITY_ID]
-            description = call.data[SERVICE_FIELD_DESCRIPTION]
-
-            from homeassistant.helpers import entity_registry as er
-
-            ent_reg = er.async_get(hass)
-            entity_entry = ent_reg.async_get(entity_id)
-            if not entity_entry:
-                raise ValueError(f"Entity {entity_id} not found")
-            entry_id = entity_entry.config_entry_id
-            if not entry_id or entry_id not in hass.data[DOMAIN]["entries"]:
-                raise ValueError("Entity is not managed by Switch Manager")
-
-            coordinator: SwitchCoordinator = hass.data[DOMAIN]["entries"][entry_id][
-                "coordinator"
-            ]
-            await coordinator.async_set_description(entity_id, description)
-
-        hass.services.async_register(
-            DOMAIN,
-            SERVICE_SET_PORT_DESCRIPTION,
-            _set_description,
-        )
+    # options reload
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry) -> bool:
-    """Unload a config entry."""
+async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload when options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a Switch Manager entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if not unload_ok:
-        return False
-
-    domain_data = hass.data[DOMAIN]
-    data = domain_data["entries"].pop(entry.entry_id)
-    await data["client"].async_close()
-
-    if not domain_data["entries"]:
-        domain_data["service_registered"] = False
-        hass.services.async_remove(DOMAIN, SERVICE_SET_PORT_DESCRIPTION)
-
-    return True
-
-
-class SwitchCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Coordinator fetching SNMP data for a switch."""
-
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        client: SwitchSnmpClient,
-        entry: SwitchManagerConfigEntry,
-    ) -> None:
-        super().__init__(
-            hass,
-            _LOGGER,
-            name=f"Switch Manager {entry.title}",
-            update_interval=timedelta(
-                seconds=entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
-            ),
-        )
-        self.client = client
-        self.entry = entry
-
-    async def _async_update_data(self) -> dict[str, Any]:
+    if unload_ok:
         try:
-            ports = await self.client.async_get_port_data()
-            system = await self.client.async_get_system_info()
-        except SnmpError as err:
-            raise UpdateFailed(f"Failed to update switch data: {err}") from err
-
-        return {
-            "ports": ports,
-            "device_info": system,
-        }
-
-    async def async_set_description(self, entity_id: str, description: str) -> None:
-        """Update the alias of a port from a service call."""
-        from homeassistant.helpers.entity_registry import async_get
-
-        ent_reg = async_get(self.hass)
-        entry = ent_reg.async_get(entity_id)
-        if not entry:
-            raise ValueError(f"Entity {entity_id} not found")
-
-        index = entry.unique_id.split(":")[-1]
-        await self.client.async_set_alias(int(index), description)
-        await self.async_request_refresh()
-
-    async def async_set_admin_state(self, index: int, enabled: bool) -> None:
-        await self.client.async_set_admin_status(index, enabled)
-        await self.async_request_refresh()
+            hass.data[DOMAIN]["entries"].pop(entry.entry_id, None)
+            # Cleanup top-level dict if empty
+            if not hass.data[DOMAIN]["entries"]:
+                hass.data.pop(DOMAIN, None)
+        except Exception:  # be tolerant
+            pass
+    return unload_ok
