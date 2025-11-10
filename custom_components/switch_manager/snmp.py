@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import ipaddress
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
@@ -70,12 +70,8 @@ def reset_backend_cache() -> None:
 
 # --- MIB-II OIDs (vendor-agnostic) ---
 IF_TABLE = "1.3.6.1.2.1.2.2.1"          # ifTable.* columns
-IF_INDEX = IF_TABLE + ".1"
 IF_DESCR = IF_TABLE + ".2"
 IF_TYPE = IF_TABLE + ".3"
-IF_MTU = IF_TABLE + ".4"
-IF_SPEED = IF_TABLE + ".5"
-IF_PHYS_ADDR = IF_TABLE + ".6"
 IF_ADMIN = IF_TABLE + ".7"
 IF_OPER = IF_TABLE + ".8"
 IF_LAST_CHANGE = IF_TABLE + ".9"
@@ -95,6 +91,38 @@ IP_AD_ENT_NETMASK = IP_ADDR_TABLE + ".3"   # ipAdEntNetMask
 SYS_DESCR = "1.3.6.1.2.1.1.1.0"
 SYS_UPTIME = "1.3.6.1.2.1.1.3.0"
 SYS_NAME = "1.3.6.1.2.1.1.5.0"
+
+
+def _normalize_port_community(
+    port_in: Union[int, str, None], community_in: Union[str, int, None]
+) -> Tuple[int, str]:
+    """
+    Accept either (port, community) or (community, port), strings or ints.
+    Defaults port to 161 if it's missing/unparseable.
+    """
+    default_port = 161
+
+    # If port is a non-digit string, it is actually the community
+    if isinstance(port_in, str) and not port_in.isdigit():
+        community = str(port_in)
+        port = community_in if isinstance(community_in, int) else default_port
+        return int(port), community
+
+    # If community is an int and port is None -> swap
+    if isinstance(community_in, int) and (port_in is None):
+        return int(community_in), ""
+
+    # Normal paths
+    port: int
+    if isinstance(port_in, str) and port_in.isdigit():
+        port = int(port_in)
+    elif isinstance(port_in, int):
+        port = port_in
+    else:
+        port = default_port
+
+    community = "" if community_in is None else str(community_in)
+    return port, community
 
 
 def _snmp_walk(host: str, port: int, community: str, base_oid: str) -> List[Tuple[str, object]]:
@@ -149,19 +177,38 @@ def _mask_to_prefix(mask: str) -> Optional[int]:
 class SwitchSnmpClient:
     """Very small pysnmp wrapper with only what the integration needs."""
 
-    def __init__(self, hass: Optional[HomeAssistant], host: str, port: int, community: str) -> None:
+    def __init__(self, hass: Optional[HomeAssistant], host: str, port: Union[int, str, None], community: Union[str, int, None]) -> None:
         self._hass = hass
+        norm_port, norm_comm = _normalize_port_community(port, community)
         self._host = host
-        self._port = port
-        self._community = community
+        self._port = norm_port
+        self._community = norm_comm
 
     # ----- creation -----
     @classmethod
     async def async_create(
-        cls, hass: HomeAssistant, host: str, port: int, community: str
+        cls, hass: HomeAssistant, host: str, port_or_comm, comm_or_port=None
     ) -> "SwitchSnmpClient":
-        # Make sure pysnmp can load before we proceed.
+        """
+        Accept both call styles:
+        - async_create(hass, host, port:int|str, community:str)
+        - async_create(hass, host, community:str, port:int|str)
+        """
         await hass.async_add_executor_job(ensure_snmp_available)
+
+        # Try to detect which arg is which
+        port: Union[int, str, None]
+        community: Union[str, int, None]
+
+        # If first of the two is str and second is int-like -> it is (community, port)
+        if isinstance(port_or_comm, str) and (isinstance(comm_or_port, int) or (isinstance(comm_or_port, str) and comm_or_port.isdigit())):
+            community = port_or_comm
+            port = comm_or_port
+        else:
+            # assume (port, community)
+            port = port_or_comm
+            community = comm_or_port
+
         return cls(hass, host, port, community)
 
     # Small helper to run sync SNMP in executor no matter how we’re called
