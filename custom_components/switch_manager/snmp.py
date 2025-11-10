@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import ipaddress
 import logging
 from typing import Dict, List, Optional, Tuple
@@ -14,7 +15,6 @@ __all__ = [
     "validate_environment_or_raise",
     "reset_backend_cache",
     "SwitchSnmpClient",
-    # constants some modules import
     "IANA_IFTYPE_LAG",
     "IANA_IFTYPE_SOFTWARE_LOOPBACK",
 ]
@@ -149,35 +149,42 @@ def _mask_to_prefix(mask: str) -> Optional[int]:
 class SwitchSnmpClient:
     """Very small pysnmp wrapper with only what the integration needs."""
 
-    def __init__(self, host: str, port: int, community: str) -> None:
+    def __init__(self, hass: Optional[HomeAssistant], host: str, port: int, community: str) -> None:
+        self._hass = hass
         self._host = host
         self._port = port
         self._community = community
 
     # ----- creation -----
     @classmethod
-    async def async_create(cls, hass: HomeAssistant, host: str, port: int, community: str) -> "SwitchSnmpClient":
+    async def async_create(
+        cls, hass: HomeAssistant, host: str, port: int, community: str
+    ) -> "SwitchSnmpClient":
         # Make sure pysnmp can load before we proceed.
         await hass.async_add_executor_job(ensure_snmp_available)
-        return cls(host, port, community)
+        return cls(hass, host, port, community)
+
+    # Small helper to run sync SNMP in executor no matter how we’re called
+    async def _run(self, func, *args):
+        if self._hass is not None:
+            return await self._hass.async_add_executor_job(func, *args)
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: func(*args))
 
     # ----- system info for sensors -----
-    async def async_get_system_info(self, hass: HomeAssistant) -> Dict[str, Optional[str]]:
+    async def async_get_system_info(self) -> Dict[str, Optional[str]]:
         def _read():
             sys_descr = _snmp_get(self._host, self._port, self._community, SYS_DESCR) or ""
             sys_uptime = _snmp_get(self._host, self._port, self._community, SYS_UPTIME) or ""
             sys_name = _snmp_get(self._host, self._port, self._community, SYS_NAME) or ""
-            return {
-                "sysDescr": sys_descr,
-                "sysUpTime": sys_uptime,
-                "sysName": sys_name,
-            }
+            return {"sysDescr": sys_descr, "sysUpTime": sys_uptime, "sysName": sys_name}
 
-        return await hass.async_add_executor_job(_read)
+        return await self._run(_read)
 
     # ----- interface listing with IPv4 attribution -----
-    async def async_get_interfaces(self, hass: HomeAssistant) -> List[Dict]:
+    async def async_get_interfaces(self) -> List[Dict]:
         """Return list of interfaces with admin/oper/alias/descr/type + IPv4 info."""
+
         def _collect() -> List[Dict]:
             # Walk ifTable essentials
             descr_rows = _snmp_walk(self._host, self._port, self._community, IF_DESCR)
@@ -294,4 +301,4 @@ class SwitchSnmpClient:
 
             return out
 
-        return await hass.async_add_executor_job(_collect)
+        return await self._run(_collect)
