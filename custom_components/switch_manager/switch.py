@@ -63,29 +63,26 @@ def _detect_vlan_id(text: str) -> int | None:
 
 
 def _short_intf_name(long_name: str, alias: str) -> str | None:
-    """Return friendly short name, including VLAN/loopback logic."""
-    name = long_name or ""
-    alt = alias or ""
+    """Return friendly short name, including VLAN/loopback/port-channel logic."""
+    name = (long_name or "").strip()
+    alt = (alias or "").strip()
+    low = name.lower()
 
-    # VLANs
-    vid = _detect_vlan_id(name)
-    if vid is None and alt:
-        vid = _detect_vlan_id(alt)
+    # VLANs -> keep exact Name if present (e.g., V1, Vl11)
+    vid = _detect_vlan_id(name) or _detect_vlan_id(alt)
     if vid is not None:
-        return name.strip() if name.strip() else f"Vl{vid}"
+        return name if name else f"Vl{vid}"
 
     # Loopback
-    if "software loopback" in name.lower() or "loopback" in name.lower():
+    if "software loopback" in low or "loopback" in low:
         return "Lo0"
 
     # Port-channels (aggregates)
-    if "port-channel" in name.lower() or "link aggregate" in name.lower():
+    if "port-channel" in low or "link aggregate" in low:
         m = re.search(r"(\d+)", name)
-        if m:
-            return f"Po{m.group(1)}"
-        return "Po"
+        return f"Po{m.group(1)}" if m else "Po"
 
-    # Physicals
+    # Physicals: Unit:X Slot:Y Port:Z <type>
     m = re.search(r"Unit:\s*(\d+)\s+Slot:\s*(\d+)\s+Port:\s*(\d+)\s+(.*)", name)
     if not m:
         return None
@@ -102,11 +99,43 @@ def _short_intf_name(long_name: str, alias: str) -> str | None:
     return f"{itype}{unit}/{slot}/{port}"
 
 
-def _should_exclude(name: str, alias: str, include: List[str], exclude: List[str]) -> bool:
-    """Exclude CPU or link-aggregates; allow loopback."""
-    text = f"{name} {alias}".lower()
+def _is_port_channel(name: str) -> bool:
+    low = (name or "").lower()
+    return "port-channel" in low or "link aggregate" in low
+
+
+def _should_exclude(
+    name: str,
+    alias: str,
+    include: List[str],
+    exclude: List[str],
+    port: Dict[str, Any] | None,
+) -> bool:
+    """
+    Exclude:
+      - CPU ports always.
+      - Port-channels unless they look configured:
+           alias present OR ipv4 present OR admin==1 OR oper==1
+      - Apply include/exclude substring filters.
+    """
+    text = f"{name or ''} {alias or ''}".lower()
+
     if "cpu" in text:
         return True
+
+    if _is_port_channel(name):
+        configured = False
+        if port:
+            if (port.get("alias") or "").strip():
+                configured = True
+            ipv4 = port.get("ipv4") or []
+            if ipv4:
+                configured = True
+            if int(port.get("admin", 0)) == 1 or int(port.get("oper", 0)) == 1:
+                configured = True
+        if not configured:
+            return True
+
     if include and not any(pat.lower() in text for pat in include):
         return True
     if exclude and any(pat.lower() in text for pat in exclude):
@@ -138,7 +167,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         name = str(port.get("name") or "")
         alias = str(port.get("alias") or "")
 
-        if _should_exclude(name, alias, include, exclude):
+        if _should_exclude(name, alias, include, exclude, port):
             continue
 
         short = _short_intf_name(name, alias)
