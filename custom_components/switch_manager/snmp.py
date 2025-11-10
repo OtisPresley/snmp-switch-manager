@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import importlib
 import logging
+import re
 from typing import Iterable, Tuple, Any, Optional, Dict
 
 _LOGGER = logging.getLogger(__name__)
@@ -178,11 +179,19 @@ class SwitchSnmpClient:
     async wrappers that run in an executor when hass is unavailable.
     """
 
-    # Standard IF-MIB OIDs we’ll use
-    OID_ifDescr = "1.3.6.1.2.1.2.2.1.2"
-    OID_ifAdminStatus = "1.3.6.1.2.1.2.2.1.7"
-    OID_ifOperStatus = "1.3.6.1.2.1.2.2.1.8"
-    OID_ifAlias = "1.3.6.1.2.1.31.1.1.1.18"  # IF-MIB::ifAlias (human description)
+    # IF-MIB OIDs
+    OID_ifDescr        = "1.3.6.1.2.1.2.2.1.2"
+    OID_ifAdminStatus  = "1.3.6.1.2.1.2.2.1.7"
+    OID_ifOperStatus   = "1.3.6.1.2.1.2.2.1.8"
+    OID_ifAlias        = "1.3.6.1.2.1.31.1.1.1.18"  # IF-MIB::ifAlias (port description)
+
+    # SNMPv2-MIB::system OIDs
+    OID_sysDescr       = "1.3.6.1.2.1.1.1.0"
+    OID_sysObjectID    = "1.3.6.1.2.1.1.2.0"
+    OID_sysUpTime      = "1.3.6.1.2.1.1.3.0"  # hundredths of a second
+    OID_sysContact     = "1.3.6.1.2.1.1.4.0"
+    OID_sysName        = "1.3.6.1.2.1.1.5.0"
+    OID_sysLocation    = "1.3.6.1.2.1.1.6.0"
 
     def __init__(self, hass, host: str, community: str, port: int = 161) -> None:
         self._hass = hass  # may be None
@@ -317,3 +326,80 @@ class SwitchSnmpClient:
             return await self._hass.async_add_executor_job(self.get_port_data)
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.get_port_data)
+
+    # ---- System info helpers -------------------------------------------------
+
+    @staticmethod
+    def _parse_sys_fields(sys_descr: str, sys_object_id: str) -> Dict[str, str]:
+        """
+        Best-effort parsing for manufacturer/model/firmware from sysDescr/sysObjectID.
+
+        Keeps values empty on unknowns so the UI still renders device info.
+        """
+        manufacturer = ""
+        model = ""
+        firmware = ""
+
+        # Manufacturer (Dell enterprise OID prefix + text heuristic)
+        if sys_object_id.startswith("1.3.6.1.4.1.674.") or "Dell" in sys_descr:
+            manufacturer = "Dell"
+
+        # Model (Dell N-series like N3048EP etc or first ALLCAPS+digits token)
+        m = re.search(r"\b(N\d{3,4}[A-Z]*\b)", sys_descr)
+        if m:
+            model = m.group(1)
+        else:
+            m2 = re.search(r"\b([A-Z][A-Z0-9\-]{3,})\b", sys_descr)
+            if m2:
+                model = m2.group(1)
+
+        # Firmware/version (first x.y or x.y.z or x.y.z.w pattern)
+        v = re.search(r"\b\d+\.\d+(?:\.\d+){0,2}\b", sys_descr)
+        if v:
+            firmware = v.group(0)
+
+        return {
+            "manufacturer": manufacturer,
+            "model": model,
+            "firmware": firmware,
+        }
+
+    def get_system_info(self) -> Dict[str, Any]:
+        """
+        Collect basic system info.
+
+        Returns:
+          {
+            "manufacturer": str,
+            "model": str,
+            "firmware": str,
+            "hostname": str,
+            "uptime_seconds": int,
+            "uptime_ticks": int,
+            "sys_descr": str,
+            "sys_object_id": str
+          }
+        """
+        sys_descr = str(self.get(self.OID_sysDescr))
+        sys_object_id = str(self.get(self.OID_sysObjectID))
+        sys_name = str(self.get(self.OID_sysName))
+        # sysUpTime is hundredths of a second
+        uptime_ticks = int(self.get(self.OID_sysUpTime))
+        uptime_seconds = int(uptime_ticks // 100)
+
+        fields = self._parse_sys_fields(sys_descr, sys_object_id)
+
+        return {
+            **fields,
+            "hostname": sys_name,
+            "uptime_seconds": uptime_seconds,
+            "uptime_ticks": uptime_ticks,
+            "sys_descr": sys_descr,
+            "sys_object_id": sys_object_id,
+        }
+
+    async def async_get_system_info(self) -> Dict[str, Any]:
+        if self._hass is not None:
+            return await self._hass.async_add_executor_job(self.get_system_info)
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self.get_system_info)
