@@ -63,16 +63,29 @@ def _detect_vlan_id(text: str) -> int | None:
 
 
 def _short_intf_name(long_name: str, alias: str) -> str | None:
-    """Return friendly short name (uses exact VLAN name if present)."""
+    """Return friendly short name, including VLAN/loopback logic."""
     name = long_name or ""
     alt = alias or ""
 
+    # VLANs
     vid = _detect_vlan_id(name)
     if vid is None and alt:
         vid = _detect_vlan_id(alt)
     if vid is not None:
         return name.strip() if name.strip() else f"Vl{vid}"
 
+    # Loopback
+    if "software loopback" in name.lower() or "loopback" in name.lower():
+        return "Lo0"
+
+    # Port-channels (aggregates)
+    if "port-channel" in name.lower() or "link aggregate" in name.lower():
+        m = re.search(r"(\d+)", name)
+        if m:
+            return f"Po{m.group(1)}"
+        return "Po"
+
+    # Physicals
     m = re.search(r"Unit:\s*(\d+)\s+Slot:\s*(\d+)\s+Port:\s*(\d+)\s+(.*)", name)
     if not m:
         return None
@@ -90,9 +103,9 @@ def _short_intf_name(long_name: str, alias: str) -> str | None:
 
 
 def _should_exclude(name: str, alias: str, include: List[str], exclude: List[str]) -> bool:
-    """Exclude CPU and link-aggregates; allow loopback."""
+    """Exclude CPU or link-aggregates; allow loopback."""
     text = f"{name} {alias}".lower()
-    if "cpu" in text or text.startswith("link aggregate"):
+    if "cpu" in text:
         return True
     if include and not any(pat.lower() in text for pat in include):
         return True
