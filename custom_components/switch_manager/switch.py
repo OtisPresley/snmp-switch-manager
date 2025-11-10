@@ -19,12 +19,10 @@ def _resolve_coordinator(hass: HomeAssistant, entry: ConfigEntry):
     """Cope with both the new dict layout and the older flat mapping."""
     dom = hass.data.get(DOMAIN) or {}
 
-    # Newer layout used by our __init__.py: hass.data[DOMAIN]["entries"][entry_id]
     node = (dom.get("entries") or {}).get(entry.entry_id)
     if isinstance(node, dict) and "coordinator" in node:
         return node["coordinator"]
 
-    # Older fallback: hass.data[DOMAIN][entry_id]
     node = dom.get(entry.entry_id)
     if isinstance(node, dict) and "coordinator" in node:
         return node["coordinator"]
@@ -111,11 +109,9 @@ class SwitchManagerPort(CoordinatorEntity, SwitchEntity):
             elif descr.strip().lower().startswith("vl"):
                 name = descr.strip()
             elif "vlan" in dlow:
-                # Find the first integer token after 'vlan'
                 parts = dlow.replace("/", " ").split()
                 try:
                     vi = parts.index("vlan")
-                    # consume next token that is numeric
                     for tok in parts[vi + 1 : vi + 4]:
                         if tok.isdigit():
                             name = f"Vl{int(tok)}"
@@ -138,8 +134,6 @@ class SwitchManagerPort(CoordinatorEntity, SwitchEntity):
             name=str(sys_name),
         )
 
-    # ---- SwitchEntity impl ----
-
     @property
     def is_on(self) -> bool:
         admin = self._port.get("admin")
@@ -148,11 +142,9 @@ class SwitchManagerPort(CoordinatorEntity, SwitchEntity):
         return bool(self._port.get("oper") == 1)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        # SNMP write for admin up would go here when implemented
         return
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        # SNMP write for admin down would go here when implemented
         return
 
     @property
@@ -175,13 +167,8 @@ class SwitchManagerPort(CoordinatorEntity, SwitchEntity):
         # IPv4 details if available (any L3 interface: VLAN, Loopback, PortChannel with SVI)
         ips = self._port.get("ips") or []
         if ips:
-            # take the first assigned IPv4 (most devices have at most one)
-            ip, mask, prefix = ips[0]
-            if ip:
-                attrs["IP address"] = ip
-            if mask:
-                attrs["Netmask"] = mask
-            if prefix is not None:
-                attrs["CIDR"] = f"{ip}/{prefix}"
+            ip, _mask, prefix = ips[0]
+            if ip and prefix is not None:
+                attrs["IP address"] = f"{ip}/{prefix}"
 
         return attrs
