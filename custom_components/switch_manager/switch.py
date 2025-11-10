@@ -65,13 +65,12 @@ def _friendly_name_from_descr(descr: str) -> Optional[str]:
         if "Port:" in descr:
             port = int(descr.split("Port:")[1].split()[0])
 
-        # interface type
         t = ""
         dlow = descr.lower()
         if " 10g" in dlow:
             t = "Te"
         elif " 20g" in dlow:
-            t = "Tw"  # stacking twinax shown as 20G on some devices
+            t = "Tw"
         elif " gigabit" in dlow:
             t = "Gi"
 
@@ -93,13 +92,8 @@ class SwitchManagerPort(CoordinatorEntity, SwitchEntity):
         descr = port_dict.get("descr") or ""
         idx = port_dict.get("index")
 
-        # Prefer Gi/Te/Tw if we can derive it
         name = _friendly_name_from_descr(descr)
 
-        # VLAN naming:
-        #   - Use alias if it already looks like "VlX"
-        #   - Otherwise, if descr itself already is something like "VlX", use it as-is
-        #   - Else, if descr contains 'vlan <num>' create "Vl<num>"
         if not name:
             alias = (port_dict.get("alias") or "").strip()
             dlow = descr.lower()
@@ -119,7 +113,6 @@ class SwitchManagerPort(CoordinatorEntity, SwitchEntity):
                 except Exception:
                     pass
 
-        # Loopback naming
         if not name and port_dict.get("type") == IANA_IFTYPE_SOFTWARE_LOOPBACK:
             name = "Lo0"
 
@@ -149,7 +142,6 @@ class SwitchManagerPort(CoordinatorEntity, SwitchEntity):
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
-        """Expose per-interface details only (no device-wide fields)."""
         attrs: Dict[str, Any] = {}
 
         attrs["Index"] = self._port.get("index")
@@ -164,11 +156,11 @@ class SwitchManagerPort(CoordinatorEntity, SwitchEntity):
         if self._port.get("oper") is not None:
             attrs["Oper"] = self._port.get("oper")
 
-        # IPv4 details if available (any L3 interface: VLAN, Loopback, PortChannel with SVI)
+        # IPv4: show IP/prefix if we have prefix; otherwise show just IP
         ips = self._port.get("ips") or []
         if ips:
             ip, _mask, prefix = ips[0]
-            if ip and prefix is not None:
-                attrs["IP address"] = f"{ip}/{prefix}"
+            if ip:
+                attrs["IP address"] = f"{ip}/{prefix}" if prefix is not None else ip
 
         return attrs
