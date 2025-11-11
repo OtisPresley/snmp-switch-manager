@@ -31,12 +31,5 @@ OID_ipAdEntAddr = "1.3.6.1.2.1.4.20.1.1"
 OID_ipAdEntIfIndex = "1.3.6.1.2.1.4.20.1.2"
 OID_ipAdEntNetMask = "1.3.6.1.2.1.4.20.1.3"
 
-# IP-MIB (modern ipAddressTable) — used as a fallback if legacy table is empty
-# Index for these columns is (AddrType, Addr) — we correlate by the identical index suffix.
-OID_ipAddressAddrType = "1.3.6.1.2.1.4.34.1.1"
-OID_ipAddressAddr      = "1.3.6.1.2.1.4.34.1.2"
-OID_ipAddressIfIndex   = "1.3.6.1.2.1.4.34.1.3"
-OID_ipAddressPrefixLen = "1.3.6.1.2.1.4.34.1.5"
-
 # ENTITY-MIB — model name column (walk and pick a base-chassis entry)
 OID_entPhysicalModelName = "1.3.6.1.2.1.47.1.1.1.1.13"
