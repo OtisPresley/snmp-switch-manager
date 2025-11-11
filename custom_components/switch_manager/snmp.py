@@ -120,7 +120,6 @@ class SwitchSnmpClient:
         self.cache["sysUpTime"] = await self._async_get_one(OID_sysUpTime)
 
         # Pull model from ENTITY-MIB if available (pick a base chassis entry).
-        # We take the first non-empty value from the column walk.
         ent_models = await self._async_walk(OID_entPhysicalModelName)
         model_hint = None
         for _oid, val in ent_models:
@@ -130,22 +129,18 @@ class SwitchSnmpClient:
                 break
         self.cache["model"] = model_hint
 
-        # Parse Manufacturer & Firmware Revision per your example line:
-        # sysDescr: "Dell EMC Networking N3048EP-ON, 6.7.1.31, Linux 4.14.174, v1.0.5"
+        # Parse Manufacturer & Firmware Revision from sysDescr string if present
         sd = (self.cache.get("sysDescr") or "").strip()
         manufacturer = None
         firmware = None
         if sd:
             parts = [p.strip() for p in sd.split(",")]
-            # Firmware revision is the first comma-separated item after <vendor> <model>
             if len(parts) >= 2:
                 firmware = parts[1] or None
-            # Manufacturer is the <vendor> portion before the model token
             head = parts[0]
             if model_hint and model_hint in head:
                 manufacturer = head.replace(model_hint, "").strip()
             else:
-                # Fallback: drop last token in head (assume it's the model)
                 toks = head.split()
                 if len(toks) > 1:
                     manufacturer = " ".join(toks[:-1])
@@ -203,16 +198,15 @@ class SwitchSnmpClient:
     async def _async_walk_ipv4(self) -> None:
         """
         Populate IPv4 maps for attributes.
-
-        1) Try legacy IP-MIB ipAdEnt* (keeps existing behavior).
-        2) If legacy is empty, derive IPs *directly from the OID index* of
-           ipAddressIfIndex (1.3.6.1.2.1.4.34.1.3) which on this device looks like:
-             ...4.34.1.3.1.4.<a>.<b>.<c>.<d> = INTEGER: <ifIndex>
-           (afi=1, length=4, then 4 octets)
-        We intentionally do NOT compute masks here.
+        1) Fill from legacy IP-MIB (ipAdEnt*) if present (keeps existing behavior).
+        2) If needed, add IPv4s by parsing IP from ipAddressIfIndex (1.3.6.1.2.1.4.34.1.3)
+           where instance suffix is: 1.4.a.b.c.d = ifIndex
+        3) If still missing (e.g., Loopback), add IPv4s from OSPF-MIB ospfIfIpAddress
+           (1.3.6.1.2.1.14.8.1.1) where suffix is: a.b.c.d.<ifIndex>.<area...>
+        No mask bits are computed in 2) or 3) – we only add IPs.
         """
         ip_index: Dict[str, int] = {}
-        ip_mask: Dict[str, str] = {}  # unchanged unless legacy provides it
+        ip_mask: Dict[str, str] = {}  # left untouched unless legacy provides it
 
         # ---- (1) Legacy table: ipAdEnt* ----
         legacy_addrs = await self._async_walk(OID_ipAdEntAddr)
@@ -237,14 +231,11 @@ class SwitchSnmpClient:
             self.cache["ipMask"] = ip_mask
             return
 
-        # ---- (2) Modern fallback: parse ip from the OID of ipAddressIfIndex only ----
+        # ---- (2) Modern fallback: parse IP from the OID of ipAddressIfIndex only ----
         OID_ipAddressIfIndex = "1.3.6.1.2.1.4.34.1.3"
-
         for oid, val in await self._async_walk(OID_ipAddressIfIndex):
-            # oid suffix format on your device: ".1.4.a.b.c.d"
-            #   1 = IPv4 AFI, 4 = length, then 4 octets of the address
             try:
-                suffix = oid[len(OID_ipAddressIfIndex) + 1 :]  # drop "1.3.6...4.34.1.3."
+                suffix = oid[len(OID_ipAddressIfIndex) + 1 :]  # ".1.4.a.b.c.d"
                 parts = [int(x) for x in suffix.split(".")]
                 if len(parts) >= 6 and parts[0] == 1 and parts[1] == 4:
                     a, b, c, d = parts[2], parts[3], parts[4], parts[5]
@@ -253,10 +244,31 @@ class SwitchSnmpClient:
             except Exception:
                 continue
 
-        # Store only what we found; leave ipMask untouched
+        # ---- (3) OSPF fallback for devices that expose loopbacks via OSPF-MIB ----
+        # ospfIfIpAddress: 1.3.6.1.2.1.14.8.1.1.<a>.<b>.<c>.<d>.<ifIndex>.<area...> = IpAddress a.b.c.d
+        OID_ospfIfIpAddress = "1.3.6.1.2.1.14.8.1.1"
+        try:
+            for oid, val in await self._async_walk(OID_ospfIfIpAddress):
+                try:
+                    suffix = oid[len(OID_ospfIfIpAddress) + 1 :]
+                    parts = [int(x) for x in suffix.split(".")]
+                    # Accept both "a.b.c.d.ifIndex.0" and "a.b.c.d.ifIndex.0.0.0.0" encodings
+                    if len(parts) >= 5:
+                        a, b, c, d = parts[0], parts[1], parts[2], parts[3]
+                        if_index = parts[4]
+                        ip = f"{a}.{b}.{c}.{d}"
+                        # Only add if not already present
+                        if ip not in ip_index:
+                            ip_index[ip] = int(if_index)
+                except Exception:
+                    continue
+        except Exception:
+            # OSPF MIB might not be present; ignore quietly
+            pass
+
+        # Save what we discovered; leave ipMask untouched (no mask bits here)
         if ip_index:
             self.cache["ipIndex"] = ip_index
-        # do not set self.cache["ipMask"] here on purpose
 
     async def set_alias(self, if_index: int, alias: str) -> bool:
         ok = await self.hass.async_add_executor_job(
