@@ -1,96 +1,100 @@
 from __future__ import annotations
 
 import logging
-from typing import List
+from typing import Any, Dict, List
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from .snmp import (
-    IANA_IFTYPE_IEEE8023AD_LAG,
-    IANA_IFTYPE_SOFTWARE_LOOPBACK,
-    SwitchSnmpClient,
-)
+from .snmp import IANA_IFTYPE_SOFTWARE_LOOPBACK, IANA_IFTYPE_IEEE8023AD_LAG
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
-    """Set up switch entities."""
-    client: SwitchSnmpClient = hass.data[DOMAIN][entry.entry_id]["client"]
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities) -> None:
+    node = hass.data[DOMAIN].get(entry.entry_id)
+    if not node:
+        _LOGGER.error("Switch setup: missing node for entry_id=%s", entry.entry_id)
+        return
+    coordinator = node["coordinator"]
 
-    # 1) Read ports + IPv4 mapping (CIDR) once up-front
-    ports = await client.async_get_ports()
-    ipv4_map = await client.async_get_ipv4_map()  # {ifIndex: 'a.b.c.d/len'}
+    ports: List[Dict[str, Any]] = (coordinator.data or {}).get("ports", []) or []
+    if not ports:
+        _LOGGER.warning("No ports returned from coordinator yet")
+        return
 
-    entities: List[SwitchManagerPort] = []
-
+    entities: List[SwitchEntity] = []
     for p in ports:
-        # (A) Hide default/unconfigured Port-channels/LAGs
-        if p.iftype == IANA_IFTYPE_IEEE8023AD_LAG:
-            looks_unconfigured = (p.oper == 2) and (not p.alias) and (p.index >= 700)
-            if looks_unconfigured:
-                continue
-
-        # (B) Friendly name (keep your existing patterns)
-        name = p.name
-        if p.iftype == IANA_IFTYPE_SOFTWARE_LOOPBACK:
-            name = "Lo0"
-
-        # (C) Build entity; attach IPv4 if we have one
-        extra_attrs = {
-            "Index": p.index,
-            "Name": p.name,
-            "Alias": p.alias,
-            "Admin": p.admin,
-            "Oper": p.oper,
-        }
-        ip_cidr = ipv4_map.get(p.index)
-        if ip_cidr:
-            extra_attrs["IP address"] = ip_cidr
-
-        entities.append(SwitchManagerPort(entry.entry_id, name, extra_attrs))
-
-    if not entities:
-        _LOGGER.warning("No switch ports discovered for %s", entry.entry_id)
-
-    async_add_entities(entities, update_before_add=False)
+        # Skip unconfigured LAGs (common nuisance)
+        if int(p.get("iftype", 0)) == IANA_IFTYPE_IEEE8023AD_LAG and not p.get("alias"):
+            continue
+        entities.append(SwitchManagerPort(coordinator, entry, p))
+    async_add_entities(entities)
 
 
-class SwitchManagerPort(SwitchEntity):
-    """Simple on/off wrapper around a port's admin state."""
+class SwitchManagerPort(CoordinatorEntity, SwitchEntity):
+    _attr_icon = "mdi:ethernet"
 
-    _attr_has_entity_name = True
+    def __init__(self, coordinator, entry: ConfigEntry, port: Dict[str, Any]) -> None:
+        super().__init__(coordinator)
+        self._entry_id = entry.entry_id
+        self._index = int(port["index"])
+        self._iftype = int(port.get("iftype", 0))
+        self._name_raw = port.get("name", "")
+        self._alias = port.get("alias", "")
+        self._attr_unique_id = f"{entry.entry_id}-port-{self._index}"
+        self._attr_name = self._friendly_name(self._name_raw, self._iftype, self._index)
 
-    def __init__(self, entry_id: str, name: str, attrs: dict) -> None:
-        self._attr_name = name
-        self._attrs = attrs
-        self._entry_id = entry_id
-        self._state = attrs.get("Admin", 0) == 1
+    @staticmethod
+    def _friendly_name(descr: str, iftype: int, index: int) -> str:
+        text = descr or ""
+        lower = text.lower()
+        # VLANs like "Vl11"
+        if lower.startswith("vl"):
+            return text.upper()
+        # loopback
+        if iftype == IANA_IFTYPE_SOFTWARE_LOOPBACK or "loopback" in lower:
+            return "Lo0"
+        # 1G / 10G common patterns
+        if "gigabit" in lower or lower.startswith("gi"):
+            # try to keep Gi1/0/46 style if present in description
+            return "Gi" + "".join(ch for ch in text if ch.isdigit() or ch in "/")
+        if "20g" in lower or "tengig" in lower or lower.startswith("te"):
+            return "Te" + "".join(ch for ch in text if ch.isdigit() or ch in "/")
+        if "port-channel" in lower or lower.startswith("po"):
+            return "Po" + "".join(ch for ch in text if ch.isdigit())
+        # fallback
+        return text or f"Port {index}"
 
     @property
     def is_on(self) -> bool:
-        return self._state
+        state = int(self._port_data.get("oper", 0))
+        return state == 1
 
     @property
-    def extra_state_attributes(self) -> dict:
-        return self._attrs
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        attrs = {
+            "Index": self._index,
+            "Name": self._name_raw,
+            "Alias": self._port_data.get("alias", ""),
+            "Admin": int(self._port_data.get("admin", 0)),
+            "Oper": int(self._port_data.get("oper", 0)),
+        }
+        ip = self._port_data.get("ip") or self._port_data.get("ip_address")
+        if ip:
+            attrs["IP address"] = ip
+        return attrs
+
+    # ------------- internals -------------
 
     @property
-    def device_info(self) -> DeviceInfo:
-        # Keep using the Device created for the config entry
-        return DeviceInfo(identifiers={(DOMAIN, self._entry_id)})
+    def _port_data(self) -> Dict[str, Any]:
+        ports: List[Dict[str, Any]] = (self.coordinator.data or {}).get("ports", []) or []
+        for p in ports:
+            if int(p.get("index", -1)) == self._index:
+                return p
+        return {}
 
-    async def async_turn_on(self, **kwargs):
-        # TODO: implement admin up via SNMP set (unchanged here)
-        self._state = True
-        self.async_write_ha_state()
-
-    async def async_turn_off(self, **kwargs):
-        # TODO: implement admin down via SNMP set (unchanged here)
-        self._state = False
-        self.async_write_ha_state()
