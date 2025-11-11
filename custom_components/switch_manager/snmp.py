@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional, Iterable, Tuple
+from typing import Any, Dict, Optional, Iterable, Tuple, List
 
 from homeassistant.core import HomeAssistant
 
@@ -199,14 +199,17 @@ class SwitchSnmpClient:
         """
         Populate IPv4 maps for attributes.
         1) Fill from legacy IP-MIB (ipAdEnt*) if present (keeps existing behavior).
-        2) If needed, add IPv4s by parsing IP from ipAddressIfIndex (1.3.6.1.2.1.4.34.1.3)
+        2) Add IPv4s by parsing IP from ipAddressIfIndex (1.3.6.1.2.1.4.34.1.3)
            where instance suffix is: 1.4.a.b.c.d = ifIndex
-        3) If still missing (e.g., Loopback), add IPv4s from OSPF-MIB ospfIfIpAddress
-           (1.3.6.1.2.1.14.8.1.1) where suffix is: a.b.c.d.<ifIndex>.<area...>
-        No mask bits are computed in 2) or 3) – we only add IPs.
+        3) Add IPv4s from OSPF-MIB ospfIfIpAddress (1.3.6.1.2.1.14.8.1.1)
+           where suffix is: a.b.c.d.<ifIndex>.<area...> = a.b.c.d
+        4) Resolve mask bits by parsing route prefixes from IP-FORWARD-MIB
+           (1.3.6.1.2.1.4.24.7.1.9) – instance carries dest IPv4 and prefixLen:
+             ... .1.4.<a>.<b>.<c>.<d>.<prefixLen>.2.0.0.1.4.<nextHop...>
+           Choose the most specific network that contains each IP.
         """
         ip_index: Dict[str, int] = {}
-        ip_mask: Dict[str, str] = {}  # left untouched unless legacy provides it
+        ip_mask: Dict[str, str] = {}  # may be filled only by step 1 or 4
 
         # ---- (1) Legacy table: ipAdEnt* ----
         legacy_addrs = await self._async_walk(OID_ipAdEntAddr)
@@ -227,48 +230,101 @@ class SwitchSnmpClient:
                 ip = ".".join(parts)
                 ip_mask[ip] = str(val)
 
-            self.cache["ipIndex"] = ip_index
-            self.cache["ipMask"] = ip_mask
-            return
+            # We intentionally do NOT return here; continue collecting more IPs below.
 
-        # ---- (2) Modern fallback: parse IP from the OID of ipAddressIfIndex only ----
+        # ---- (2) Modern: parse IP from the OID of ipAddressIfIndex ----
         OID_ipAddressIfIndex = "1.3.6.1.2.1.4.34.1.3"
-        for oid, val in await self._async_walk(OID_ipAddressIfIndex):
-            try:
-                suffix = oid[len(OID_ipAddressIfIndex) + 1 :]  # ".1.4.a.b.c.d"
-                parts = [int(x) for x in suffix.split(".")]
-                if len(parts) >= 6 and parts[0] == 1 and parts[1] == 4:
-                    a, b, c, d = parts[2], parts[3], parts[4], parts[5]
-                    ip = f"{a}.{b}.{c}.{d}"
-                    ip_index[ip] = int(val)
-            except Exception:
-                continue
+        try:
+            for oid, val in await self._async_walk(OID_ipAddressIfIndex):
+                try:
+                    suffix = oid[len(OID_ipAddressIfIndex) + 1 :]  # ".1.4.a.b.c.d"
+                    parts = [int(x) for x in suffix.split(".")]
+                    if len(parts) >= 6 and parts[0] == 1 and parts[1] == 4:
+                        a, b, c, d = parts[2], parts[3], parts[4], parts[5]
+                        ip = f"{a}.{b}.{c}.{d}"
+                        ip_index.setdefault(ip, int(val))
+                except Exception:
+                    continue
+        except Exception:
+            pass  # table may be absent; ignore quietly
 
-        # ---- (3) OSPF fallback for devices that expose loopbacks via OSPF-MIB ----
-        # ospfIfIpAddress: 1.3.6.1.2.1.14.8.1.1.<a>.<b>.<c>.<d>.<ifIndex>.<area...> = IpAddress a.b.c.d
+        # ---- (3) OSPF: loopbacks exposed via ospfIfIpAddress ----
         OID_ospfIfIpAddress = "1.3.6.1.2.1.14.8.1.1"
         try:
             for oid, val in await self._async_walk(OID_ospfIfIpAddress):
                 try:
                     suffix = oid[len(OID_ospfIfIpAddress) + 1 :]
                     parts = [int(x) for x in suffix.split(".")]
-                    # Accept both "a.b.c.d.ifIndex.0" and "a.b.c.d.ifIndex.0.0.0.0" encodings
                     if len(parts) >= 5:
                         a, b, c, d = parts[0], parts[1], parts[2], parts[3]
                         if_index = parts[4]
                         ip = f"{a}.{b}.{c}.{d}"
-                        # Only add if not already present
-                        if ip not in ip_index:
-                            ip_index[ip] = int(if_index)
+                        ip_index.setdefault(ip, int(if_index))
                 except Exception:
                     continue
         except Exception:
-            # OSPF MIB might not be present; ignore quietly
-            pass
+            pass  # OSPF MIB may be absent
 
-        # Save what we discovered; leave ipMask untouched (no mask bits here)
+        # ---- (4) Derive mask bits from IP-FORWARD-MIB route index (vendor flavor) ----
+        # We parse destinations/prefixLen from the INSTANCE of 1.3.6.1.2.1.4.24.7.1.9
+        # (any column in that table shares the same index; .9 works well)
+        OID_routeCol = "1.3.6.1.2.1.4.24.7.1.9"
+
+        def _bits_to_mask(bits: int) -> str:
+            if bits <= 0:
+                return "0.0.0.0"
+            if bits >= 32:
+                return "255.255.255.255"
+            mask = (0xFFFFFFFF << (32 - bits)) & 0xFFFFFFFF
+            return ".".join(str((mask >> s) & 0xFF) for s in (24, 16, 8, 0))
+
+        def _ip_to_int(ip: str) -> int:
+            a, b, c, d = (int(x) for x in ip.split("."))
+            return (a << 24) | (b << 16) | (c << 8) | d
+
+        def _int_to_ip(x: int) -> str:
+            return ".".join(str((x >> s) & 0xFF) for s in (24, 16, 8, 0))
+
+        # Collect list of (network_int, bits)
+        route_prefixes: List[Tuple[int, int]] = []
+        try:
+            for oid, _val in await self._async_walk(OID_routeCol):
+                try:
+                    suffix = oid[len(OID_routeCol) + 1 :]  # "...1.4.a.b.c.d.bits.2.0.0.1.4.x.x.x.x"
+                    parts = [int(x) for x in suffix.split(".")]
+                    # Find a '1,4' pair then 4 octets and a plausible bits (0..32)
+                    for i in range(len(parts) - 6):
+                        if parts[i] == 1 and parts[i + 1] == 4:
+                            a, b, c, d = parts[i + 2 : i + 6]
+                            bits = parts[i + 6] if i + 6 < len(parts) else None
+                            if bits is None or bits < 0 or bits > 32:
+                                continue
+                            net_int = _ip_to_int(f"{a}.{b}.{c}.{d}")
+                            route_prefixes.append((net_int, bits))
+                            break
+                except Exception:
+                    continue
+        except Exception:
+            pass  # table may be absent; that's okay
+
+        # Choose the most specific matching prefix for each discovered IP
+        if route_prefixes and ip_index:
+            # Sort prefixes by descending specificity once
+            route_prefixes.sort(key=lambda t: t[1], reverse=True)
+            for ip in ip_index.keys():
+                ip_int = _ip_to_int(ip)
+                # pick first (i.e., most specific) whose network contains ip
+                for net_int, bits in route_prefixes:
+                    mask_int = (0xFFFFFFFF << (32 - bits)) & 0xFFFFFFFF if bits else 0
+                    if bits == 0 or (ip_int & mask_int) == (net_int & mask_int):
+                        ip_mask[ip] = _bits_to_mask(bits)
+                        break
+
+        # Commit findings
         if ip_index:
             self.cache["ipIndex"] = ip_index
+        if ip_mask:
+            self.cache["ipMask"] = ip_mask
 
     async def set_alias(self, if_index: int, alias: str) -> bool:
         ok = await self.hass.async_add_executor_job(
