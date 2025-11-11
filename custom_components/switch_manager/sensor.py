@@ -1,7 +1,5 @@
-
 from __future__ import annotations
 
-from datetime import timedelta
 import logging
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.entity import DeviceInfo
@@ -26,46 +24,39 @@ async def async_setup_entry(hass, entry, async_add_entities):
     client: SwitchSnmpClient = data["client"]
     coordinator = data["coordinator"]
 
-    sysdescr = client.cache.get("sysDescr") or ""
-    manufacturer = sysdescr.split()[0] if sysdescr else "Unknown"
-    model = None
-    firmware = None
-    if sysdescr:
-        parts = sysdescr.split()
-        if len(parts) >= 2:
-            model = parts[1]
-        if "Version" in parts:
-            try:
-                firmware = parts[parts.index("Version")+1]
-            except Exception:
-                pass
+    # Prefer parsed values placed in cache by snmp.py
+    manufacturer = client.cache.get("manufacturer") or "Unknown"
+    model = client.cache.get("model") or "Unknown"
+    firmware = client.cache.get("firmware") or "Unknown"
 
     hostname = client.cache.get("sysName")
     uptime_ticks = client.cache.get("sysUpTime")
-    uptime_human = None
-    try:
-        ticks = int(uptime_ticks)
-        seconds = ticks // 100
-        days, rem = divmod(seconds, 86400)
-        hours, rem = divmod(rem, 3600)
-        minutes, seconds = divmod(rem, 60)
-        uptime_human = f"{days}d {hours}h {minutes}m {seconds}s"
-    except Exception:
-        uptime_human = str(uptime_ticks) if uptime_ticks is not None else None
+
+    # Convert sysUpTime (hundredths of seconds) to human string
+    def _uptime_human(ticks):
+        try:
+            t = int(ticks)
+            sec = t // 100
+            d, r = divmod(sec, 86400)
+            h, r = divmod(r, 3600)
+            m, s = divmod(r, 60)
+            return f"{d}d {h}h {m}m {s}s"
+        except Exception:
+            return str(ticks) if ticks is not None else "Unknown"
 
     device_info = DeviceInfo(
         identifiers={(DOMAIN, f"{client.host}:{client.port}:{client.community}")},
-        manufacturer=manufacturer or None,
-        model=model or None,
-        sw_version=firmware or None,
+        manufacturer=manufacturer if manufacturer != "Unknown" else None,
+        model=model if model != "Unknown" else None,
+        sw_version=firmware if firmware != "Unknown" else None,
         name=hostname or entry.data.get("name") or client.host,
     )
 
     entities = [
-        SimpleTextSensor(coordinator, entry, "manufacturer", manufacturer or "Unknown", device_info),
-        SimpleTextSensor(coordinator, entry, "model", model or "Unknown", device_info),
-        SimpleTextSensor(coordinator, entry, "firmware", firmware or "Unknown", device_info),
-        SimpleTextSensor(coordinator, entry, "uptime", uptime_human or "Unknown", device_info),
+        SimpleTextSensor(coordinator, entry, "manufacturer", manufacturer, device_info),
+        SimpleTextSensor(coordinator, entry, "model", model, device_info),
+        SimpleTextSensor(coordinator, entry, "firmware", firmware, device_info),
+        SimpleTextSensor(coordinator, entry, "uptime", _uptime_human(uptime_ticks), device_info),
         SimpleTextSensor(coordinator, entry, "hostname", hostname or client.host, device_info),
     ]
     async_add_entities(entities)
@@ -90,28 +81,19 @@ class SimpleTextSensor(CoordinatorEntity, SensorEntity):
         if self._key == "uptime":
             ticks = data.get("sysUpTime")
             try:
-                ticks = int(ticks)
-                seconds = ticks // 100
-                d, r = divmod(seconds, 86400)
+                t = int(ticks)
+                sec = t // 100
+                d, r = divmod(sec, 86400)
                 h, r = divmod(r, 3600)
                 m, s = divmod(r, 60)
                 return f"{d}d {h}h {m}m {s}s"
             except Exception:
                 return str(ticks)
+        # prefer parsed cache values if present
         if self._key == "manufacturer":
-            sysdescr = data.get("sysDescr") or ""
-            return (sysdescr.split()[0] if sysdescr else self._value)
+            return data.get("manufacturer") or self._value
         if self._key == "model":
-            sysdescr = data.get("sysDescr") or ""
-            parts = sysdescr.split()
-            return (parts[1] if len(parts) >= 2 else self._value)
+            return data.get("model") or self._value
         if self._key == "firmware":
-            sysdescr = data.get("sysDescr") or ""
-            parts = sysdescr.split()
-            if "Version" in parts:
-                try:
-                    return parts[parts.index("Version")+1]
-                except Exception:
-                    pass
-            return self._value
+            return data.get("firmware") or self._value
         return self._value
