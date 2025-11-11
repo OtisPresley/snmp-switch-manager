@@ -247,22 +247,3 @@ async def test_connection(hass: HomeAssistant, host: str, community: str, port: 
 async def get_sysname(hass: HomeAssistant, host: str, community: str, port: int) -> Optional[str]:
     client = SwitchSnmpClient(hass, host, community, port)
     return await client._async_get_one(OID_sysName)
-
-async def test_connection(hass, host: str, community: str, port: int) -> bool:
-    """Lightweight connectivity check used by the config flow."""
-    client = SwitchSnmpClient(hass, host, community, port)
-    # sysName.0 exists on every SNMP agent; treat presence as success
-    try:
-        value = await client._async_get_one("1.3.6.1.2.1.1.5.0")  # OID_sysName
-    except Exception:
-        return False
-    return value is not None
-
-
-async def get_sysname(hass, host: str, community: str, port: int) -> str | None:
-    """Fetch sysName for naming the device in the config flow."""
-    client = SwitchSnmpClient(hass, host, community, port)
-    try:
-        return await client._async_get_one("1.3.6.1.2.1.1.5.0")  # OID_sysName
-    except Exception:
-        return None
