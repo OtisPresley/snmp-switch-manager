@@ -10,9 +10,7 @@
   "issue_tracker": "https://github.com/OtisPresley/switch-manager/issues",
   "loggers": ["custom_components.switch_manager"],
   "requirements": [
-    "pysnmp==4.4.12",
-    "pyasn1==0.4.8",
-    "pyasn1-modules==0.2.8"
+    "pysnmp==4.4.12"
   ],
   "version": "0.1.0"
 }
