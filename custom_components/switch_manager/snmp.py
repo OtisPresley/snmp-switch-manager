@@ -32,10 +32,6 @@ from .const import (
     OID_ipAdEntAddr,
     OID_ipAdEntIfIndex,
     OID_ipAdEntNetMask,
-    OID_ipAddressAddrType,
-    OID_ipAddressAddr,
-    OID_ipAddressIfIndex,
-    OID_ipAddressPrefixLen,
     OID_entPhysicalModelName,
 )
 
@@ -91,21 +87,6 @@ def _do_set_admin_status(engine, community, target, context, if_index: int, valu
     return (not err_ind) and (not err_stat)
 
 
-def _octets_to_ipv4(val: Any) -> Optional[str]:
-    """Try to coerce an OCTET STRING to dotted IPv4."""
-    try:
-        bs = bytes(val)
-    except Exception:
-        try:
-            bs = val.asOctets()  # type: ignore[attr-defined]
-        except Exception:
-            s = str(val)
-            return s if s.count(".") == 3 else None
-    if len(bs) == 4:
-        return ".".join(str(b) for b in bs)
-    return None
-
-
 class SwitchSnmpClient:
     """SNMP client using sync HLAPI in an executor; exposes async interface."""
 
@@ -125,8 +106,9 @@ class SwitchSnmpClient:
             "sysName": None,
             "sysUpTime": None,
             "ifTable": {},
-            "ipIndex": {},  # ip -> ifIndex
-            "ipMask": {},   # ip -> netmask (or cidr computed later)
+            "ipIndex": {},
+            "ipMask": {},
+            # parsed fields for diagnostics:
             "manufacturer": None,
             "model": None,
             "firmware": None,
@@ -137,7 +119,8 @@ class SwitchSnmpClient:
         self.cache["sysName"] = await self._async_get_one(OID_sysName)
         self.cache["sysUpTime"] = await self._async_get_one(OID_sysUpTime)
 
-        # ENTITY-MIB model + parse manufacturer/firmware from sysDescr
+        # Pull model from ENTITY-MIB if available (pick a base chassis entry).
+        # We take the first non-empty value from the column walk.
         ent_models = await self._async_walk(OID_entPhysicalModelName)
         model_hint = None
         for _oid, val in ent_models:
@@ -147,17 +130,22 @@ class SwitchSnmpClient:
                 break
         self.cache["model"] = model_hint
 
+        # Parse Manufacturer & Firmware Revision per your example line:
+        # sysDescr: "Dell EMC Networking N3048EP-ON, 6.7.1.31, Linux 4.14.174, v1.0.5"
         sd = (self.cache.get("sysDescr") or "").strip()
         manufacturer = None
         firmware = None
         if sd:
             parts = [p.strip() for p in sd.split(",")]
+            # Firmware revision is the first comma-separated item after <vendor> <model>
             if len(parts) >= 2:
                 firmware = parts[1] or None
+            # Manufacturer is the <vendor> portion before the model token
             head = parts[0]
             if model_hint and model_hint in head:
                 manufacturer = head.replace(model_hint, "").strip()
             else:
+                # Fallback: drop last token in head (assume it's the model)
                 toks = head.split()
                 if len(toks) > 1:
                     manufacturer = " ".join(toks[:-1])
@@ -213,64 +201,22 @@ class SwitchSnmpClient:
             self.cache["ifTable"].setdefault(idx, {})["oper"] = int(val)
 
     async def _async_walk_ipv4(self) -> None:
-        """Populate ipIndex (ip->ifIndex) and ipMask (ip->mask or /bits) from SNMP.
-        Try legacy ipAdEnt* first; if empty, fall back to modern ipAddressTable.
-        """
         ip_to_index: Dict[str, int | None] = {}
         ip_to_mask: Dict[str, str] = {}
 
-        # -------- Legacy table (ipAdEnt*) --------
-        addrs = await self._async_walk(OID_ipAdEntAddr)
-        if addrs:
-            for _oid, val in addrs:
-                ip_to_index[str(val)] = None
+        for _oid, val in await self._async_walk(OID_ipAdEntAddr):
+            ip_to_index[str(val)] = None
 
-            for oid, val in await self._async_walk(OID_ipAdEntIfIndex):
-                parts = oid.split(".")[-4:]
-                ip = ".".join(parts)
-                ip_to_index[ip] = int(val)
+        for oid, val in await self._async_walk(OID_ipAdEntIfIndex):
+            parts = oid.split(".")[-4:]
+            ip = ".".join(parts)
+            ip_to_index[ip] = int(val)
 
-            for oid, val in await self._async_walk(OID_ipAdEntNetMask):
-                parts = oid.split(".")[-4:]
-                ip = ".".join(parts)
-                ip_to_mask[ip] = str(val)
+        for oid, val in await self._async_walk(OID_ipAdEntNetMask):
+            parts = oid.split(".")[-4:]
+            ip = ".".join(parts)
+            ip_to_mask[ip] = str(val)
 
-            self.cache["ipIndex"] = ip_to_index
-            self.cache["ipMask"] = ip_to_mask
-            return
-
-        # -------- Modern table (ipAddressTable) --------
-        # Build rows keyed by the full index suffix; then compose values.
-        types = {suffix: int(val) for suffix, val in [
-            (oid[len(OID_ipAddressAddrType)+1:], val) for oid, val in await self._async_walk(OID_ipAddressAddrType)
-        ]}
-        addrs_oct = {suffix: val for suffix, val in [
-            (oid[len(OID_ipAddressAddr)+1:], val) for oid, val in await self._async_walk(OID_ipAddressAddr)
-        ]}
-        ifidxs = {suffix: int(val) for suffix, val in [
-            (oid[len(OID_ipAddressIfIndex)+1:], val) for oid, val in await self._async_walk(OID_ipAddressIfIndex)
-        ]}
-        prefix = {suffix: int(val) for suffix, val in [
-            (oid[len(OID_ipAddressPrefixLen)+1:], val) for oid, val in await self._async_walk(OID_ipAddressPrefixLen)
-        ]}
-
-        for suffix, addr_type in types.items():
-            # Only IPv4 rows
-            # Commonly: 1=ipv4 or 2=ipv6 depending on INET-ADDRESS-MIB impl. We accept 1 or 2; verify address size.
-            val = addrs_oct.get(suffix)
-            ip = _octets_to_ipv4(val) if val is not None else None
-            if not ip:
-                continue
-            if_index = ifidxs.get(suffix)
-            if if_index is None:
-                continue
-            ip_to_index[ip] = if_index
-            bits = prefix.get(suffix)
-            if bits is not None:
-                ip_to_mask[ip] = f"/{bits}"
-
-        # Convert any "/bits" entries in ip_to_mask to explicit dotted masks for consistency with legacy path
-        # (the UI helper in switch.py will handle either "/bits" or full mask).
         self.cache["ipIndex"] = ip_to_index
         self.cache["ipMask"] = ip_to_mask
 
