@@ -6,9 +6,8 @@ from typing import Dict, List, Optional, Tuple
 
 from homeassistant.core import HomeAssistant
 
-# NOTE: keep imports lightweight at module import time (avoid SnmpEngine() etc)
+# Keep imports light at module import time (no SnmpEngine() calls here)
 try:
-    # pysnmp (lextudio) – classic sync hlapi
     from pysnmp.hlapi import (
         CommunityData,
         ContextData,
@@ -23,11 +22,12 @@ except Exception:  # pragma: no cover
     CommunityData = ContextData = ObjectIdentity = ObjectType = None  # type: ignore
     SnmpEngine = UdpTransportTarget = getCmd = nextCmd = None  # type: ignore
 
-# --- IANA ifType values we need to filter/nickname (DO NOT remove) ----------------
-IANA_IFTYPE_SOFTWARE_LOOPBACK = 24
-IANA_IFTYPE_IEEE8023AD_LAG = 161  # port-channel/LAG on many vendors
 
-# --- MIB/OIDs used (kept local to avoid const churn) ------------------------------
+# IANA ifType constants used elsewhere (do not remove)
+IANA_IFTYPE_SOFTWARE_LOOPBACK = 24
+IANA_IFTYPE_IEEE8023AD_LAG = 161  # Port-Channel/LAG on many vendors
+
+
 # IF-MIB
 OID_IFDESCR = "1.3.6.1.2.1.2.2.1.2"
 OID_IFTYPE = "1.3.6.1.2.1.2.2.1.3"
@@ -49,7 +49,31 @@ OID_SYS_UPTIME = "1.3.6.1.2.1.1.3.0"
 
 def _ok() -> bool:
     """Return True if pysnmp imports are available."""
-    return all((CommunityData, ContextData, ObjectIdentity, ObjectType, SnmpEngine, UdpTransportTarget, getCmd, nextCmd))
+    return all(
+        (
+            CommunityData,
+            ContextData,
+            ObjectIdentity,
+            ObjectType,
+            SnmpEngine,
+            UdpTransportTarget,
+            getCmd,
+            nextCmd,
+        )
+    )
+
+
+# ---------- RESTORED for config_flow compatibility ----------
+def ensure_snmp_available() -> None:
+    """
+    Config-flow probe: keep it *non-blocking*.
+
+    Only verifies that pysnmp is importable and the symbols we use exist.
+    Do not instantiate SnmpEngine() or touch the filesystem here.
+    """
+    if not _ok():
+        raise SnmpError("pysnmp not available")
+# -----------------------------------------------------------
 
 
 @dataclass
@@ -67,7 +91,7 @@ class SnmpError(Exception):
 
 
 class SwitchSnmpClient:
-    """Very small SNMP helper. Keep all blocking calls inside executor jobs."""
+    """Small SNMP helper. All blocking work stays in executor jobs."""
 
     def __init__(self, hass: HomeAssistant, host: str, port: int, community: str) -> None:
         self._hass = hass
@@ -75,14 +99,15 @@ class SwitchSnmpClient:
         self._port = port
         self._community = community
 
-    # ---------------------------- Factory -------------------------------------
     @classmethod
-    async def async_create(cls, hass: HomeAssistant, host: str, port: int, community: str) -> "SwitchSnmpClient":
-        if not _ok():
-            raise SnmpError("pysnmp not available")
+    async def async_create(
+        cls, hass: HomeAssistant, host: str, port: int, community: str
+    ) -> "SwitchSnmpClient":
+        # Keep config flow happy and fast
+        ensure_snmp_available()
         return cls(hass, host, port, community)
 
-    # ----------------------------- Low level ----------------------------------
+    # ----------------- low-level helpers (sync, called in executor) -----------------
     def _target(self) -> UdpTransportTarget:
         return UdpTransportTarget((self._host, self._port), timeout=2, retries=1)
 
@@ -90,7 +115,6 @@ class SwitchSnmpClient:
         return CommunityData(self._community, mpModel=0)
 
     def _get(self, oid: str) -> Optional[str]:
-        """Sync GET – returns stringified value or None."""
         errorIndication, errorStatus, errorIndex, varBinds = next(
             getCmd(
                 SnmpEngine(),
@@ -107,7 +131,6 @@ class SwitchSnmpClient:
         return None
 
     def _walk(self, base_oid: str) -> List[Tuple[str, str]]:
-        """Sync WALK – returns list of (oid,indexed), value as strings."""
         out: List[Tuple[str, str]] = []
         for (errInd, errStat, errIdx, varBinds) in nextCmd(
             SnmpEngine(),
@@ -123,9 +146,10 @@ class SwitchSnmpClient:
                 out.append((str(name), str(val)))
         return out
 
-    # ------------------------------ Readers -----------------------------------
+    # ------------------------------ readers (async) --------------------------------
     async def async_get_system_info(self) -> Dict[str, str]:
         """Return firmware, hostname, manufacturer+model, uptime (seconds)."""
+
         def _read() -> Dict[str, str]:
             sys_descr = self._get(OID_SYS_DESCR) or ""
             hostname = self._get(OID_SYS_NAME) or ""
@@ -133,22 +157,18 @@ class SwitchSnmpClient:
             firmware = ""
             manuf_model = ""
 
-            # Cheap & resilient parser: "Vendor Model, 6.7.1.31, ..." -> split by ','
             if sys_descr:
                 parts = [p.strip() for p in sys_descr.split(",")]
                 if parts:
                     manuf_model = parts[0]
                 for p in parts[1:]:
-                    # first token that looks like x.y.z or similar
                     if sum(ch.isdigit() for ch in p) >= 3 and "." in p:
                         firmware = p
                         break
 
-            # uptime in seconds (from Timeticks)
             seconds = ""
             if uptime_ticks.isdigit():
-                # Timeticks are 1/100s
-                seconds = str(int(uptime_ticks) // 100)
+                seconds = str(int(uptime_ticks) // 100)  # Timeticks are 1/100s
 
             return {
                 "firmware": firmware or "",
@@ -161,8 +181,8 @@ class SwitchSnmpClient:
 
     async def async_get_ports(self) -> List[SwitchPort]:
         """Walk interface table and return normalized ports."""
+
         def _read() -> List[SwitchPort]:
-            # index -> fields
             descr = {oid.split(".")[-1]: val for oid, val in self._walk(OID_IFDESCR)}
             alias = {oid.split(".")[-1]: val for oid, val in self._walk(OID_IFALIAS)}
             admin = {oid.split(".")[-1]: val for oid, val in self._walk(OID_IFADMIN)}
@@ -175,7 +195,7 @@ class SwitchSnmpClient:
                     idx = int(idx_str)
                 except ValueError:
                     continue
-                p = SwitchPort(
+                port = SwitchPort(
                     index=idx,
                     name=name,
                     alias=alias.get(idx_str, ""),
@@ -183,23 +203,23 @@ class SwitchSnmpClient:
                     oper=int(oper.get(idx_str, "0") or 0),
                     iftype=int(iftype.get(idx_str, "0") or 0),
                 )
-                # Skip known "CPU" pseudo-ifIndex seen on some stacks (661 was reported)
-                if p.index == 661:
+                # Skip known CPU pseudo-ifIndex
+                if port.index == 661:
                     continue
-                out.append(p)
+                out.append(port)
             return out
 
         return await self._hass.async_add_executor_job(_read)
 
     async def async_get_ipv4_map(self) -> Dict[int, str]:
         """Return {ifIndex: 'a.b.c.d/len'} for interfaces that have IPv4."""
+
         def _read() -> Dict[int, str]:
-            # ipAdEntIfIndex.<addr> => ifIndex
             idx_map: Dict[str, int] = {}
             for oid, val in self._walk(OID_IPADDR_IFINDEX):
-                ip = oid.split(".")[-4:]  # last 4 components are the IPv4
+                ip_parts = oid.split(".")[-4:]
                 try:
-                    addr = str(IPv4Address(".".join(ip)))
+                    addr = str(IPv4Address(".".join(ip_parts)))
                 except Exception:
                     continue
                 try:
@@ -207,12 +227,11 @@ class SwitchSnmpClient:
                 except ValueError:
                     continue
 
-            # ipAdEntNetMask.<addr> => netmask
             mask_map: Dict[str, str] = {}
             for oid, val in self._walk(OID_IPADDR_NETMASK):
-                ip = oid.split(".")[-4:]
+                ip_parts = oid.split(".")[-4:]
                 try:
-                    addr = str(IPv4Address(".".join(ip)))
+                    addr = str(IPv4Address(".".join(ip_parts)))
                 except Exception:
                     continue
                 mask_map[addr] = val
