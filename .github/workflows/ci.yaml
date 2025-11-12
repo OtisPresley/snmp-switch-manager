@@ -28,7 +28,7 @@ jobs:
 
       - name: Compile integration and card
         run: |
-          python -m compileall custom_components/switch_manager www/community/switch-manager-card
+          python -m compileall custom_components/snmp_switch_manager www/community/snmp-switch-manager-card
 
   frontend-lint:
     runs-on: ubuntu-latest
@@ -43,8 +43,8 @@ jobs:
 
       - name: Lint Lovelace card (if configured)
         run: |
-          if [ -f "www/community/switch-manager-card/package.json" ]; then
-            cd www/community/switch-manager-card
+          if [ -f "www/community/snmp-switch-manager-card/package.json" ]; then
+            cd www/community/snmp-switch-manager-card
             npm ci
             npm run lint
           else
