@@ -1,4 +1,4 @@
-class SwitchManagerCard extends HTMLElement {
+class SnmpSwitchManagerCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -309,7 +309,7 @@ class SwitchManagerCard extends HTMLElement {
 }
 
 // Register with the new tag name
-customElements.define("snmp-switch-manager-card", SwitchManagerCard);
+customElements.define("snmp-switch-manager-card", SnmpSwitchManagerCard);
 
 // Show in card picker
 window.customCards = window.customCards || [];
