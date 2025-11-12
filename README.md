@@ -57,7 +57,7 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
 ### Manual installation
 
 1. Download the latest release ZIP from the [GitHub releases page](https://github.com/OtisPresley/snmp-switch-manager/releases).
-2. Copy `custom_components/snmp-switch_manager` into your Home Assistant `custom_components` directory.
+2. Copy `custom_components/snmp_switch_manager` into your Home Assistant `custom_components` directory.
 3. Copy `www/community/snmp-switch-manager-card` into `www/community` (create the path if necessary).
 4. Restart Home Assistant.
 
@@ -76,7 +76,7 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
 1. Add the card JavaScript as a resource under **Settings → Dashboards → Resources**:
 
    ```yaml
-   url: /hacsfiles/switch-manager-card/snmp-switch-manager-card.js
+   url: /hacsfiles/snmp-switch-manager-card/snmp-switch-manager-card.js
    type: module
    ```
 
