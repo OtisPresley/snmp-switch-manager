@@ -73,14 +73,16 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
 
 ## Lovelace card
 
-1. Add the card JavaScript as a resource under **Settings → Dashboards → Resources**:
+1. Download the snmp-switch-manager-card.js file from the SNMP Switch Manager Card repository and place it in `www/community/snmp-switch-manager-card/` in Home Assistant.
+
+2. Add the card JavaScript as a resource under **Settings → Dashboards → Resources**:
 
    ```yaml
    url: /hacsfiles/snmp-switch-manager-card/snmp-switch-manager-card.js
    type: module
    ```
 
-2. Place the card on any dashboard:
+3. Place the card on any dashboard:
 
    ```yaml
    type: custom:snmp-switch-manager-card
