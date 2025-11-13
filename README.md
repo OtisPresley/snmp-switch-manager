@@ -49,18 +49,29 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
 
 ## Installation
 
-### Install through HACS (recommended)
+### HACS (recommended)
+You can install this integration directly from HACS:
 
-1. In Home Assistant, open **HACS → Integrations → ⋮ → Custom repositories** and add `https://github.com/OtisPresley/snmp-switch-manager` as an Integration repository.
-2. Search HACS for **Switch Manager** and click **Download**.
-3. Restart Home Assistant when prompted.
+[![Open your Home Assistant instance and show the repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=OtisPresley&repository=snmp-switch-manager)
 
-### Manual installation
+After installation, restart Home Assistant and add the integration:
 
-1. Download the latest release ZIP from the [GitHub releases page](https://github.com/OtisPresley/snmp-switch-manager/releases).
-2. Copy `custom_components/snmp_switch_manager` into your Home Assistant `custom_components` directory.
-3. Copy `www/community/snmp-switch-manager-card` into `www/community` (create the path if necessary).
-4. Restart Home Assistant.
+[![Open your Home Assistant instance and add this integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=snmp_switch_manager)
+
+---
+
+#### Manual steps (if you prefer not to use the buttons)
+1. In Home Assistant, open **HACS → Integrations**.  
+2. Click **Explore & Download Repositories**, search for **SNMP Switch Manager**, then click **Download**.  
+3. **Restart Home Assistant**.  
+4. Go to **Settings → Devices & Services → Add Integration → SNMP Switch Manager**.  
+
+### Manual install
+1. Copy the folder `custom_components/snmp_switch_manager` into your HA `config/custom_components` directory.
+2. Restart Home Assistant.
+3. Go to **Settings → Devices & Services → Add Integration → SNMP Switch Manager**.
+
+> ⚠️ No `configuration.yaml` entries are required. Remove any legacy YAML after migrating to the UI.
 
 ---
 
