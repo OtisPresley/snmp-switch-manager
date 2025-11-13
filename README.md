@@ -82,7 +82,10 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
    type: module
    ```
 
-3. Place the card on any dashboard:
+3. Place the card on any dashboard and edit via the GUI or in YAML:
+   <p float="left">
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot1.png" alt="Screenshot 1" width="250"/>
+   </p>
 
    ```yaml
     type: custom:snmp-switch-manager-card
@@ -105,9 +108,9 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
    Clicking a port opens a dialog with quick actions to toggle the port or edit its description. There is also an alternative `list` view depicted in the      third image below.
 
     <p float="left">
-      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot1.png" alt="Screenshot 1" width="250"/>
-      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot2.png" alt="Screenshot 2" width="250"/>
-      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot3.png" alt="Screenshot 3" width="250"/>
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot2.png" alt="Screenshot 1" width="250"/>
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot3.png" alt="Screenshot 2" width="250"/>
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot4.png" alt="Screenshot 3" width="250"/>
     </p>
 
 ---
