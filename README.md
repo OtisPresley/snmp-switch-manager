@@ -105,9 +105,9 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
    Clicking a port opens a dialog with quick actions to toggle the port or edit its description. There is also an alternative `list` view depicted in the      third image below.
 
     <p float="left">
-      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot1.png" alt="Screenshot 1" width="280"/>
-      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot2.png" alt="Screenshot 2" width="280"/>
-      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot3.png" alt="Screenshot 3" width="280"/>
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot1.png" alt="Screenshot 1" width="250"/>
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot2.png" alt="Screenshot 2" width="250"/>
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot3.png" alt="Screenshot 3" width="250"/>
     </p>
 
 ---
