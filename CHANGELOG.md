@@ -27,3 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 Refactored to work with pysnmp 7.1.24 to work with HA Core 7.1.24
 
 ---
+
+## [0.3.0RC1] - 2025-11-21
+### Added
+- 🎚️ Support for Cisco CBS250
+- 🏷️ Updated README
+
+---
