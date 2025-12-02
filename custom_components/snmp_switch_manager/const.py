@@ -33,3 +33,7 @@ OID_ipAdEntNetMask = "1.3.6.1.2.1.4.20.1.3"
 
 # ENTITY-MIB — model name column (walk and pick a base-chassis entry)
 OID_entPhysicalModelName = "1.3.6.1.2.1.47.1.1.1.1.13"
+
+# ENTITY-MIB — CBS350 base-chassis software revision (see Cisco CBS350 SNMP OIDs doc)
+# This is entPhysicalSoftwareRev with entPhysicalIndex 67109120
+OID_entPhysicalSoftwareRev_CBS350 = "1.3.6.1.2.1.47.1.1.1.1.10.67109120"
