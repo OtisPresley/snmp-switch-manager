@@ -123,7 +123,10 @@ async def _do_set_admin_status(
         community,
         target,
         context,
-        ObjectType(ObjectIdentity(f"{OID_ifAdminStatus}.{if_index}")), Integer(value),
+        ObjectType(
+            ObjectIdentity(f"{OID_ifAdminStatus}.{if_index}"),
+            Integer(value),
+        ),
         lookupMib=False,  # <<< prevent FS MIB access
     )
     return (not err_ind) and (not err_stat)
