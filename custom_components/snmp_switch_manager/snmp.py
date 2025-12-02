@@ -34,6 +34,7 @@ from .const import (
     OID_ipAdEntIfIndex,
     OID_ipAdEntNetMask,
     OID_entPhysicalModelName,
+    OID_entPhysicalSoftwareRev_CBS350,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -232,6 +233,17 @@ class SwitchSnmpClient:
                 toks = head.split()
                 if len(toks) > 1:
                     manufacturer = " ".join(toks[:-1])
+
+        # Cisco CBS350: prefer ENTITY-MIB software revision when available.
+        # This uses the documented entPhysicalSoftwareRev OID for the base chassis.
+        if (model_hint and "CBS" in model_hint) or ("CBS" in sd):
+            try:
+                sw_rev = await self._async_get_one(OID_entPhysicalSoftwareRev_CBS350)
+            except Exception:
+                sw_rev = None
+            if sw_rev:
+                firmware = sw_rev.strip() or firmware
+
         self.cache["manufacturer"] = manufacturer
         self.cache["firmware"] = firmware
 
