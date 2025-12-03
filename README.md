@@ -24,6 +24,7 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
 - [Services](#services)
 - [Troubleshooting](#troubleshooting)
 - [Changelog](https://github.com/OtisPresley/switch-manager/blob/main/CHANGELOG.md)
+- [Roadmap](https://github.com/OtisPresley/switch-manager/blob/main/ROADMAP.md)
 - [Support](#support)
 
 ---
