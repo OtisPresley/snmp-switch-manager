@@ -25,7 +25,7 @@ This roadmap reflects **active development priorities** and **realistic implemen
 
 ### 📶 Bandwidth Sensors  
 **Priority:** 🔴 High  
-**Target Release:** v1.4.x  
+**Target Release:** v0.4.0  
 **Tracking:** [`#roadmap-bandwidth-sensors`](./CHANGELOG.md#roadmap-bandwidth-sensors)
 
 Add real-time and cumulative traffic visibility for every network interface.
