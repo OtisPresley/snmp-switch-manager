@@ -1,12 +1,21 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+> 📌 See also: [`ROADMAP.md`](./ROADMAP.md) for planned features and release targets.
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
 ## [Unreleased]
+
+### 🛣️ Roadmap Tracking
+
+- 📶 **Bandwidth Sensors**  
+  Planned for **v0.4.0**  
+  🔗 See roadmap: [`#roadmap-bandwidth-sensors`](./ROADMAP.md#roadmap-bandwidth-sensors)
+
 ### Added
 - Created the initial integration
 
@@ -58,3 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 Fixed naming of switch and sensor entities to include the switch name (must delete switch and readd it)
 
 ---
+
+<!-- ROADMAP ANCHOR LINKS -->
+
+<a name="roadmap-bandwidth-sensors"></a>
