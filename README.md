@@ -201,6 +201,8 @@ If your switch does not display correctly, then the integration will need to hav
 - Arista
 - Juniper EX2200
 - Mikrotik RouterOS
+- OPNsense Firewall
+- DDWRT
 
 ### Open an Issue
 - Open an issue on the [GitHub tracker](https://github.com/OtisPresley/snmp-switch-manager/issues) if you run into problems or have feature requests.
