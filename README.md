@@ -200,6 +200,7 @@ If your switch does not display correctly, then the integration will need to hav
 - Cisco CBS, SG, 9200CX, 9300X
 - Arista
 - Juniper EX2200
+- Mikrotik RouterOS
 
 ### Open an Issue
 - Open an issue on the [GitHub tracker](https://github.com/OtisPresley/snmp-switch-manager/issues) if you run into problems or have feature requests.
