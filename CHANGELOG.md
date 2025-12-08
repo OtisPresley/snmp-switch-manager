@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Planned for **v0.4.0**  
   🔗 See roadmap: [`#roadmap-bandwidth-sensors`](./ROADMAP.md#roadmap-bandwidth-sensors)
 
+- 🌡️ **Switch Environmentals & CPU / Memory Usage**  
+  Planned for **v0.4.0**  
+  🔗 See roadmap: [`#roadmap-switch-environmentals`](./ROADMAP.md#roadmap-switch-environmentals)
+
+- ⚡ **Power over Ethernet (PoE) Statistics**  
+  Planned for **v0.4.0**  
+  🔗 See roadmap: [`#roadmap-poe-statistics`](./ROADMAP.md#roadmap-poe-statistics)
+
 ### Added
 - Created the initial integration
 
@@ -44,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.3.0RC2] - 2025-12-2
+## [0.3.0RC2] - 2025-12-02
 ### Added
 - 🎚️ Support for Cisco CBS250
 - 🎚️ Support for Cisco CBS250 firmware sensor
@@ -55,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.3.0] - 2025-12-7
+## [0.3.0] - 2025-12-07
 ### Added
 - 🎚️ Support for Cisco CBS and SG
 - 🎚️ Support for Cisco CBS250 firmware sensor
@@ -68,10 +76,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.3.1BETA1] - 2025-12-7
+## [0.3.1BETA1] - 2025-12-07
 ### Added
 - 🎚️ Support for Mikrotik RouterOS
+
+---
 
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-bandwidth-sensors"></a>
+<a name="roadmap-switch-environmentals"></a>
+<a name="roadmap-poe-statistics"></a>
