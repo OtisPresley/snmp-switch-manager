@@ -48,8 +48,7 @@ Add real-time and cumulative traffic visibility for every network interface.
 - ✅ **Automatic 32-bit counter wrap detection & correction**
 - ✅ **Efficient polling** via the existing coordinator (no per-entity SNMP sessions)
 - ✅ **Minimal Home Assistant performance impact**
-- ✅ Default exposure as **per-port attributes**
-- ✅ Optional exposure as **dedicated diagnostic sensors**
+- ✅ Default exposure as **dedicated diagnostic sensors**
 
 ---
 
