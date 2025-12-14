@@ -99,7 +99,13 @@ async def async_setup_entry(hass, entry, async_add_entities):
                     raw_name = "VLAN " + raw_name
                     include = True
 
-            # 3) Any other interface with an IP address configured
+            # 3) Link Access Group interfaces should also be displayed if operationally up or
+            # administratively disabled.
+            elif lower_name.startswith("po"):
+                if oper == 1 or admin == 2:
+                    include = True
+            
+            # 4) Any other interface with an IP address configured
             elif has_ip:
                 include = True
 
