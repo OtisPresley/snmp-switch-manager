@@ -87,7 +87,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
             # 1) Physical ports: names starting with Fa or Gi (case-insensitive)
             if lower_name.startswith("fa") or lower_name.startswith("gi"):
-                include = True
+                if oper != 6:
+                  include = True
 
             # 2) VLAN interfaces that are operationally up or administratively disabled
             elif lower_name.startswith("vlan"):
