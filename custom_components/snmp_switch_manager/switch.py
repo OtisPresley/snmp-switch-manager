@@ -91,8 +91,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
                   include = True
 
             # 2) VLAN interfaces that are operationally up or administratively disabled
-            elif lower_name.startswith("vlan"):
-                if oper == 1 or admin == 2:
+            # and have an IP address configured (avoiding duplicate entry)
+            elif lower_name.isdigit():
+                if (oper == 1 or admin == 2) and has_ip:
+                    # We modify the name because on Cisco VLAN interface names are unprefixed digits
+                    # which make for a confusing interface.
+                    raw_name = "VLAN " + raw_name
                     include = True
 
             # 3) Any other interface with an IP address configured
