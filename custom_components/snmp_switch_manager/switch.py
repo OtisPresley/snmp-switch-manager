@@ -74,14 +74,16 @@ async def async_setup_entry(hass, entry, async_add_entities):
             # Only create PortChannel entity if configured (alias or IP present)
             continue
 
+        # Get interface details
+        name = raw_name.strip()
+        lower_name = name.lower()
+        admin = row.get("admin")
+        oper = row.get("oper")
+        has_ip = bool(ip_str)
+        include = False
+        
         # Cisco SG interface selection rules
         if is_cisco_sg:
-            name = raw_name.strip()
-            lower_name = name.lower()
-            admin = row.get("admin")
-            oper = row.get("oper")
-            has_ip = bool(ip_str)
-            include = False
 
             # 1) Physical ports: names starting with Fa or Gi (case-insensitive)
             if lower_name.startswith("fa") or lower_name.startswith("gi"):
@@ -102,12 +104,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
         # Junos (e.g. EX2200) interface selection rules
         if is_junos:
-            name = raw_name.strip()
-            lower_name = name.lower()
-            admin = row.get("admin")
-            oper = row.get("oper")
-            has_ip = bool(ip_str)
-            include = False
 
             # 1) Physical front-panel ports: ge-0/0/X (no subinterface suffix)
             if lower_name.startswith("ge-") and "." not in name:
