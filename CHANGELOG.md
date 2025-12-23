@@ -90,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🏷️ Updated README
 
 ### Fixed
-- 🚧 Thanks to @cerebrate for Cisco SG-Series interface filtering improvements
+- 🚧 Thanks to [@cerebrate](https://github.com/cerebrate) for Cisco SG-Series interface filtering improvements
 - 🚧 Diagnostic sensors now refresh correctly without requiring an integration restart
 - 🚧 Corrected Manufacturer and Firmware OIDs for Zyxel devices
 
