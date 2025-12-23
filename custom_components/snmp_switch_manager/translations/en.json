@@ -16,5 +16,22 @@
     "error": {
       "cannot_connect": "Cannot connect or SNMP timed out"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Custom SNMP OIDs",
+        "description": "Override SNMP OIDs for this device only. Leave fields blank to use automatic defaults.",
+        "data": {
+          "enable_custom_oids": "Enable custom SNMP OIDs",
+          "manufacturer": "Manufacturer OID",
+          "model": "Model OID",
+          "firmware": "Firmware version OID",
+          "hostname": "Hostname OID",
+          "uptime": "Uptime OID",
+          "reset_custom_oids": "Reset all custom OIDs to defaults"
+        }
+      }
+    }
   }
 }
