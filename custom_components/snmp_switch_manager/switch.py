@@ -13,6 +13,26 @@ from .helpers import format_interface_name
 
 _LOGGER = logging.getLogger(__name__)
 
+
+def _format_bps(bps: Any) -> str:
+    """Format an integer bits-per-second value into a human-friendly string."""
+    try:
+        v = int(bps)
+    except Exception:
+        return "Unknown"
+    if v <= 0:
+        return "Unknown"
+    if v >= 1_000_000_000:
+        g = v / 1_000_000_000
+        return f"{g:g} Gbps"
+    if v >= 1_000_000:
+        m = v / 1_000_000
+        return f"{m:g} Mbps"
+    if v >= 1_000:
+        k = v / 1_000
+        return f"{k:g} Kbps"
+    return f"{v} bps"
+
 ADMIN_STATE = {1: "Up", 2: "Down", 3: "Testing"}
 OPER_STATE = {
     1: "Up",
@@ -243,7 +263,17 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
             "Alias": row.get("alias") or "",
             "Admin": ADMIN_STATE.get(row.get("admin", 0), "Unknown"),
             "Oper": OPER_STATE.get(row.get("oper", 0), "Unknown"),
+            "Speed": _format_bps(row.get("speed_bps")),
         }
+
+        vlan_id = row.get("vlan_id")
+        if vlan_id is not None:
+            try:
+                vlan_int = int(vlan_id)
+            except Exception:
+                vlan_int = None
+            if vlan_int:
+                attrs["VLAN ID"] = vlan_int
         ip = _ip_for_index(
             self._if_index,
             self.coordinator.data.get("ipIndex", {}),
