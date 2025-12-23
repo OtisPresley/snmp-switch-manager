@@ -31,7 +31,7 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
 
 ## Highlights
 
-- 🔍 Automatic discovery of port count, speed, description, and operational status via SNMP v2c
+- 🔍 Automatic discovery of port count, speed, VLAN ID (PVID), description, and operational status via SNMP v2c
 - 🔄 Background polling that keeps Home Assistant entities in sync with switch updates
 - 🎚️ One `switch` entity per interface for toggling administrative state (up/down)
 - 🏷️ Service for updating the interface alias (`ifAlias`) without leaving Home Assistant
@@ -78,7 +78,24 @@ After installation, restart Home Assistant and add the integration:
 
 1. Go to **Settings → Devices & services → Add integration** and search for **SNMP Switch Manager**.
 2. Enter the switch hostname/IP address, the SNMP community string, and optionally a friendly name or non-standard SNMP port.
-3. Once the flow completes, Home Assistant adds one `switch` entity per discovered interface. Entities follow the pattern `switch.<device_name>_port_<index>`.
+3. Once the flow completes, Home Assistant adds one `switch` entity per discovered interface. Entities follow the pattern `switch.<hostname>_<interface_name>` (for example: `switch.switch1_gi1_0_1`).
+
+### Custom SNMP OIDs (Advanced)
+
+Per-device custom SNMP OIDs can be configured from the integration options (⚙️ icon).
+
+This allows overriding how the following diagnostic sensors are detected:
+- Manufacturer
+- Model
+- Firmware
+- Hostname
+- Uptime
+
+Notes:
+- Overrides apply **only to the selected device**
+- Leave a field blank to fall back to automatic detection
+- A reset option is available to restore defaults
+- Useful for devices with vendor-specific or non-standard SNMP implementations
 
 ---
 
@@ -177,7 +194,7 @@ data:
 
 ### Toggle administrative state
 
-The state of each port entity reflects the interface's administrative status. Turning it **on** sets the port to *up*; turning it **off** sets it to *down*. Entity attributes include both administrative and operational status direct from SNMP.
+The state of each port entity reflects the interface's administrative status. Turning it **on** sets the port to *up*; turning it **off** sets it to *down*. Entity attributes include both administrative and operational status direct from SNMP. Entity attributes include administrative status, operational status, port speed, VLAN ID (PVID), and IP configuration when available.
 
 ---
 
