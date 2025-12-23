@@ -82,6 +82,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.1] - 2025-12-23
+### Added
+- ⚡ Port Speed in the interface attributes
+- 🏷️ VLAN ID in the interface attributes (PVID / untagged VLAN)
+- 🧩 Per-device custom SNMP OID overrides for diagnostic sensors (with reset to defaults)
+- 🏷️ Updated README
+
+### Fixed
+- 🚧 Thanks to @cerebrate for Cisco SG-Series interface filtering improvements
+- 🚧 Diagnostic sensors now refresh correctly without requiring an integration restart
+- 🚧 Corrected Manufacturer and Firmware OIDs for Zyxel devices
+
+---
+
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-bandwidth-sensors"></a>
