@@ -34,6 +34,18 @@ This roadmap reflects **active development priorities** and **realistic implemen
 
 - ✅ Virtual Interfaces display controls  
   - Optional ability to hide the Virtual Interfaces panel entirely (no reserved space)
+ 
+- ✅ Device Options (per-device configuration)
+  - Override SNMP community, port, and friendly name
+  - Multi-step options UI with clean navigation
+    
+- ✅ Interface include / exclude rule engine
+  - Starts with / Contains / Ends with matching
+  - Include rules can override vendor filtering when needed
+  - Exclude rules always take precedence and remove existing entities
+    
+- ✅ VLAN ID (PVID) reliability improvements
+  - Added fallback handling for devices that index VLANs by `ifIndex`
 
 - ✅ Custom switch front-panel visualization  
   - Support for a custom background image in panel view  
