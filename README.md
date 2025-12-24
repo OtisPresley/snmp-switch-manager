@@ -179,7 +179,7 @@ Once complete, everything will be fully managed by HACS and you will continue to
    
 ---
 
-## Configuration
+### Configuration
 
 1. Place the card on any dashboard and edit via the GUI or in YAML:
    <p float="left">
