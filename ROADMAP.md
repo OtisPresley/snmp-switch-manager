@@ -55,6 +55,21 @@ This roadmap reflects **active development priorities** and **realistic implemen
 - ✅ Simplified Lovelace resource loading  
   - Card editor embedded directly in the main card  
   - Only a single dashboard resource URL required
+ 
+- ✅ Device-based Lovelace card configuration
+  - Card scoped by Home Assistant Device Registry instead of anchor entities
+  - Device selector limited to SNMP Switch Manager devices only
+
+- ✅ Automatic Diagnostics discovery
+  - Hostname, Manufacturer, Model, Firmware Revision, and Uptime detected automatically
+  - No manual sensor configuration required
+
+- ✅ Reorderable Diagnostics display
+  - Diagnostics order configurable directly in the card editor
+
+- ✅ Live port state feedback in UI
+  - Port toggle button updates immediately when state changes
+  - No need to close/reopen the port popup
 
 ---
 
