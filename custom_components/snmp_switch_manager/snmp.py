@@ -42,6 +42,8 @@ from .const import (
     OID_mikrotik_model,
     OID_entPhysicalMfgName_Zyxel,
     OID_zyxel_firmware_version,
+    OID_dot1dBasePortIfIndex,
+    OID_dot1qPvid,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -449,7 +451,7 @@ class SwitchSnmpClient:
 
         def _normalize_ipv4(val: Any) -> str:
             """Convert SNMP IPv4 values to dotted-quad strings.
-        
+
             Some vendors (e.g., Cisco CBS series, Arista) return ipAdEntAddr/ipAdEntNetMask
             as raw octets instead of a printable IpAddress. This helper keeps existing
             behavior for vendors that already return dotted strings."""
@@ -458,10 +460,10 @@ class SwitchSnmpClient:
             if len(parts) == 4 and all(p.isdigit() for p in parts):
                 # Already a normal dotted-decimal IPv4 string
                 return s
-        
+
             # Try to interpret as 4 raw octets
             b: Optional[bytes] = None
-        
+
             # Fast path for native bytes/bytearray
             if isinstance(val, (bytes, bytearray)):
                 b = bytes(val)
@@ -483,10 +485,10 @@ class SwitchSnmpClient:
                             b = val.asOctets()  # type: ignore[attr-defined]
                         except Exception:
                             b = None
-        
+
             if b and len(b) == 4:
                 return ".".join(str(x) for x in b)
-        
+
             # Fallback: give the original string representation
             return s
 
