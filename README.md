@@ -107,8 +107,37 @@ You can install this card directly from HACS:
 
 [![Open your Home Assistant instance and show the repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=OtisPresley&repository=snmp-switch-manager-card)
 
-After installation, restart Home Assistant. The card will then be available
-as **Custom: SNMP Switch Manager Card** when adding a card in your dashboard.
+🚫 **No manual resource configuration is required.**
+
+This card includes its editor automatically, so you do **not** need to add any additional JavaScript resources under  
+**Settings → Dashboards → Resources**.
+
+After installation, restart Home Assistant. The card will then be available as:
+
+**Custom: SNMP Switch Manager Card**
+
+---
+
+### 🔁 Migrating from Manual to HACS Installation (Important)
+
+If you previously installed this card manually using resource URLs, follow these steps to safely migrate to the HACS-managed version:
+
+1. 🗑️ **Remove old resources** from  
+   **Settings → Dashboards → Resources**
+   - Remove:
+     ```
+     /local/community/snmp-switch-manager-card/snmp-switch-manager-card.js
+     ```
+     ```
+     /local/community/snmp-switch-manager-card/snmp-switch-manager-card-editor.js
+     ```
+
+2. 📂 **Delete the old manually installed files** from: `/config/www/community/snmp-switch-manager-card/`
+3. ✅ **Install the card via HACS** using the HACS button above.
+
+4. 🔄 **Restart Home Assistant**
+
+Once complete, everything will be fully managed by HACS and you will continue to receive automatic updates.
 
 ---
 
@@ -116,17 +145,15 @@ as **Custom: SNMP Switch Manager Card** when adding a card in your dashboard.
 
 1. Download the `snmp-switch-manager-card.js` and  `snmp-switch-manager-card-editor.js` files and place them in `www/community/snmp-switch-manager-card/` in Home Assistant.
 
-2. Add the card and editor JavaScript as a resource under **Settings → Dashboards → Resources**:
+2. Add **only one** JavaScript resource under  
+**Settings → Dashboards → Resources**:
 
    ```yaml
    url: /local/community/snmp-switch-manager-card/snmp-switch-manager-card.js
    type: module
    ```
-
-   ```yaml
-   url: /local/community/snmp-switch-manager-card/snmp-switch-manager-card-editor.js
-   type: module
-   ```
+   ⚠️ Do NOT add a separate editor resource. The editor is embedded in the card.
+   
 ---
 
 ## Configuration
@@ -137,21 +164,30 @@ as **Custom: SNMP Switch Manager Card** when adding a card in your dashboard.
    </p>
 
    ```yaml
-    type: custom:snmp-switch-manager-card
-    title: Core Switch
-    view: panel
-    ports_per_row: 24
-    info_position: below
-    label_size: 6
-    anchor_entity: switch.gi1_0_1
-    diagnostics:
-      - sensor.hostname
-      - sensor.firmware_revision
-      - sensor.manufacturer
-      - sensor.model
-      - sensor.uptime
-    port_size: 18
-    gap: 10
+   type: custom:snmp-switch-manager-card
+   title: Core Switch
+   view: panel
+   ports_per_row: 24
+   info_position: below
+   label_size: 6
+   anchor_entity: switch.gi1_0_1
+   port_size: 18
+   gap: 10
+   
+   # Optional display controls
+   hide_diagnostics: false
+   hide_virtual_interfaces: false
+   
+   # Optional panel background image (panel view only)
+   background_image: /local/switches/core-switch.png
+   ports_offset_x: 0
+   ports_offset_y: 0
+   ports_scale: 1
+   
+   # Optional per-port positioning overrides
+   port_positions:
+     Gi1/0/1: { x: 120, y: 80 }
+     Gi1/0/2: { x: 150, y: 80 }
    ```
 
    The follows are descriptions of the settings:
@@ -165,8 +201,23 @@ as **Custom: SNMP Switch Manager Card** when adding a card in your dashboard.
    - `diagnostics` is a list of sensors you want to display in the diagnostics area.
    - `port_size` determines the size of the port images when in panel view.
    - `gap` determines how far apart the ports are when in panel view.
+   - `hide_diagnostics` hides the Diagnostics panel entirely when set to `true`.
+   - `hide_virtual_interfaces` hides the Virtual Interfaces panel entirely when set to `true`.
+   - `background_image` sets a custom switch image for panel view.
+   - `ports_offset_x` and `ports_offset_y` move all ports to align with the background image.
+   - `ports_scale` scales all ports uniformly.
+   - `port_positions` allows individual ports to be positioned manually.
+      
+   Clicking a port opens a unified information dialog (used in both panel and list views) showing:
+
+   - Interface name
+   - Admin and Oper status
+   - Speed
+   - VLAN ID
+   - Interface index
    
-   Clicking a port opens a dialog with quick actions to toggle the port or edit its description. The alternative `list` view depicted in the third image below.
+   From this dialog you can also edit the port description when supported.
+
 
     <p float="left">
       <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot2.png" alt="Screenshot 1" width="250"/>
@@ -175,7 +226,6 @@ as **Custom: SNMP Switch Manager Card** when adding a card in your dashboard.
     </p>
 
 ---
-
 
 ## Services
 
