@@ -12,12 +12,37 @@ This roadmap reflects **active development priorities** and **realistic implemen
 - ✅ Vendor-specific interface filtering  
   - Juniper EX (ge-0/0/X physical ports, VLAN rules, IP-based logical ports)  
   - Cisco SG (Fa/Gi physical ports, VLAN rules, IP-based logical ports)
+
 - ✅ Hostname-prefixed entity names  
   - `switch.switch1_gi1_0_1`  
   - `sensor.switch1_firmware_revision`
+
 - ✅ Cisco CBS firmware detection via ENTITY-MIB
 - ✅ Arista IPv4 normalization fixes
+
 - ✅ Port alias editing & tooltip enhancements
+
+- ✅ Unified port information pop-up across panel and list views  
+  - Displays Admin / Oper status, Speed, VLAN ID, and interface index
+
+- ✅ Theme-safe card styling  
+  - All colors now derive from Home Assistant theme variables (Light/Dark compatible)
+
+- ✅ Diagnostics panel improvements  
+  - Removed hostname prefix from Diagnostics sensor display names  
+  - Optional ability to hide the Diagnostics panel entirely (no reserved space)
+
+- ✅ Virtual Interfaces display controls  
+  - Optional ability to hide the Virtual Interfaces panel entirely (no reserved space)
+
+- ✅ Custom switch front-panel visualization  
+  - Support for a custom background image in panel view  
+  - Adjustable port positioning, offsets, and scaling  
+  - Optional per-port coordinate overrides
+
+- ✅ Simplified Lovelace resource loading  
+  - Card editor embedded directly in the main card  
+  - Only a single dashboard resource URL required
 
 ---
 
