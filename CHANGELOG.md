@@ -97,6 +97,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.2] - 2025-12-24
+### Added
+- 🧰 **Device Options** panel replacing Custom SNMP OIDs
+  - Per-device overrides for SNMP community, port, and friendly name
+- 🧩 **Per-device interface include rules**
+  - Starts with / Contains / Ends with matching
+  - Can explicitly include interfaces otherwise excluded by vendor logic
+- 🚫 **Per-device interface exclude rules**
+  - Prevent entity creation and remove existing matching entities
+  - Exclude rules always take precedence
+- 🧭 **Multi-step rule manager UI**
+  - Clean, menu-driven Options flow
+  - Dedicated sub-forms for include rules, exclude rules, and custom diagnostic OIDs
+- 🏷️ **VLAN ID (PVID) attribute reliability improvements**
+  - Added fallback handling for devices that index PVIDs by `ifIndex`
+
+---
+
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-bandwidth-sensors"></a>
