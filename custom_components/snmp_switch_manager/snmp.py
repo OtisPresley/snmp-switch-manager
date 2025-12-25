@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 import logging
 from typing import Any, Dict, Optional, Iterable, Tuple, List
 
@@ -21,34 +22,28 @@ from .snmp_compat import (
 )
 
 # Canonical OIDs from const.py (original repo)
-from . import const as c
-
-# Import constants with safe fallbacks (prevents startup failures if files are copied out-of-sync)
-OID_dot1dBasePortIfIndex = getattr(c, 'OID_dot1dBasePortIfIndex', None)
-OID_dot1qPvid = getattr(c, 'OID_dot1qPvid', '1.3.6.1.2.1.17.7.1.4.5.1.1')
-OID_entPhysicalMfgName_Zyxel = getattr(c, 'OID_entPhysicalMfgName_Zyxel', None)
-OID_entPhysicalModelName = getattr(c, 'OID_entPhysicalModelName', '1.3.6.1.2.1.47.1.1.1.1.13')
-OID_entPhysicalSoftwareRev_CBS350 = getattr(c, 'OID_entPhysicalSoftwareRev_CBS350', '1.3.6.1.2.1.47.1.1.1.1.10.67109120')
-OID_ifAdminStatus = getattr(c, 'OID_ifAdminStatus', '1.3.6.1.2.1.2.2.1.7')
-OID_ifAlias = getattr(c, 'OID_ifAlias', '1.3.6.1.2.1.31.1.1.1.18')
-OID_ifDescr = getattr(c, 'OID_ifDescr', '1.3.6.1.2.1.2.2.1.2')
-OID_ifHighSpeed = getattr(c, 'OID_ifHighSpeed', '1.3.6.1.2.1.31.1.1.1.15')
-OID_ifIndex = getattr(c, 'OID_ifIndex', '1.3.6.1.2.1.2.2.1.1')
-OID_ifName = getattr(c, 'OID_ifName', '1.3.6.1.2.1.31.1.1.1.1')
-OID_ifOperStatus = getattr(c, 'OID_ifOperStatus', '1.3.6.1.2.1.2.2.1.8')
-OID_ifSpeed = getattr(c, 'OID_ifSpeed', '1.3.6.1.2.1.2.2.1.5')
-OID_ipAdEntAddr = getattr(c, 'OID_ipAdEntAddr', '1.3.6.1.2.1.4.20.1.1')
-OID_ipAdEntIfIndex = getattr(c, 'OID_ipAdEntIfIndex', '1.3.6.1.2.1.4.20.1.2')
-OID_ipAdEntNetMask = getattr(c, 'OID_ipAdEntNetMask', '1.3.6.1.2.1.4.20.1.3')
-OID_ipAddressIfIndex = getattr(c, 'OID_ipAddressIfIndex', getattr(c, 'OID_ipAdEntIfIndex', '1.3.6.1.2.1.4.20.1.2'))
-OID_mikrotik_model = getattr(c, 'OID_mikrotik_model', None)
-OID_mikrotik_software_version = getattr(c, 'OID_mikrotik_software_version', None)
-OID_ospfIfIpAddress = getattr(c, 'OID_ospfIfIpAddress', None)
-OID_routeCol = getattr(c, 'OID_routeCol', None)
-OID_sysDescr = getattr(c, 'OID_sysDescr', '1.3.6.1.2.1.1.1.0')
-OID_sysName = getattr(c, 'OID_sysName', '1.3.6.1.2.1.1.5.0')
-OID_sysUpTime = getattr(c, 'OID_sysUpTime', '1.3.6.1.2.1.1.3.0')
-OID_zyxel_firmware_version = getattr(c, 'OID_zyxel_firmware_version', None)
+from .const import (
+    OID_sysDescr,
+    OID_sysName,
+    OID_sysUpTime,
+    OID_ifIndex,
+    OID_ifDescr,
+    OID_ifAdminStatus,
+    OID_ifOperStatus,
+    OID_ifName,
+    OID_ifAlias,
+    OID_ifSpeed,
+    OID_ifHighSpeed,
+    OID_ipAdEntAddr,
+    OID_ipAdEntIfIndex,
+    OID_ipAdEntNetMask,
+    OID_entPhysicalModelName,
+    OID_entPhysicalSoftwareRev_CBS350,
+    OID_mikrotik_software_version,
+    OID_mikrotik_model,
+    OID_entPhysicalMfgName_Zyxel,
+    OID_zyxel_firmware_version,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -177,6 +172,12 @@ class SwitchSnmpClient:
             "model": None,
             "firmware": None,
         }
+
+        # sysUpTime updates continuously; to avoid excessive churn in Home
+        # Assistant, we throttle polling separately from the main coordinator.
+        # These are used by async_poll().
+        self._last_uptime_poll: float = 0.0
+        self._uptime_poll_interval: float = 300.0
 
     def _custom_oid(self, key: str) -> Optional[str]:
         val = (self.custom_oids or {}).get(key)
@@ -390,12 +391,9 @@ class SwitchSnmpClient:
                     mbps = int(val)
                 except Exception:
                     continue
-                # ifHighSpeed is Mbps per RFC.
-                # Some devices incorrectly return ifHighSpeed already in *bps*.
-                # Heuristic: values above 1,000,000 are treated as bps.
+                # ifHighSpeed is Mbps; prefer it when non-zero
                 if mbps > 0:
-                    bps = mbps if mbps > 1_000_000 else mbps * 1_000_000
-                    self.cache["ifTable"].setdefault(idx, {})["speed_bps"] = bps
+                    self.cache["ifTable"].setdefault(idx, {})["speed_bps"] = mbps * 1_000_000
 
             # VLAN (PVID) mapping via BRIDGE-MIB / Q-BRIDGE-MIB
             # Map ifIndex -> dot1dBasePort -> dot1qPvid (untagged VLAN)
@@ -458,7 +456,7 @@ class SwitchSnmpClient:
 
         def _normalize_ipv4(val: Any) -> str:
             """Convert SNMP IPv4 values to dotted-quad strings.
-
+        
             Some vendors (e.g., Cisco CBS series, Arista) return ipAdEntAddr/ipAdEntNetMask
             as raw octets instead of a printable IpAddress. This helper keeps existing
             behavior for vendors that already return dotted strings."""
@@ -467,10 +465,10 @@ class SwitchSnmpClient:
             if len(parts) == 4 and all(p.isdigit() for p in parts):
                 # Already a normal dotted-decimal IPv4 string
                 return s
-
+        
             # Try to interpret as 4 raw octets
             b: Optional[bytes] = None
-
+        
             # Fast path for native bytes/bytearray
             if isinstance(val, (bytes, bytearray)):
                 b = bytes(val)
@@ -492,10 +490,10 @@ class SwitchSnmpClient:
                             b = val.asOctets()  # type: ignore[attr-defined]
                         except Exception:
                             b = None
-
+        
             if b and len(b) == 4:
                 return ".".join(str(x) for x in b)
-
+        
             # Fallback: give the original string representation
             return s
 
@@ -538,18 +536,17 @@ class SwitchSnmpClient:
 
         # ---- (3) OSPF-MIB ospfIfIpAddress: suffix a.b.c.d.<ifIndex>.<area...>
         try:
-            if OID_ospfIfIpAddress:
-                for oid, val in await self._async_walk(OID_ospfIfIpAddress):
-                    try:
-                        suffix = oid[len(OID_ospfIfIpAddress) + 1 :]
-                        parts = [int(x) for x in suffix.split(".")]
-                        if len(parts) >= 5:
-                            a, b, c, d = parts[0], parts[1], parts[2], parts[3]
-                            if_index = parts[4]
-                            ip = f"{a}.{b}.{c}.{d}"
-                            ip_index.setdefault(ip, int(if_index))
-                    except Exception:
-                        continue
+            for oid, val in await self._async_walk(OID_ospfIfIpAddress):
+                try:
+                    suffix = oid[len(OID_ospfIfIpAddress) + 1 :]
+                    parts = [int(x) for x in suffix.split(".")]
+                    if len(parts) >= 5:
+                        a, b, c, d = parts[0], parts[1], parts[2], parts[3]
+                        if_index = parts[4]
+                        ip = f"{a}.{b}.{c}.{d}"
+                        ip_index.setdefault(ip, int(if_index))
+                except Exception:
+                    continue
         except Exception:
             pass  # OSPF-MIB may be absent
 
@@ -569,23 +566,22 @@ class SwitchSnmpClient:
             return (a << 24) | (b << 16) | (c << 8) | d
 
         try:
-            if OID_routeCol:
-                for oid, _val in await self._async_walk(OID_routeCol):
-                    try:
-                        suffix = oid[len(OID_routeCol) + 1 :]
-                        parts = [int(x) for x in suffix.split(".") if x]
+            for oid, _val in await self._async_walk(OID_routeCol):
+                try:
+                    suffix = oid[len(OID_routeCol) + 1 :]
+                    parts = [int(x) for x in suffix.split(".") if x]
 
-                        for i in range(len(parts) - 7):
-                            if parts[i] == 1 and parts[i + 1] == 4:
-                                a, b, c, d = parts[i + 2 : i + 6]
-                                bits = parts[i + 6] if i + 6 < len(parts) else None
-                                if bits is None or bits < 0 or bits > 32:
-                                    continue
-                                net_int = _ip_to_int(f"{a}.{b}.{c}.{d}")
-                                route_prefixes.append((net_int, bits))
-                                break
-                    except Exception:
-                        continue
+                    for i in range(len(parts) - 7):
+                        if parts[i] == 1 and parts[i + 1] == 4:
+                            a, b, c, d = parts[i + 2 : i + 6]
+                            bits = parts[i + 6] if i + 6 < len(parts) else None
+                            if bits is None or bits < 0 or bits > 32:
+                                continue
+                            net_int = _ip_to_int(f"{a}.{b}.{c}.{d}")
+                            route_prefixes.append((net_int, bits))
+                            break
+                except Exception:
+                    continue
         except Exception:
             pass  # table may be absent on some vendors
 
@@ -683,16 +679,24 @@ class SwitchSnmpClient:
         await self._ensure_target()
 
         # Refresh common system fields with minimal overhead.
-        # Respect per-device custom diagnostic OIDs on every poll.
-        sysdescr_oid = OID_sysDescr
-        sysname_oid = self._custom_oid("hostname") or OID_sysName
-        sysuptime_oid = self._custom_oid("uptime") or OID_sysUpTime
+                # Refresh common system fields with minimal overhead.
+        # sysUpTime can be very "chatty" (updates constantly), so poll it less frequently.
+        now_mono = time.monotonic()
+        poll_uptime = (
+            "sysUpTime" not in self.cache
+            or (now_mono - self._last_uptime_poll) >= float(self._uptime_poll_interval)
+        )
+
+        if poll_uptime:
+            self._last_uptime_poll = now_mono
 
         sysdescr, sysname, sysuptime = await asyncio.gather(
-            _do_get_one(self.engine, self.community_data, self.target, self.context, sysdescr_oid),
-            _do_get_one(self.engine, self.community_data, self.target, self.context, sysname_oid),
-            _do_get_one(self.engine, self.community_data, self.target, self.context, sysuptime_oid),
+            _do_get_one(self.engine, self.community_data, self.target, self.context, OID_sysDescr),
+            _do_get_one(self.engine, self.community_data, self.target, self.context, OID_sysName),
+            _do_get_one(self.engine, self.community_data, self.target, self.context, OID_sysUpTime) if poll_uptime else asyncio.sleep(0, result=None),
         )
+        if (not poll_uptime) and ("sysUpTime" in self.cache):
+            sysuptime = self.cache.get("sysUpTime")
         if sysdescr is not None:
             self.cache["sysDescr"] = sysdescr
         if sysname is not None:
@@ -790,85 +794,8 @@ class SwitchSnmpClient:
                 if mk_model:
                     self.cache["model"] = mk_model.strip() or self.cache.get("model")
 
-            # Custom OIDs (per-device) take precedence over vendor logic and generic parsing.
-            try:
-                mfg_oid = self._custom_oid("manufacturer")
-                if mfg_oid:
-                    mfg_val = await _do_get_one(
-                        self.engine, self.community_data, self.target, self.context, mfg_oid
-                    )
-                    if mfg_val:
-                        manufacturer = mfg_val.strip() or manufacturer
-            except Exception:
-                pass
-
-            try:
-                fw_oid = self._custom_oid("firmware")
-                if fw_oid:
-                    fw_val = await _do_get_one(
-                        self.engine, self.community_data, self.target, self.context, fw_oid
-                    )
-                    if fw_val:
-                        firmware = fw_val.strip() or firmware
-            except Exception:
-                pass
-
-            try:
-                model_oid = self._custom_oid("model")
-                if model_oid:
-                    model_val = await _do_get_one(
-                        self.engine, self.community_data, self.target, self.context, model_oid
-                    )
-                    if model_val:
-                        self.cache["model"] = model_val.strip() or self.cache.get("model")
-            except Exception:
-                pass
-
             self.cache["manufacturer"] = manufacturer
             self.cache["firmware"] = firmware
-
-        else:
-            # If sysDescr is missing/empty, still allow custom diagnostic OIDs
-            # to populate the diagnostic sensors.
-            manufacturer = self.cache.get("manufacturer")
-            firmware = self.cache.get("firmware")
-            try:
-                mfg_oid = self._custom_oid("manufacturer")
-                if mfg_oid:
-                    mfg_val = await _do_get_one(
-                        self.engine, self.community_data, self.target, self.context, mfg_oid
-                    )
-                    if mfg_val:
-                        manufacturer = mfg_val.strip() or manufacturer
-            except Exception:
-                pass
-
-            try:
-                fw_oid = self._custom_oid("firmware")
-                if fw_oid:
-                    fw_val = await _do_get_one(
-                        self.engine, self.community_data, self.target, self.context, fw_oid
-                    )
-                    if fw_val:
-                        firmware = fw_val.strip() or firmware
-            except Exception:
-                pass
-
-            try:
-                model_oid = self._custom_oid("model")
-                if model_oid:
-                    model_val = await _do_get_one(
-                        self.engine, self.community_data, self.target, self.context, model_oid
-                    )
-                    if model_val:
-                        self.cache["model"] = model_val.strip() or self.cache.get("model")
-            except Exception:
-                pass
-
-            if manufacturer is not None:
-                self.cache["manufacturer"] = manufacturer
-            if firmware is not None:
-                self.cache["firmware"] = firmware
 
         await self.async_refresh_dynamic()
         return self.cache
