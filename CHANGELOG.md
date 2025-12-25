@@ -115,6 +115,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.3] - 2025-12-25
+### Added
+- ⏱️ **Configurable Uptime polling interval**
+  - Default uptime refresh reduced to **5 minutes** to avoid excessive updates
+- 🧰 **Stabilized Device Options framework**
+  - Confirmed persistence and correct reload behavior for all option changes
+  - Options now reliably apply without requiring multiple manual reloads
+- 🏷️ **Port Name Rules**
+  - Regex-based renaming verified working end-to-end
+  - Fixed rule application order and duplicate-prefix issues (e.g. `GigEgE`)
+
+### Improved
+- 🧩 **Interface Include / Exclude rule engine**
+  - Rule changes now correctly:
+    - Apply immediately
+    - Persist across restarts
+    - Remove or restore entities as expected
+  - Exclude rules properly remove existing entities (not just block creation)
+- 🔄 **Integration reload behavior**
+  - Reduced reload time on large switches
+  - Eliminated spurious “Unknown error” during option changes
+
+### Fixed
+- 🚧 Uptime sensor updating too frequently
+- 🚧 Option removal not persisting after UI close or reload
+
+### Removed
+- 🗑️ **Friendly Name override**
+  - Removed from Add Entry flow and Device Options
+  - Entity naming now relies solely on device hostname and interface name
+
+---
+
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-bandwidth-sensors"></a>
