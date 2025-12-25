@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Dict, Optional
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import DeviceInfo
 
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    CONF_PORT_RENAME_USER_RULES,
+    CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
+    DEFAULT_PORT_RENAME_RULES,
+)
 from .snmp import SwitchSnmpClient
 from .helpers import format_interface_name
 
@@ -61,6 +67,54 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     ip_index = client.cache.get("ipIndex", {})
     ip_mask = client.cache.get("ipMask", {})
+
+    def _build_port_rename_rules() -> list[tuple[str, re.Pattern[str], str]]:
+        """Return ordered (id, compiled_regex, replace) rules for this entry."""
+        rules: list[tuple[str, re.Pattern[str], str]] = []
+
+        disabled = set(entry.options.get(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS) or [])
+
+        # User rules first (highest priority)
+        for i, r in enumerate(entry.options.get(CONF_PORT_RENAME_USER_RULES) or []):
+            try:
+                pattern = str(r.get("pattern") or "").strip()
+                replace = str(r.get("replace") or "")
+                if not pattern:
+                    continue
+                rules.append((f"user_{i}", re.compile(pattern, re.IGNORECASE), replace))
+            except Exception:
+                # Ignore invalid user rules (they should be validated in the UI)
+                continue
+
+        # Built-in defaults next
+        for r in DEFAULT_PORT_RENAME_RULES:
+            rid = r.get("id") or ""
+            if not rid or rid in disabled:
+                continue
+            try:
+                pattern = str(r.get("pattern") or "").strip()
+                replace = str(r.get("replace") or "")
+                if not pattern:
+                    continue
+                rules.append((rid, re.compile(pattern, re.IGNORECASE), replace))
+            except Exception:
+                continue
+
+        return rules
+
+    port_rename_rules = _build_port_rename_rules()
+
+    def _apply_port_rename(display_name: str) -> str:
+        """Apply the first matching rename rule to the base display name."""
+        if not display_name or not port_rename_rules:
+            return display_name
+        for _rid, rx, rep in port_rename_rules:
+            if rx.search(display_name):
+                try:
+                    return rx.sub(rep, display_name, count=1)
+                except Exception:
+                    return display_name
+        return display_name
 
     # Vendor detection
     manufacturer = (client.cache.get("manufacturer") or "").lower()
@@ -160,14 +214,19 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 # For Junos we drop everything that doesn’t meet the above rules
                 continue
 
-        # Try to parse Gi1/0/1 style to preserve unit/slot/port in display name
+                # Apply per-device port rename rules to the *raw* interface name first.
+        # This allows rules to match vendor-specific raw strings (e.g. "Unit: ...") before any normalization.
+        # _apply_port_rename() closes over port_rename_rules
+        raw_for_display = _apply_port_rename((raw_name or "").strip())
+
+# Try to parse Gi1/0/1 style to preserve unit/slot/port in display name
         unit = 1
         slot = 0
         port = None
         try:
             # e.g., "Gi1/0/1" -> parts after the first two letters
-            if "/" in raw_name and raw_name[2:3].isdigit():
-                parts = raw_name[2:].split("/")
+            if "/" in raw_for_display and raw_for_display[2:3].isdigit():
+                parts = raw_for_display[2:].split("/")
                 if len(parts) >= 3:
                     unit = int(parts[0])
                     slot = int(parts[1])
@@ -175,7 +234,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         except Exception:
             pass
 
-        display = format_interface_name(raw_name, unit=unit, slot=slot, port=port)
+        display = format_interface_name(raw_for_display, unit=unit, slot=slot, port=port)
+        display = _apply_port_rename(display)
 
         entities.append(
             IfAdminSwitch(
