@@ -26,7 +26,58 @@
           "device": "Connection & Name",
           "include_rules": "Manage Included Interfaces",
           "exclude_rules": "Manage Excluded Interfaces",
+          "port_name_rules": "Port Name Rules",
           "custom_oids": "Custom Diagnostic OIDs"
+        }
+      },
+      "port_name_rules": {
+        "title": "Port Name Rules",
+        "description": "Customize how interface names are displayed in the UI and card.\n\nBuilt-in rules are provided as examples and can be disabled per device.",
+        "menu_options": {
+          "port_rename_defaults": "Built-in Rename Rules",
+          "port_rename_custom": "Custom Rename Rules",
+          "port_rename_restore_defaults": "Restore Built-in Rules",
+          "init": "Back"
+        }
+      },
+      "port_rename_defaults": {
+        "title": "Built-in Rename Rules",
+        "description": "Enable or disable built-in display name rules for this device.\n\nCurrent built-ins:\n{rules}",
+        "data": {
+          "defaults_action": "Action",
+          "builtin_link_aggregate_to_po": "Normalize link aggregate → Po",
+          "builtin_port_channel_to_po": "Normalize port-channel → Po",
+          "builtin_portchannel_to_po": "Normalize PortChannel → Po",
+          "builtin_loopback_to_lo0": "Normalize loopback → Lo0",
+          "builtin_unit_slot_port_10g_to_te": "Normalize Unit/Slot/Port 10G → Te",
+          "builtin_unit_slot_port_20g_to_tw": "Normalize Unit/Slot/Port 20G → Tw",
+          "builtin_unit_slot_port_1g_to_gi": "Normalize Unit/Slot/Port 1G → Gi",
+          "builtin_unit_slot_port_100m_to_fa": "Normalize Unit/Slot/Port 100M → Fa"
+        }
+      },
+      "port_rename_custom": {
+        "title": "Custom Rename Rules",
+        "description": "Add or remove your own regex-based display name rules. Custom rules take priority over built-in rules.",
+        "menu_options": {
+          "port_rename_custom_add": "Add Rule",
+          "port_rename_custom_remove": "Remove Rule",
+          "port_name_rules": "Back"
+        }
+      },
+      "port_rename_custom_add": {
+        "title": "Add Rename Rule",
+        "description": "Create a regex rule that transforms the displayed interface name.\n\nExample pattern: ^Gi(\\\\d+)/0/(\\\\d+)$\nExample replace: Uplink-\\\\1-\\\\2",
+        "data": {
+          "pattern": "Regex pattern",
+          "replace": "Replacement",
+          "description": "Description (optional)"
+        }
+      },
+      "port_rename_custom_remove": {
+        "title": "Remove Rename Rule",
+        "description": "Select a custom rule to remove.\n\nCurrent custom rules:\n{current_rules}",
+        "data": {
+          "remove_index": "Rule"
         }
       },
       "device": {
@@ -72,7 +123,8 @@
     },
     "error": {
       "invalid_oid": "Invalid OID format (must be numeric dotted OID)",
-      "invalid_port": "Invalid port"
+      "invalid_port": "Invalid port",
+      "invalid_regex": "Invalid regex pattern"
     }
   }
 }
