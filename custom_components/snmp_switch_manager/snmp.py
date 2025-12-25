@@ -690,10 +690,13 @@ class SwitchSnmpClient:
         if poll_uptime:
             self._last_uptime_poll = now_mono
 
+        sysname_oid = self._custom_oid("hostname") or OID_sysName
+        uptime_oid = self._custom_oid("uptime") or OID_sysUpTime
+
         sysdescr, sysname, sysuptime = await asyncio.gather(
             _do_get_one(self.engine, self.community_data, self.target, self.context, OID_sysDescr),
-            _do_get_one(self.engine, self.community_data, self.target, self.context, OID_sysName),
-            _do_get_one(self.engine, self.community_data, self.target, self.context, OID_sysUpTime) if poll_uptime else asyncio.sleep(0, result=None),
+            _do_get_one(self.engine, self.community_data, self.target, self.context, sysname_oid),
+            _do_get_one(self.engine, self.community_data, self.target, self.context, uptime_oid) if poll_uptime else asyncio.sleep(0, result=None),
         )
         if (not poll_uptime) and ("sysUpTime" in self.cache):
             sysuptime = self.cache.get("sysUpTime")
@@ -793,6 +796,37 @@ class SwitchSnmpClient:
                     mk_model = None
                 if mk_model:
                     self.cache["model"] = mk_model.strip() or self.cache.get("model")
+
+            # Custom OIDs: per-device overrides take precedence over vendor logic and generic parsing
+            try:
+                mfg_oid = self._custom_oid("manufacturer")
+                if mfg_oid:
+                    mfg_val = await _do_get_one(
+                        self.engine,
+                        self.community_data,
+                        self.target,
+                        self.context,
+                        mfg_oid,
+                    )
+                    if mfg_val:
+                        manufacturer = mfg_val.strip() or manufacturer
+            except Exception:
+                pass
+
+            try:
+                fw_oid = self._custom_oid("firmware")
+                if fw_oid:
+                    fw_val = await _do_get_one(
+                        self.engine,
+                        self.community_data,
+                        self.target,
+                        self.context,
+                        fw_oid,
+                    )
+                    if fw_val:
+                        firmware = fw_val.strip() or firmware
+            except Exception:
+                pass
 
             self.cache["manufacturer"] = manufacturer
             self.cache["firmware"] = firmware
