@@ -4,8 +4,7 @@ DOMAIN = "snmp_switch_manager"
 
 CONF_HOST = "host"
 CONF_PORT = "port"
-CONF_COMMUNITY = "community"
-CONF_NAME = "name"
+CONF_COMMUNITY = "community" 
 
 DEFAULT_PORT = 161
 DEFAULT_POLL_INTERVAL = 10  # seconds
@@ -87,9 +86,11 @@ CONF_ENABLE_CUSTOM_OIDS = "enable_custom_oids"
 CONF_RESET_CUSTOM_OIDS = "reset_custom_oids"
 
 # Device options (overrides)
+CONF_UPTIME_POLL_INTERVAL = "uptime_poll_interval"
+DEFAULT_UPTIME_POLL_INTERVAL = 300  # seconds
+
 CONF_OVERRIDE_COMMUNITY = "override_community"
-CONF_OVERRIDE_PORT = "override_port"
-CONF_OVERRIDE_NAME = "override_name"
+CONF_OVERRIDE_PORT = "override_port" 
 
 # Include/exclude rules (simple modes)
 CONF_INCLUDE_STARTS_WITH = "include_starts_with"
@@ -99,6 +100,23 @@ CONF_INCLUDE_ENDS_WITH = "include_ends_with"
 CONF_EXCLUDE_STARTS_WITH = "exclude_starts_with"
 CONF_EXCLUDE_CONTAINS = "exclude_contains"
 CONF_EXCLUDE_ENDS_WITH = "exclude_ends_with"
+
+
+# Built-in vendor interface filtering rule toggles (per-device)
+CONF_DISABLED_VENDOR_FILTER_RULE_IDS = "disabled_vendor_filter_rule_ids"
+
+# Rule IDs for built-in vendor interface filtering (used for disable/enable)
+BUILTIN_VENDOR_FILTER_RULES: list[dict[str, str]] = [
+    # Cisco SG
+    {"id": "cisco_sg_physical_fa_gi", "label": "Cisco SG: Only create physical Fa*/Gi* interfaces"},
+    {"id": "cisco_sg_vlan_admin_or_oper", "label": "Cisco SG: Create VLAN interfaces (oper up or admin down)"},
+    {"id": "cisco_sg_other_has_ip", "label": "Cisco SG: Create other interfaces when an IP is configured"},
+    # Juniper EX (Junos)
+    {"id": "junos_physical_ge", "label": "Junos: Create physical ge-0/0/X interfaces"},
+    {"id": "junos_l3_subif_has_ip", "label": "Junos: Create ge-0/0/X.Y subinterfaces with IP (non-.0)"},
+    {"id": "junos_vlan_admin_or_oper", "label": "Junos: Create VLAN interfaces (oper up or admin down)"},
+    {"id": "junos_other_has_ip", "label": "Junos: Create other interfaces when an IP is configured"},
+]
 
 # Port rename rules (regex)
 CONF_PORT_RENAME_USER_RULES = "port_rename_user_rules"
