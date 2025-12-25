@@ -140,6 +140,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - 🚧 Uptime sensor updating too frequently
 - 🚧 Option removal not persisting after UI close or reload
+- 🚧 Device Options menus not applying changes properly
 
 ### Removed
 - 🗑️ **Friendly Name override**
