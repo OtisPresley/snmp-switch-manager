@@ -70,6 +70,10 @@ This roadmap reflects **active development priorities** and **realistic implemen
 - ✅ Live port state feedback in UI
   - Port toggle button updates immediately when state changes
   - No need to close/reopen the port popup
+ 
+- ✅ Device Options hardening
+  - Confirmed persistence, reload correctness, and safe option removal
+  - Removed Friendly Name override to prevent entity naming conflicts
 
 ---
 
