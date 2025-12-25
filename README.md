@@ -77,10 +77,26 @@ After installation, restart Home Assistant and add the integration:
 ## Configuration
 
 1. Go to **Settings → Devices & services → Add integration** and search for **SNMP Switch Manager**.
-2. Enter the switch hostname/IP address, the SNMP community string, and optionally a friendly name or non-standard SNMP port.
+2. Enter the switch hostname/IP address, the SNMP community string, and optionally a non-standard SNMP port.
 3. Once the flow completes, Home Assistant adds one `switch` entity per discovered interface. Entities follow the pattern `switch.<hostname>_<interface_name>` (for example: `switch.switch1_gi1_0_1`).
 
-### Device Options (Advanced)
+### Device Options
+
+SNMP Switch Manager supports **per-device configuration** via the Home Assistant
+Device Options menu.
+
+Available options include:
+
+- SNMP connection overrides (community, port)
+- Interface Include rules
+- Interface Exclude rules
+- Port Name (rename) rules
+- Custom Diagnostic OIDs
+
+All option changes:
+- Apply immediately
+- Persist across restarts
+- Safely remove or restore entities as rules change
 
 Per-device **Device Options** can be configured from the integration options (⚙️ icon).
 
@@ -89,7 +105,6 @@ This allows advanced customization **without deleting and re-adding the device**
 #### Connection & Naming Overrides
 - Override **SNMP community string**
 - Override **SNMP port**
-- Override **friendly device name**
 
 Overrides apply **only to the selected device** and do not affect other switches.
 
@@ -104,6 +119,27 @@ Control which interfaces are created as Home Assistant entities using rule-based
   - Exclude rules always take precedence
 
 Rules are evaluated per device and do not require Home Assistant restarts.
+
+#### Port Name Rules
+Customize how interface names are displayed in Home Assistant without affecting the underlying SNMP data.
+
+- **Regex-based rename rules**
+  - Match interface names using regular expressions
+  - Replace matched names with a normalized or user-friendly format
+- **Per-device scope**
+  - Rules apply **only to the selected device**
+  - Different switches can use different naming conventions
+- **Rule order matters**
+  - Rules are evaluated top-to-bottom
+  - The first matching rule is applied
+- **Built-in defaults**
+  - Common vendor formats (e.g. Cisco, Dell, generic SNMP) are provided
+  - Built-in rules can be individually disabled or re-enabled
+
+Notes:
+- Renaming affects **display names only** — entity IDs and SNMP behavior remain unchanged
+- Rule changes apply immediately and persist across restarts
+- Advanced users can use full regex syntax; a simplified mode is planned for a future release
 
 #### Custom Diagnostic SNMP OIDs
 Override how diagnostic sensors are detected for devices with non-standard SNMP implementations:
