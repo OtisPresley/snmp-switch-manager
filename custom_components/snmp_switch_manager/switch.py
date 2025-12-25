@@ -7,12 +7,20 @@ from typing import Any, Dict, Optional
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers import entity_registry as er
 
 from .const import (
     DOMAIN,
     CONF_PORT_RENAME_USER_RULES,
     CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
     DEFAULT_PORT_RENAME_RULES,
+    CONF_INCLUDE_STARTS_WITH,
+    CONF_INCLUDE_CONTAINS,
+    CONF_INCLUDE_ENDS_WITH,
+    CONF_EXCLUDE_STARTS_WITH,
+    CONF_EXCLUDE_CONTAINS,
+    CONF_EXCLUDE_ENDS_WITH,
+    CONF_DISABLED_VENDOR_FILTER_RULE_IDS,
 )
 from .snmp import SwitchSnmpClient
 from .helpers import format_interface_name
@@ -57,6 +65,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = data["coordinator"]
 
     entities: list[IfAdminSwitch] = []
+    desired_if_indexes: set[int] = set()
     iftable = client.cache.get("ifTable", {})
     hostname = client.cache.get("sysName") or entry.data.get("name") or client.host
 
@@ -104,6 +113,24 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     port_rename_rules = _build_port_rename_rules()
 
+    # Include/Exclude interface rules (simple string match; include wins over exclude)
+    include_starts = [str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_STARTS_WITH, []) or []) if str(s).strip()]
+    include_contains = [str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_CONTAINS, []) or []) if str(s).strip()]
+    include_ends = [str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_ENDS_WITH, []) or []) if str(s).strip()]
+
+    exclude_starts = [str(s).strip().lower() for s in (entry.options.get(CONF_EXCLUDE_STARTS_WITH, []) or []) if str(s).strip()]
+    exclude_contains = [str(s).strip().lower() for s in (entry.options.get(CONF_EXCLUDE_CONTAINS, []) or []) if str(s).strip()]
+    exclude_ends = [str(s).strip().lower() for s in (entry.options.get(CONF_EXCLUDE_ENDS_WITH, []) or []) if str(s).strip()]
+
+    disabled_vendor_filter_ids = set(entry.options.get(CONF_DISABLED_VENDOR_FILTER_RULE_IDS, []) or [])
+
+    def _matches_any(name_l: str, starts: list[str], contains: list[str], ends: list[str]) -> bool:
+        return (
+            any(name_l.startswith(x) for x in starts)
+            or any(x in name_l for x in contains)
+            or any(name_l.endswith(x) for x in ends)
+        )
+
     def _apply_port_rename(display_name: str) -> str:
         """Apply the first matching rename rule to the base display name."""
         if not display_name or not port_rename_rules:
@@ -139,6 +166,14 @@ async def async_setup_entry(hass, entry, async_add_entities):
         lower = (raw_name or "").lower()
         ip_str = _ip_for_index(idx, ip_index, ip_mask)
 
+        name_l = (raw_name or "").strip().lower()
+        include_hit = _matches_any(name_l, include_starts, include_contains, include_ends)
+        exclude_hit = _matches_any(name_l, exclude_starts, exclude_contains, exclude_ends)
+
+        # Exclude rules always win.
+        if exclude_hit:
+            continue
+
         is_port_channel = (
             lower.startswith("po")
             or lower.startswith("port-channel")
@@ -156,63 +191,73 @@ async def async_setup_entry(hass, entry, async_add_entities):
         has_ip = bool(ip_str)
         include = False
         
-        # Cisco SG interface selection rules
+
+        # Cisco SG interface selection rules (can disable individual built-in rules)
         if is_cisco_sg:
+            enable_physical = "cisco_sg_physical_fa_gi" not in disabled_vendor_filter_ids
+            enable_vlan = "cisco_sg_vlan_admin_or_oper" not in disabled_vendor_filter_ids
+            enable_has_ip = "cisco_sg_other_has_ip" not in disabled_vendor_filter_ids
 
-            # 1) Physical ports: names starting with Fa or Gi (case-insensitive)
-            if lower_name.startswith("fa") or lower_name.startswith("gi"):
-                if oper != 6:
-                  include = True
+            if enable_physical or enable_vlan or enable_has_ip:
+                name = raw_name.strip()
+                lower_name = name.lower()
+                admin = row.get("admin")
+                oper = row.get("oper")
+                has_ip = bool(ip_str)
+                include = False
 
-            # 2) VLAN interfaces that are operationally up or administratively disabled
-            # and have an IP address configured (avoiding duplicate entry)
-            elif lower_name.isdigit():
-                if (oper == 1 or admin == 2) and has_ip:
-                    # We modify the name because on Cisco VLAN interface names are unprefixed digits
-                    # which make for a confusing interface.
-                    raw_name = "VLAN " + raw_name
+                if enable_physical and (lower_name.startswith("fa") or lower_name.startswith("gi")):
                     include = True
 
-            # 3) Link Access Group interfaces should also be displayed if operationally up or
-            # administratively disabled.
-            elif lower_name.startswith("po"):
-                if oper == 1 or admin == 2:
+                elif enable_vlan and lower_name.startswith("vlan"):
+                    if oper == 1 or admin == 2:
+                        include = True
+
+                elif enable_has_ip and has_ip:
                     include = True
-            
-            # 4) Any other interface with an IP address configured
-            elif has_ip:
-                include = True
 
-            # If none of the conditions matched, skip this interface entirely
-            if not include:
-                continue
+                if not include and not include_hit:
+                    continue
 
-        # Junos (e.g. EX2200) interface selection rules
+
+
+        # Junos (e.g. EX2200) interface selection rules (can disable individual built-in rules)
         if is_junos:
+            enable_physical = "junos_physical_ge" not in disabled_vendor_filter_ids
+            enable_l3_subif = "junos_l3_subif_has_ip" not in disabled_vendor_filter_ids
+            enable_vlan = "junos_vlan_admin_or_oper" not in disabled_vendor_filter_ids
+            enable_has_ip = "junos_other_has_ip" not in disabled_vendor_filter_ids
 
-            # 1) Physical front-panel ports: ge-0/0/X (no subinterface suffix)
-            if lower_name.startswith("ge-") and "." not in name:
-                include = True
+            if enable_physical or enable_l3_subif or enable_vlan or enable_has_ip:
+                name = raw_name.strip()
+                lower_name = name.lower()
+                admin = row.get("admin")
+                oper = row.get("oper")
+                has_ip = bool(ip_str)
+                include = False
 
-            # 2) L3 subinterfaces: ge-0/0/X.Y – only keep non-.0 with an IP address
-            elif lower_name.startswith("ge-") and "." in name:
-                base, sub = name.split(".", 1)
-                if sub != "0" and has_ip:
+                # 1) Physical front-panel ports: ge-0/0/X (no subinterface suffix)
+                if enable_physical and lower_name.startswith("ge-") and "." not in name:
                     include = True
 
-            # 3) VLAN interfaces that are operationally up or administratively disabled
-            elif lower_name.startswith("vlan"):
-                if oper == 1 or admin == 2:
+                # 2) L3 subinterfaces: ge-0/0/X.Y – only keep non-.0 with an IP address
+                elif enable_l3_subif and lower_name.startswith("ge-") and "." in name:
+                    base, sub = name.split(".", 1)
+                    if sub != "0" and has_ip:
+                        include = True
+
+                # 3) VLAN interfaces that are operationally up or administratively disabled
+                elif enable_vlan and lower_name.startswith("vlan"):
+                    if oper == 1 or admin == 2:
+                        include = True
+
+                # 4) Any other non-physical interface with an IP address configured
+                elif enable_has_ip and has_ip:
                     include = True
 
-            # 4) Any other non-physical interface with an IP address configured
-            #    (e.g. lo0, me0, vme.0, etc.)
-            elif has_ip:
-                include = True
+                if not include and not include_hit:
+                    continue
 
-            if not include:
-                # For Junos we drop everything that doesn’t meet the above rules
-                continue
 
                 # Apply per-device port rename rules to the *raw* interface name first.
         # This allows rules to match vendor-specific raw strings (e.g. "Unit: ...") before any normalization.
@@ -250,6 +295,24 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 client=client,
             )
         )
+
+        desired_if_indexes.add(idx)
+
+    # Remove any previously-created switch entities that are no longer desired
+    # (e.g. excluded by user rules). Without this, Home Assistant keeps the old
+    # entities around even if we stop creating them.
+    ent_reg = er.async_get(hass)
+    for ent in er.async_entries_for_config_entry(ent_reg, entry.entry_id):
+        if ent.domain != "switch":
+            continue
+        if not (ent.unique_id or "").startswith(f"{entry.entry_id}-if-"):
+            continue
+        try:
+            old_idx = int((ent.unique_id or "").split("-if-", 1)[1])
+        except Exception:
+            continue
+        if old_idx not in desired_if_indexes:
+            ent_reg.async_remove(ent.entity_id)
 
     async_add_entities(entities)
 
