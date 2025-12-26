@@ -74,6 +74,11 @@ This roadmap reflects **active development priorities** and **realistic implemen
 - ✅ Device Options hardening
   - Confirmed persistence, reload correctness, and safe option removal
   - Removed Friendly Name override to prevent entity naming conflicts
+ 
+- ✅ Configurable port color representation
+  - Port colors can represent either **Admin / Oper state** or **link speed**
+  - User-selectable via card configuration (`color_mode`)
+  - Default behavior remains state-based for backward compatibility
 
 ---
 
