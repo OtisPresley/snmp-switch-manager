@@ -7,7 +7,16 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import DOMAIN, PLATFORMS, DEFAULT_POLL_INTERVAL, CONF_CUSTOM_OIDS, CONF_OVERRIDE_COMMUNITY, CONF_OVERRIDE_PORT
+from .const import (
+    DOMAIN,
+    PLATFORMS,
+    DEFAULT_POLL_INTERVAL,
+    CONF_CUSTOM_OIDS,
+    CONF_OVERRIDE_COMMUNITY,
+    CONF_OVERRIDE_PORT,
+    CONF_UPTIME_POLL_INTERVAL,
+    DEFAULT_UPTIME_POLL_INTERVAL,
+)
 from .snmp import SwitchSnmpClient
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,6 +34,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
 
     client = SwitchSnmpClient(hass, host, community, port, custom_oids=entry.options.get(CONF_CUSTOM_OIDS) or {})
     await client.async_initialize()
+
+    # Apply per-device option for sysUpTime throttling
+    client.set_uptime_poll_interval(entry.options.get(CONF_UPTIME_POLL_INTERVAL, DEFAULT_UPTIME_POLL_INTERVAL))
 
     coordinator = DataUpdateCoordinator(
         hass,
