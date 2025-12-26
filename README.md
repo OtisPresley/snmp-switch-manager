@@ -97,6 +97,31 @@ After installation, restart Home Assistant and add the integration:
 SNMP Switch Manager supports **per-device configuration** via the Home Assistant
 Device Options menu.
 
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot5.png" width="250">
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot6.png" width="250">
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot7.png" width="250">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot8.png" width="250">
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot9.png" width="250">
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot10.png" width="250">
+    </td>
+  </tr>
+</table>
+
 Available options include:
 
 - SNMP connection overrides (community, port)
@@ -235,9 +260,14 @@ Once complete, everything will be fully managed by HACS and you will continue to
 ### Configuration
 
 1. Place the card on any dashboard and edit via the GUI or in YAML:
-   <p float="left">
-      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot1.png" alt="Screenshot 1" width="250"/>
-   </p>
+
+   <table>
+    <tr>
+      <td align="center">
+        <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot1.png" width="250">
+      </td>
+    </tr>
+  </table>
 
    ```yaml
    type: custom:snmp-switch-manager-card
@@ -289,20 +319,27 @@ Once complete, everything will be fully managed by HACS and you will continue to
       
    Clicking a port opens a unified information dialog (used in both panel and list views) showing:
 
-   - Interface name
-   - Admin and Oper status
-   - Speed
-   - VLAN ID
-   - Interface index
-   
-   From this dialog you can also edit the port description when supported.
+  - Interface name
+  - Admin and Oper status
+  - Speed
+  - VLAN ID
+  - Interface index
+  
+  The port power toggle updates live in the dialog as soon as the port state changes.
 
-
-    <p float="left">
-      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot2.png" alt="Screenshot 1" width="250"/>
-      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot3.png" alt="Screenshot 2" width="250"/>
-      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot4.png" alt="Screenshot 3" width="250"/>
-    </p>
+  <table>
+    <tr>
+      <td align="center">
+        <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot2.png" width="250">
+      </td>
+      <td align="center">
+        <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot3.png" width="250">
+      </td>
+      <td align="center">
+        <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot4.png" width="250">
+      </td>
+    </tr>
+  </table>
 
 ### 🎨 Port Color Legend
 
