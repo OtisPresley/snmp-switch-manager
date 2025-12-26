@@ -155,6 +155,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2025-12-25
+### Added
+- ⏱️ **Per-device configurable Uptime polling interval**
+  - Exposed via **Device Options**
+  - Controls refresh rate of the Uptime (sysUpTime) diagnostic sensor
+  - Default: **300 seconds (5 minutes)**
+  - Configurable range: **30–3600 seconds**
+  - Applies immediately without restart
+
+### Fixed
+- 🚧 Removed hard-coded Uptime refresh interval
+- 🚧 Prevented excessive coordinator updates from high-frequency uptime polling
+
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-bandwidth-sensors"></a>
