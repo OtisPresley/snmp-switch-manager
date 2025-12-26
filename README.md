@@ -104,6 +104,11 @@ Available options include:
 - Interface Exclude rules
 - Port Name (rename) rules
 - Custom Diagnostic OIDs
+- Uptime polling interval (per-device, configurable)
+
+The Uptime polling interval controls how often the switch Uptime (sysUpTime)
+diagnostic sensor is refreshed. This can be tuned per device to balance
+responsiveness versus system load.
 
 All option changes:
 - Apply immediately
