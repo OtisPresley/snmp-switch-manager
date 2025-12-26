@@ -92,7 +92,8 @@
         "description": "Optional per-device overrides. Leave blank to use values from initial setup.",
         "data": {
           "override_community": "SNMP community override (optional)",
-          "override_port": "SNMP port override (optional)"
+          "override_port": "SNMP port override (optional)",
+          "uptime_poll_interval": "Uptime refresh interval (seconds)"
         }
       },
       "include_rules": {
@@ -130,7 +131,8 @@
     "error": {
       "invalid_oid": "Invalid OID format (must be numeric dotted OID)",
       "invalid_port": "Invalid port",
-      "invalid_regex": "Invalid regex pattern"
+      "invalid_regex": "Invalid regex pattern",
+      "invalid_uptime_interval": "Invalid uptime refresh interval"
     }
   }
 }
