@@ -11,11 +11,20 @@ from .const import (
     DOMAIN,
     PLATFORMS,
     DEFAULT_POLL_INTERVAL,
+    CONF_BANDWIDTH_POLL_INTERVAL,
+    DEFAULT_BANDWIDTH_POLL_INTERVAL,
     CONF_CUSTOM_OIDS,
     CONF_OVERRIDE_COMMUNITY,
     CONF_OVERRIDE_PORT,
     CONF_UPTIME_POLL_INTERVAL,
     DEFAULT_UPTIME_POLL_INTERVAL,
+    CONF_BW_ENABLE,
+    CONF_BW_INCLUDE_STARTS_WITH,
+    CONF_BW_INCLUDE_CONTAINS,
+    CONF_BW_INCLUDE_ENDS_WITH,
+    CONF_BW_EXCLUDE_STARTS_WITH,
+    CONF_BW_EXCLUDE_CONTAINS,
+    CONF_BW_EXCLUDE_ENDS_WITH,
 )
 from .snmp import SwitchSnmpClient
 
@@ -32,7 +41,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
     port = entry.data.get("port")
     community = entry.data.get("community")
 
-    client = SwitchSnmpClient(hass, host, community, port, custom_oids=entry.options.get(CONF_CUSTOM_OIDS) or {})
+    client = SwitchSnmpClient(hass, host, community, port, custom_oids=entry.options.get(CONF_CUSTOM_OIDS) or {}, bandwidth_options={
+        CONF_BW_ENABLE: entry.options.get(CONF_BW_ENABLE, False),
+        CONF_BW_INCLUDE_STARTS_WITH: entry.options.get(CONF_BW_INCLUDE_STARTS_WITH, []) or [],
+        CONF_BW_INCLUDE_CONTAINS: entry.options.get(CONF_BW_INCLUDE_CONTAINS, []) or [],
+        CONF_BW_INCLUDE_ENDS_WITH: entry.options.get(CONF_BW_INCLUDE_ENDS_WITH, []) or [],
+        CONF_BW_EXCLUDE_STARTS_WITH: entry.options.get(CONF_BW_EXCLUDE_STARTS_WITH, []) or [],
+        CONF_BW_EXCLUDE_CONTAINS: entry.options.get(CONF_BW_EXCLUDE_CONTAINS, []) or [],
+        CONF_BW_EXCLUDE_ENDS_WITH: entry.options.get(CONF_BW_EXCLUDE_ENDS_WITH, []) or [],
+        CONF_BANDWIDTH_POLL_INTERVAL: entry.options.get(CONF_BANDWIDTH_POLL_INTERVAL, DEFAULT_BANDWIDTH_POLL_INTERVAL),
+    })
     await client.async_initialize()
 
     # Apply per-device option for sysUpTime throttling
