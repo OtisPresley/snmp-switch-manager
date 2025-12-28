@@ -121,6 +121,14 @@ Device Options menu.
       <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot10.png" width="250">
     </td>
   </tr>
+  <tr>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot11.png" width="250">
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/otispresley/snmp-switch-manager/main/assets/screenshot12.png" width="250">
+    </td>
+  </tr>
 </table>
 
 Available options include:
