@@ -1,138 +1,194 @@
 {
-  "title": "SNMP Switch Manager",
   "config": {
-    "step": {
-      "user": {
-        "title": "Connect to your switch",
-        "description": "Provide SNMP access details. Uses SNMP v2c.",
-        "data": {
-          "host": "Host/IP",
-          "community": "SNMP community (RW for alias writes)",
-          "port": "Port"
-        }
-      }
-    },
     "error": {
       "cannot_connect": "Cannot connect or SNMP timed out"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "community": "SNMP community (RW for alias writes)",
+          "host": "Host/IP",
+          "port": "Port"
+        },
+        "description": "Provide SNMP access details. Uses SNMP v2c.",
+        "title": "Connect to your switch"
+      }
     }
   },
   "options": {
+    "error": {
+      "invalid_oid": "Invalid OID format (must be numeric dotted OID)",
+      "invalid_poll_interval": "Invalid poll interval",
+      "invalid_port": "Invalid port",
+      "invalid_regex": "Invalid regex pattern",
+      "invalid_uptime_interval": "Invalid uptime refresh interval"
+    },
     "step": {
-      "init": {
-        "title": "Device Options",
-        "description": "Manage per-device overrides and advanced settings.",
+      "bandwidth_enable": {
+        "data": {
+          "enable_bandwidth_sensors": "Enable bandwidth sensors"
+        },
+        "description": "Turn bandwidth sensor entities on or off for this device.",
+        "title": "Bandwidth Sensors"
+      },
+      "bandwidth_enable_disable": {
+        "data": {
+          "bw_enabled": "Enable bandwidth sensors",
+          "enable_bandwidth_sensors": "Enable bandwidth sensors"
+        },
+        "description": "Enable or disable bandwidth sensors for this device.",
+        "title": "Bandwidth Sensors"
+      },
+      "bandwidth_exclude_rules": {
+        "data": {
+          "rule_action": "Action",
+          "rule_match": "Match",
+          "rule_value": "Value"
+        },
+        "description": "Add or remove exclude rules. Exclude rules always take precedence.\n\nCurrent rules: {current_rules}",
+        "title": "Bandwidth Sensor Exclude Rules"
+      },
+      "bandwidth_include_rules": {
+        "data": {
+          "rule_action": "Action",
+          "rule_match": "Match",
+          "rule_value": "Value"
+        },
+        "description": "Add or remove include rules. If any include rules are set, only matching interfaces will get bandwidth sensors.\n\nCurrent rules: {current_rules}",
+        "title": "Bandwidth Sensor Include Rules"
+      },
+      "bandwidth_poll_interval": {
+        "data": {
+          "bandwidth_poll_interval": "Poll interval (seconds)"
+        },
+        "description": "Set the poll interval for bandwidth sensors. Lower intervals update more often but increase SNMP load.",
+        "title": "Bandwidth Sensors"
+      },
+      "bandwidth_sensors": {
+        "description": "Enable optional RX/TX throughput and total traffic sensors for selected interfaces.",
         "menu_options": {
-          "device": "Connection & Name",
-          "include_rules": "Manage Included Interfaces",
-          "exclude_rules": "Manage Excluded Interfaces",
-          "builtin_filters": "Built-in Vendor Filters",
-          "port_name_rules": "Port Name Rules",
-          "custom_oids": "Custom Diagnostic OIDs"
-        }
+          "bandwidth_enable_disable": "Enable / Disable",
+          "bandwidth_exclude_rules": "Exclude Rules",
+          "bandwidth_include_rules": "Include Rules",
+          "bandwidth_poll_interval": "Poll Interval",
+          "init": "Back"
+        },
+        "title": "Bandwidth Sensors"
       },
       "builtin_filters": {
-        "title": "Built-in Vendor Filters",
-        "description": "Enable or disable built-in vendor interface filter rules for this device.\n\nDisabled rules will not be applied during interface discovery.",
         "data": {
           "disabled_vendor_filter_rule_ids": "Disabled built-in filter rules"
-        }
+        },
+        "description": "Enable or disable built-in vendor interface filter rules for this device.\n\nDisabled rules will not be applied during interface discovery.",
+        "title": "Built-in Vendor Filters"
       },
-      "port_name_rules": {
-        "title": "Port Name Rules",
-        "description": "Customize how interface names are displayed in the UI and card.\n\nBuilt-in rules are provided as examples and can be disabled per device.",
-        "menu_options": {
-          "port_rename_defaults": "Built-in Rename Rules",
-          "port_rename_custom": "Custom Rename Rules",
-          "port_rename_restore_defaults": "Restore Built-in Rules",
-          "init": "Back"
-        }
-      },
-      "port_rename_defaults": {
-        "title": "Built-in Rename Rules",
-        "description": "Enable or disable built-in display name rules for this device.\n\nCurrent built-ins:\n{rules}",
+      "custom_oids": {
         "data": {
-          "defaults_action": "Action",
-          "builtin_link_aggregate_to_po": "Normalize link aggregate → Po",
-          "builtin_port_channel_to_po": "Normalize port-channel → Po",
-          "builtin_portchannel_to_po": "Normalize PortChannel → Po",
-          "builtin_loopback_to_lo0": "Normalize loopback → Lo0",
-          "builtin_unit_slot_port_10g_to_te": "Normalize Unit/Slot/Port 10G → Te",
-          "builtin_unit_slot_port_20g_to_tw": "Normalize Unit/Slot/Port 20G → Tw",
-          "builtin_unit_slot_port_1g_to_gi": "Normalize Unit/Slot/Port 1G → Gi",
-          "builtin_unit_slot_port_100m_to_fa": "Normalize Unit/Slot/Port 100M → Fa"
-        }
-      },
-      "port_rename_custom": {
-        "title": "Custom Rename Rules",
-        "description": "Add or remove your own regex-based display name rules. Custom rules take priority over built-in rules.",
-        "menu_options": {
-          "port_rename_custom_add": "Add Rule",
-          "port_rename_custom_remove": "Remove Rule",
-          "port_name_rules": "Back"
-        }
-      },
-      "port_rename_custom_add": {
-        "title": "Add Rename Rule",
-        "description": "Create a regex rule that transforms the displayed interface name.\n\nExample pattern: ^Gi(\\\\d+)/0/(\\\\d+)$\nExample replace: Uplink-\\\\1-\\\\2",
-        "data": {
-          "pattern": "Regex pattern",
-          "replace": "Replacement",
-          "description": "Description (optional)"
-        }
-      },
-      "port_rename_custom_remove": {
-        "title": "Remove Rename Rule",
-        "description": "Select a custom rule to remove.\n\nCurrent custom rules:\n{current_rules}",
-        "data": {
-          "remove_index": "Rule"
-        }
+          "enable_custom_oids": "Enable custom diagnostic OIDs",
+          "firmware_oid": "Firmware OID (optional)",
+          "hostname_oid": "Hostname OID (optional)",
+          "manufacturer_oid": "Manufacturer OID (optional)",
+          "model_oid": "Model OID (optional)",
+          "reset_custom_oids": "Reset custom OIDs to defaults",
+          "uptime_oid": "Uptime OID (optional)"
+        },
+        "description": "Override diagnostic sensor OIDs for this device only. Leave blank to use automatic detection.",
+        "title": "Custom Diagnostic OIDs"
       },
       "device": {
-        "title": "Connection & Name",
-        "description": "Optional per-device overrides. Leave blank to use values from initial setup.",
         "data": {
           "override_community": "SNMP community override (optional)",
           "override_port": "SNMP port override (optional)",
           "uptime_poll_interval": "Uptime refresh interval (seconds)"
-        }
-      },
-      "include_rules": {
-        "title": "Manage Included Interfaces",
-        "description": "Current include rules:\n{current_rules}\n\nAdd or remove rules below. Exclude rules (if any) always win.",
-        "data": {
-          "rule_action": "Action",
-          "rule_match": "Match type",
-          "rule_value": "Match value"
-        }
+        },
+        "description": "Optional per-device overrides. Leave blank to use values from initial setup.",
+        "title": "Connection & Name"
       },
       "exclude_rules": {
-        "title": "Manage Excluded Interfaces",
-        "description": "Current exclude rules:\n{current_rules}\n\nAdd or remove rules below. Excluded interfaces will not have entities created.",
         "data": {
           "rule_action": "Action",
           "rule_match": "Match type",
           "rule_value": "Match value"
-        }
+        },
+        "description": "Current exclude rules:\n{current_rules}\n\nAdd or remove rules below. Excluded interfaces will not have entities created.",
+        "title": "Manage Excluded Interfaces"
       },
-      "custom_oids": {
-        "title": "Custom Diagnostic OIDs",
-        "description": "Override diagnostic sensor OIDs for this device only. Leave blank to use automatic detection.",
+      "include_rules": {
         "data": {
-          "enable_custom_oids": "Enable custom diagnostic OIDs",
-          "manufacturer_oid": "Manufacturer OID (optional)",
-          "model_oid": "Model OID (optional)",
-          "firmware_oid": "Firmware OID (optional)",
-          "hostname_oid": "Hostname OID (optional)",
-          "uptime_oid": "Uptime OID (optional)",
-          "reset_custom_oids": "Reset custom OIDs to defaults"
-        }
+          "rule_action": "Action",
+          "rule_match": "Match type",
+          "rule_value": "Match value"
+        },
+        "description": "Current include rules:\n{current_rules}\n\nAdd or remove rules below. Exclude rules (if any) always win.",
+        "title": "Manage Included Interfaces"
+      },
+      "init": {
+        "description": "Manage per-device overrides and advanced settings.",
+        "menu_options": {
+          "bandwidth_sensors": "Bandwidth Sensors",
+          "builtin_filters": "Built-in Vendor Filters",
+          "custom_oids": "Custom Diagnostic OIDs",
+          "device": "Connection & Name",
+          "exclude_rules": "Manage Excluded Interfaces",
+          "include_rules": "Manage Included Interfaces",
+          "port_name_rules": "Port Name Rules"
+        },
+        "title": "Device Options"
+      },
+      "port_name_rules": {
+        "description": "Customize how interface names are displayed in the UI and card.\n\nBuilt-in rules are provided as examples and can be disabled per device.",
+        "menu_options": {
+          "init": "Back",
+          "port_rename_custom": "Custom Rename Rules",
+          "port_rename_defaults": "Built-in Rename Rules",
+          "port_rename_restore_defaults": "Restore Built-in Rules"
+        },
+        "title": "Port Name Rules"
+      },
+      "port_rename_custom": {
+        "description": "Add or remove your own regex-based display name rules. Custom rules take priority over built-in rules.",
+        "menu_options": {
+          "port_name_rules": "Back",
+          "port_rename_custom_add": "Add Rule",
+          "port_rename_custom_remove": "Remove Rule"
+        },
+        "title": "Custom Rename Rules"
+      },
+      "port_rename_custom_add": {
+        "data": {
+          "description": "Description (optional)",
+          "pattern": "Regex pattern",
+          "replace": "Replacement"
+        },
+        "description": "Create a regex rule that transforms the displayed interface name.\n\nExample pattern: ^Gi(\\\\d+)/0/(\\\\d+)$\nExample replace: Uplink-\\\\1-\\\\2",
+        "title": "Add Rename Rule"
+      },
+      "port_rename_custom_remove": {
+        "data": {
+          "remove_index": "Rule"
+        },
+        "description": "Select a custom rule to remove.\n\nCurrent custom rules:\n{current_rules}",
+        "title": "Remove Rename Rule"
+      },
+      "port_rename_defaults": {
+        "data": {
+          "builtin_link_aggregate_to_po": "Normalize link aggregate → Po",
+          "builtin_loopback_to_lo0": "Normalize loopback → Lo0",
+          "builtin_port_channel_to_po": "Normalize port-channel → Po",
+          "builtin_portchannel_to_po": "Normalize PortChannel → Po",
+          "builtin_unit_slot_port_100m_to_fa": "Normalize Unit/Slot/Port 100M → Fa",
+          "builtin_unit_slot_port_10g_to_te": "Normalize Unit/Slot/Port 10G → Te",
+          "builtin_unit_slot_port_1g_to_gi": "Normalize Unit/Slot/Port 1G → Gi",
+          "builtin_unit_slot_port_20g_to_tw": "Normalize Unit/Slot/Port 20G → Tw",
+          "defaults_action": "Action"
+        },
+        "description": "Enable or disable built-in display name rules for this device.\n\nCurrent built-ins:\n{rules}",
+        "title": "Built-in Rename Rules"
       }
     },
-    "error": {
-      "invalid_oid": "Invalid OID format (must be numeric dotted OID)",
-      "invalid_port": "Invalid port",
-      "invalid_regex": "Invalid regex pattern",
-      "invalid_uptime_interval": "Invalid uptime refresh interval"
+    "flow": {
+      "step": {}
     }
-  }
+  },
+  "title": "SNMP Switch Manager"
 }
