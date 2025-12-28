@@ -473,7 +473,9 @@ class SwitchSnmpClient:
             for oid, val in await self._async_walk(OID_ifSpeed):
                 idx = int(oid.split(".")[-1])
                 try:
-                    bps = int(val)
+                    bps = _parse_numeric(val)
+                    if not bps or bps <= 0:
+                        continue
                 except Exception:
                     continue
                 if bps > 0:
@@ -1089,7 +1091,15 @@ async def test_connection(hass: HomeAssistant, host: str, community: str, port: 
     sysname = await client._async_get_one(OID_sysName)
     return sysname is not None
 
-
 async def get_sysname(hass: HomeAssistant, host: str, community: str, port: int) -> Optional[str]:
     client = SwitchSnmpClient(hass, host, community, port)
     return await client._async_get_one(OID_sysName)
+
+def _parse_numeric(val):
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        try:
+            return int(float(val))
+        except (TypeError, ValueError):
+            return None
