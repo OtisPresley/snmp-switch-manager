@@ -97,6 +97,9 @@ This roadmap reflects **active development priorities** and **realistic implemen
   - Popup-based statistics graph with manual refresh
   - Conditional rendering based on available sensors
 
+- ✅ Optional Physical vs Virtual interface classification
+  - If unset, the card uses its built-in defaults
+
 ---
 
 ## 📝 Planned
