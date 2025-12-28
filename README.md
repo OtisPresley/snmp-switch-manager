@@ -48,6 +48,7 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
 - 🎚️ One `switch` entity per interface for toggling administrative state (up/down)
 - 🏷️ Service for updating the interface alias (`ifAlias`) without leaving Home Assistant
 - 🖼️ Lovelace card that mirrors the switch layout with colour-coded port status and quick actions
+- 📶 Optional per-device bandwidth monitoring (RX / TX throughput & totals)
 
 ---
 
@@ -162,6 +163,11 @@ Control which interfaces are created as Home Assistant entities using rule-based
   - Exclude rules always take precedence
 
 Rules are evaluated per device and do not require Home Assistant restarts.
+
+ℹ️ Interface Include / Exclude rules affect **entity creation only**.
+They do **not** control Bandwidth Sensors.
+
+Bandwidth Sensors use their own independent rule set.
 
 #### Port Name Rules
 Customize how interface names are displayed in Home Assistant without affecting the underlying SNMP data.
