@@ -122,6 +122,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
     exclude_contains = [str(s).strip().lower() for s in (entry.options.get(CONF_EXCLUDE_CONTAINS, []) or []) if str(s).strip()]
     exclude_ends = [str(s).strip().lower() for s in (entry.options.get(CONF_EXCLUDE_ENDS_WITH, []) or []) if str(s).strip()]
 
+    any_include_rules = bool(include_starts or include_contains or include_ends)
+
     disabled_vendor_filter_ids = set(entry.options.get(CONF_DISABLED_VENDOR_FILTER_RULE_IDS, []) or [])
 
     def _matches_any(name_l: str, starts: list[str], contains: list[str], ends: list[str]) -> bool:
@@ -172,6 +174,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
         # Exclude rules always win.
         if exclude_hit:
+            continue
+
+        # If include rules exist, only matching interfaces are created.
+        if any_include_rules and not include_hit:
             continue
 
         is_port_channel = (
