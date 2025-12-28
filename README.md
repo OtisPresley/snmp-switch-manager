@@ -125,11 +125,12 @@ Device Options menu.
 Available options include:
 
 - SNMP connection overrides (community, port)
+  - Uptime polling interval (configurable, default 300 seconds)
 - Interface Include rules
 - Interface Exclude rules
 - Port Name (rename) rules
 - Custom Diagnostic OIDs
-- Uptime polling interval (configurable, default 300 seconds)
+- Bandwidth Sensors
 
 The Uptime polling interval controls how often the switch Uptime (sysUpTime)
 diagnostic sensor is refreshed. This can be tuned per device to balance
@@ -196,6 +197,20 @@ Notes:
 - Overrides apply **only to the selected device**
 - Leave fields blank to fall back to automatic detection
 - A reset option is available to restore defaults
+
+#### Bandwidth Sensors
+Enable optional per-device bandwidth monitoring using SNMP counters.
+
+- RX / TX throughput sensors (bits per second)
+- Total RX / TX traffic sensors
+- Configurable polling interval
+- Independent include and exclude rules
+
+Notes:
+- Bandwidth rules are **completely independent** from Interface Include / Exclude rules
+- Exclude rules always take precedence
+- Rule changes apply immediately and persist across restarts
+- Sensors are created only for interfaces matching the rules
 
 ---
 
