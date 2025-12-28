@@ -475,18 +475,18 @@ Interfaces without bandwidth sensors remain unchanged and do not show empty fiel
 
   When `color_mode: speed` is enabled, port colors represent the negotiated link speed:
   
-  - <img src="https://singlecolorimage.com/get/ef4444/18x18" width="18" height="18" style="vertical-align:middle" /> **Red** — 10 Mbps
+  - <img src="https://singlecolorimage.com/get/9ca3af/18x18" width="18" height="18" style="vertical-align:middle" /> **Gray** — 10 Mbps
   - <img src="https://singlecolorimage.com/get/f59e0b/18x18" width="18" height="18" style="vertical-align:middle" /> **Orange** — 100 Mbps
   - <img src="https://singlecolorimage.com/get/22c55e/18x18" width="18" height="18" style="vertical-align:middle" /> **Green** — 1 Gbps
-  - <img src="https://singlecolorimage.com/get/18b8a6/18x18" width="18" height="18" style="vertical-align:middle" /> **Teal** — 2.5 Gbps
+  - <img src="https://singlecolorimage.com/get/14b8a6/18x18" width="18" height="18" style="vertical-align:middle" /> **Teal** — 2.5 Gbps
   - <img src="https://singlecolorimage.com/get/0ea5e9/18x18" width="18" height="18" style="vertical-align:middle" /> **Cyan** — 5 Gbps
   - <img src="https://singlecolorimage.com/get/3b82f6/18x18" width="18" height="18" style="vertical-align:middle" /> **Blue** — 10 Gbps
-  - <img src="https://singlecolorimage.com/get/6366f1/18x18" width="18" height="18" style="vertical-align:middle" /> **Indigo** — 18 Gbps
+  - <img src="https://singlecolorimage.com/get/6366f1/18x18" width="18" height="18" style="vertical-align:middle" /> **Indigo** — 20 Gbps
   - <img src="https://singlecolorimage.com/get/8b5cf6/18x18" width="18" height="18" style="vertical-align:middle" /> **Violet** — 25 Gbps
   - <img src="https://singlecolorimage.com/get/a855f7/18x18" width="18" height="18" style="vertical-align:middle" /> **Purple** — 40 Gbps
   - <img src="https://singlecolorimage.com/get/d946ef/18x18" width="18" height="18" style="vertical-align:middle" /> **Fuchsia** — 50 Gbps
   - <img src="https://singlecolorimage.com/get/ec4899/18x18" width="18" height="18" style="vertical-align:middle" /> **Pink** — 100 Gbps
-  - <img src="https://singlecolorimage.com/get/9ca3af/18x18" width="18" height="18" style="vertical-align:middle" /> **Gray** — Unknown or unsupported speed
+  - <img src="https://singlecolorimage.com/get/ef4444/18x18" width="18" height="18" style="vertical-align:middle" /> **Red** — Unknown or unsupported speed
 
   > ℹ️ Speed values are automatically parsed from SNMP attributes and normalized.
   > The card supports both numeric (e.g. `2500`, `100000`) and textual
