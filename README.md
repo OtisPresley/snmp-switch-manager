@@ -546,6 +546,8 @@ If your switch does not display correctly, then the integration will need to hav
 - Mikrotik RouterOS
 - OPNsense Firewall
 - DDWRT
+- Jt-Com
+- Goodtop
 
 ### Open an Issue
 - Open an issue on the [GitHub tracker](https://github.com/OtisPresley/snmp-switch-manager/issues) if you run into problems or have feature requests.
