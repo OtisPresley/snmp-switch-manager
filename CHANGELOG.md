@@ -151,7 +151,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.3.6] - 2025-12-26
+## [0.3.6] - 2025-12-27
 ### Added
 - ⏱️ **Per-device configurable Uptime polling interval**
   - Exposed via **Device Options**
@@ -182,6 +182,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - 🚧 Bandwidth polling interval validation and persistence
 - 🚧 Incorrect interface speed on some devices that report in bps
+
+---
+
+## [0.3.7-beta.1] - 2025-12-28
+### Fixed
+- 🚧 VLAN ID not displaying in port attributes
 
 <!-- ROADMAP ANCHOR LINKS -->
 
