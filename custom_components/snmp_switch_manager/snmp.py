@@ -34,6 +34,8 @@ from .const import (
     OID_ifAlias,
     OID_ifSpeed,
     OID_ifHighSpeed,
+    OID_dot1dBasePortIfIndex,
+    OID_dot1qPvid,
     OID_ipAdEntAddr,
     OID_ipAdEntIfIndex,
     OID_ipAdEntNetMask,
