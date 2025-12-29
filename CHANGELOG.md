@@ -189,6 +189,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - 🚧 VLAN ID not displaying in port attributes
 
+---
+
+## [0.3.7-beta.2] - 2025-12-28
+### Fixed
+- 🚧 Issues reporting speed with very large values
+
+---
+
+## [0.3.7-beta.3] - 2025-12-28
+### Fixed
+- 🚧 Restored Cisco SG-specific rules impacting which interfaces get created and how they are named
+
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-bandwidth-sensors"></a>
