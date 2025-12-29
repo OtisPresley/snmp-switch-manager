@@ -186,8 +186,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
             or lower.startswith("link aggregate")
         )
         if is_port_channel and not (ip_str or alias):
-            # Only create PortChannel entity if configured (alias or IP present)
-            continue
+            # Only create PortChannel entity if configured (alias or IP present),
+            # except for Cisco SG where PortChannels are included by vendor rules.
+            if not is_cisco_sg:
+                continue
 
         # Get interface details
         name = raw_name.strip()
@@ -212,10 +214,25 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 has_ip = bool(ip_str)
                 include = False
 
-                if enable_physical and (lower_name.startswith("fa") or lower_name.startswith("gi")):
+                if enable_physical and (lower_name.startswith("fa") or lower_name.startswith("gi")) and oper != 6:
                     include = True
 
-                elif enable_vlan and lower_name.startswith("vlan"):
+                elif enable_vlan and (lower_name.startswith("vlan") or lower_name.isdigit()):
+                    if lower_name.isdigit():
+                        # Cisco SG VLAN interfaces may present as unprefixed digits (e.g. "1" for VLAN 1).
+                        # Only include when up/admin-disabled and an IP is configured to avoid duplicates.
+                        if (oper == 1 or admin == 2) and has_ip:
+                            raw_name = "VLAN " + raw_name
+                            name = raw_name.strip()
+                            lower_name = name.lower()
+                            include = True
+                    else:
+                        if oper == 1 or admin == 2:
+                            include = True
+
+                # 3) Link Access Group / PortChannel interfaces should also be displayed if operationally up
+                # or administratively disabled.
+                elif enable_vlan and lower_name.startswith("po"):
                     if oper == 1 or admin == 2:
                         include = True
 
