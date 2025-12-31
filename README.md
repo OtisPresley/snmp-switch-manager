@@ -395,7 +395,7 @@ Once complete, everything will be fully managed by HACS and you will continue to
     </tr>
   </table>
 
-**Example using vertical stack card.** Thanks to [@larieu](https://github.com/larieu) for contributing this.
+**Example using vertical stack card showing the switch ports duplicated with the first row showing port state colors and the second row showing port speed colors.** Thanks to [@larieu](https://github.com/larieu) for contributing this.
  <table>
     <tr>
       <td align="center">
