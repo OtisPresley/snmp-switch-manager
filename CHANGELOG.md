@@ -207,7 +207,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## 0.3.7-beta.4
-### ✨ Added
+### Added
 - 🔀 **Trunk port VLAN visibility** using standard IEEE 802.1Q SNMP MIBs when available:
   - 🏷️ Native VLAN (PVID)
   - 📋 Allowed VLAN list
