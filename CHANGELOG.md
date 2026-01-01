@@ -193,13 +193,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.7-beta.2] - 2025-12-28
 ### Fixed
+- 🚧 VLAN ID not displaying in port attributes
 - 🚧 Issues reporting speed with very large values
 
 ---
 
 ## [0.3.7-beta.3] - 2025-12-28
 ### Fixed
+- 🚧 VLAN ID not displaying in port attributes
+- 🚧 Issues reporting speed with very large values
 - 🚧 Restored Cisco SG-specific rules impacting which interfaces get created and how they are named
+
+---
+
+## 0.3.7-beta.4
+### ✨ Added
+- 🔀 **Trunk port VLAN visibility** using standard IEEE 802.1Q SNMP MIBs when available:
+  - 🏷️ Native VLAN (PVID)
+  - 📋 Allowed VLAN list
+  - 🧵 Tagged VLAN list
+  - 🚫 Untagged VLAN list
+  - 🔗 Trunk detection flag
+- 🧠 **Automatic fallback to static VLAN membership tables** for platforms that do
+  not expose current VLAN membership tables
+
+### Fixed
+- 🚧 VLAN ID not displaying in port attributes
+- 🚧 Issues reporting speed with very large values
+- 🚧 Restored Cisco SG-specific rules impacting which interfaces get created and how they are named
+- 🎯 Corrected **PVID (native VLAN) detection** for switches that expose PVID via `dot1qPvid` (including ZyXEL and similar platforms)
+- 🌐 Improved **per-port IP address detection** to avoid displaying invalid or non-routable addresses (e.g. loopback addresses on physical ports)
 
 <!-- ROADMAP ANCHOR LINKS -->
 
