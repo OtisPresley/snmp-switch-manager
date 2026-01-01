@@ -420,6 +420,9 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
                 vlan_int = None
             if vlan_int:
                 attrs["VLAN ID"] = vlan_int
+        # Hide redundant VLAN ID on trunk ports (Native VLAN covers this)
+        if row.get("is_trunk") is True and "VLAN ID" in attrs:
+            attrs.pop("VLAN ID", None)
         ip = _ip_for_index(
             self._if_index,
             self.coordinator.data.get("ipIndex", {}),
@@ -427,4 +430,40 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
         )
         if ip:
             attrs["IP"] = ip
+
+        # Optional VLAN/trunk details (only present on switches that expose
+        # VLAN membership tables). Keep these additive and non-breaking.
+        def _fmt_vlan_list(val: Any) -> str:
+            if val is None:
+                return ""
+            if isinstance(val, (list, tuple, set)):
+                try:
+                    items = [int(v) for v in val if v not in (None, "")]
+                except Exception:
+                    items = [v for v in val if v not in (None, "")]
+                return ", ".join(str(v) for v in sorted(items)) if items else ""
+            return str(val)
+
+        # Only show VLAN membership details on trunk ports.
+        if row.get("is_trunk") is True:
+            native_vlan = row.get("native_vlan")
+            if native_vlan not in (None, "", 0, "0"):
+                try:
+                    attrs["Native VLAN"] = int(native_vlan)
+                except Exception:
+                    attrs["Native VLAN"] = str(native_vlan)
+
+            allowed_vlans = _fmt_vlan_list(row.get("allowed_vlans"))
+            if allowed_vlans:
+                attrs["Allowed VLANs"] = allowed_vlans
+
+            untagged_vlans = _fmt_vlan_list(row.get("untagged_vlans"))
+            if untagged_vlans:
+                attrs["Untagged VLANs"] = untagged_vlans
+
+            tagged_vlans = _fmt_vlan_list(row.get("tagged_vlans"))
+            if tagged_vlans:
+                attrs["Tagged VLANs"] = tagged_vlans
+
+            attrs["Trunk"] = True
         return attrs
