@@ -441,7 +441,7 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
                     items = [int(v) for v in val if v not in (None, "")]
                 except Exception:
                     items = [v for v in val if v not in (None, "")]
-                return ", ".join(str(v) for v in sorted(items)) if items else ""
+                return items[0] if len(items) == 1 else (", ".join(str(v) for v in sorted(items)) if items else "")
             return str(val)
 
         # Only show VLAN membership details on trunk ports.
