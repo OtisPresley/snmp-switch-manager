@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 import logging
+import ipaddress
 from typing import Any, Dict, Optional, Iterable, Tuple, List
 
 from homeassistant.core import HomeAssistant
@@ -61,6 +62,15 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# Q-BRIDGE-MIB VLAN membership tables are not present in some older versions
+# of this integration's const.py. Keep these OID strings defined locally to
+# avoid import-time failures, while still using standard OIDs.
+OID_dot1qVlanCurrentEgressPorts = "1.3.6.1.2.1.17.7.1.2.2.1.4"
+OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.2.2.1.5"
+# Some platforms (incl. Dell N-series) expose VLAN membership only via the *static* tables.
+OID_dot1qVlanStaticEgressPorts = "1.3.6.1.2.1.17.7.1.4.3.1.2"
+OID_dot1qVlanStaticUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.3.1.4"
 
 # Extra OIDs used in the original repo’s IP logic (not in const.py)
 # (2) ipAddressIfIndex index suffix encodes IPv4 as: 1.4.a.b.c.d
@@ -499,8 +509,14 @@ class SwitchSnmpClient:
                 baseport_by_ifindex: Dict[int, int] = {}
                 for oid, val in await self._async_walk(OID_dot1dBasePortIfIndex):
                     # Instance: ...1.4.1.2.<basePort>
-                    base_port = int(oid.split(".")[-1])
-                    if_index = int(val)
+                    try:
+                        base_port = int(oid.split(".")[-1])
+                    except Exception:
+                        continue
+                    try:
+                        if_index = int(_parse_numeric(val))
+                    except Exception:
+                        continue
                     if if_index > 0 and base_port > 0:
                         baseport_by_ifindex[if_index] = base_port
 
@@ -508,19 +524,111 @@ class SwitchSnmpClient:
                     pvid_by_baseport: Dict[int, int] = {}
                     for oid, val in await self._async_walk(OID_dot1qPvid):
                         # Instance: ...5.1.1.<basePort>
-                        base_port = int(oid.split(".")[-1])
                         try:
-                            pvid = int(val)
+                            base_port = int(oid.split(".")[-1])
+                        except Exception:
+                            continue
+                        try:
+                            pvid = int(_parse_numeric(val))
                         except Exception:
                             continue
                         if pvid > 0:
                             pvid_by_baseport[base_port] = pvid
 
+                    # Build VLAN membership maps (per bridge port) when available.
+                    # These Q-BRIDGE-MIB tables are indexed by VLAN and return a PortList bitmap.
+                    allowed_by_baseport: Dict[int, set[int]] = {}
+                    untagged_by_baseport: Dict[int, set[int]] = {}
+
+                    async def _collect_vlan_portlists(oid_base: str, out: Dict[int, set[int]]) -> int:
+                        """Walk a Q-BRIDGE PortList table and invert it into port -> {vlans}."""
+                        count = 0
+                        for oid, val in await self._async_walk(oid_base):
+                            try:
+                                vlan_id = int(oid.split(".")[-1])
+                            except Exception:
+                                continue
+                            if vlan_id <= 0:
+                                continue
+                            ports = _decode_bridge_port_bitmap(val)
+                            if not ports:
+                                continue
+                            count += 1
+                            for bp in ports:
+                                out.setdefault(bp, set()).add(vlan_id)
+                        return count
+
+                    # Prefer "current" VLAN membership tables when present.
+                    # Dell N-series (and some others) expose only the "static" tables.
+                    try:
+                        cur_allowed = await _collect_vlan_portlists(
+                            OID_dot1qVlanCurrentEgressPorts, allowed_by_baseport
+                        )
+                    except Exception:
+                        cur_allowed = 0
+
+                    try:
+                        cur_untagged = await _collect_vlan_portlists(
+                            OID_dot1qVlanCurrentUntaggedPorts, untagged_by_baseport
+                        )
+                    except Exception:
+                        cur_untagged = 0
+
+                    # Fall back to static membership when current tables are not implemented.
+                    if cur_allowed == 0:
+                        try:
+                            await _collect_vlan_portlists(
+                                OID_dot1qVlanStaticEgressPorts, allowed_by_baseport
+                            )
+                        except Exception:
+                            pass
+
+                    if cur_untagged == 0:
+                        try:
+                            await _collect_vlan_portlists(
+                                OID_dot1qVlanStaticUntaggedPorts, untagged_by_baseport
+                            )
+                        except Exception:
+                            pass
+
                     if pvid_by_baseport:
                         for if_index, base_port in baseport_by_ifindex.items():
+                            rec = self.cache["ifTable"].setdefault(if_index, {})
                             pvid = pvid_by_baseport.get(base_port)
+
+                            # Backwards-compatible: keep vlan_id as the PVID
                             if pvid is not None:
-                                self.cache["ifTable"].setdefault(if_index, {})["vlan_id"] = pvid
+                                rec["vlan_id"] = pvid
+                                rec["native_vlan"] = pvid
+
+                            allowed = sorted(allowed_by_baseport.get(base_port, set()))
+                            if allowed:
+                                rec["allowed_vlans"] = allowed
+
+                            untagged = sorted(untagged_by_baseport.get(base_port, set()))
+                            if untagged:
+                                rec["untagged_vlans"] = untagged
+
+                            # Tagged VLANs:
+                            # - Prefer (allowed - untagged) when untagged data exists
+                            # - Fall back to (allowed - {pvid}) when it doesn't
+                            tagged_set: set[int] = set()
+                            if allowed:
+                                if untagged:
+                                    tagged_set = set(allowed) - set(untagged)
+                                elif pvid is not None:
+                                    tagged_set = set(allowed) - {pvid}
+                                else:
+                                    tagged_set = set(allowed)
+
+                            tagged = sorted(tagged_set)
+                            if tagged:
+                                rec["tagged_vlans"] = tagged
+
+                            # Trunk-like heuristic
+                            if (len(allowed) > 1) or bool(tagged):
+                                rec["is_trunk"] = True
+
             except Exception:
                 # VLAN discovery is optional; ignore devices that don't implement these MIBs
                 pass
@@ -595,23 +703,50 @@ class SwitchSnmpClient:
             # Fallback: give the original string representation
             return s
 
+
+        def _is_usable_ipv4(ip: str) -> bool:
+            """Filter out addresses that are almost always meaningless on L2 switch ports."""
+            try:
+                addr = ipaddress.IPv4Address(ip)
+            except Exception:
+                return False
+            # Exclude loopback/unspecified/link-local/multicast/reserved/broadcast
+            if (
+                addr.is_loopback
+                or addr.is_unspecified
+                or addr.is_link_local
+                or addr.is_multicast
+                or addr.is_reserved
+            ):
+                return False
+            if ip == "255.255.255.255":
+                return False
+            return True
         # ---- (1) Legacy table: ipAdEnt* ----
         legacy_addrs = await self._async_walk(OID_ipAdEntAddr)
         if legacy_addrs:
             for _oid, val in legacy_addrs:
-                ip_index[_normalize_ipv4(val)] = None  # type: ignore[assignment]
+                ip = _normalize_ipv4(val)
+                if not _is_usable_ipv4(ip):
+                    continue
+                ip_index[ip] = None  # type: ignore[assignment]
 
             for oid, val in await self._async_walk(OID_ipAdEntIfIndex):
                 parts = oid.split(".")[-4:]
                 ip = ".".join(parts)
+                if not _is_usable_ipv4(ip):
+                    continue
                 try:
-                    ip_index[ip] = int(val)
+                    ip_index[ip] = int(_parse_numeric(val))
                 except Exception:
+                    continue
                     continue
 
             for oid, val in await self._async_walk(OID_ipAdEntNetMask):
                 parts = oid.split(".")[-4:]
                 ip = ".".join(parts)
+                if not _is_usable_ipv4(ip):
+                    continue
                 ip_mask[ip] = _normalize_ipv4(val)
 
         # ---- (2) IP-MIB ipAddressIfIndex: parse instance suffix (1.4.a.b.c.d)
@@ -623,9 +758,13 @@ class SwitchSnmpClient:
                     if parts[i] == 1 and parts[i + 1] == 4:
                         a, b, c, d = parts[i + 2 : i + 6]
                         ip = f"{a}.{b}.{c}.{d}"
+                        if not _is_usable_ipv4(ip):
+                            break
                         try:
-                            idx = int(val)
+                            idx = int(_parse_numeric(val))
                             ip_index.setdefault(ip, idx)
+                        except Exception:
+                            pass
                         except Exception:
                             pass
                         break
@@ -642,6 +781,8 @@ class SwitchSnmpClient:
                         a, b, c, d = parts[0], parts[1], parts[2], parts[3]
                         if_index = parts[4]
                         ip = f"{a}.{b}.{c}.{d}"
+                        if not _is_usable_ipv4(ip):
+                            continue
                         ip_index.setdefault(ip, int(if_index))
                 except Exception:
                     continue
@@ -1103,3 +1244,55 @@ def _parse_numeric(val):
             return int(float(val))
         except (TypeError, ValueError):
             return None
+
+
+def _as_bytes(val) -> bytes:
+    """Best-effort conversion of pysnmp OctetString/bytes/hex-string to raw bytes."""
+    if val is None:
+        return b""
+    if isinstance(val, (bytes, bytearray)):
+        return bytes(val)
+    # pysnmp OctetString often supports .asOctets()
+    try:
+        as_octets = getattr(val, "asOctets", None)
+        if callable(as_octets):
+            return bytes(as_octets())
+    except Exception:
+        pass
+    # Some devices / libs stringify as '0xAABBCC' or 'AA:BB:CC'
+    s = str(val).strip()
+    # Net-SNMP style: 'Hex-STRING: AA BB CC'
+    if s.lower().startswith("hex-string:"):
+        s = s.split(":", 1)[1].strip()
+    if s.startswith("0x") and len(s) > 2:
+        try:
+            return bytes.fromhex(s[2:])
+        except Exception:
+            return b""
+    # hex with separators
+    if ":" in s and all(len(p) == 2 for p in s.split(":")):
+        try:
+            return bytes.fromhex(s.replace(":", ""))
+        except Exception:
+            return b""
+    # Space-separated hex bytes: 'AA BB CC'
+    parts = s.split()
+    if parts and all(len(p) == 2 and all(c in "0123456789abcdefABCDEF" for c in p) for p in parts):
+        try:
+            return bytes.fromhex("".join(parts))
+        except Exception:
+            return b""
+    # fallback: empty
+    return b""
+
+
+def _decode_bridge_port_bitmap(val) -> set[int]:
+    """Decode Q-BRIDGE PortList bitmap into a set of 1-based bridge port numbers."""
+    data = _as_bytes(val)
+    ports: set[int] = set()
+    for oct_i, b in enumerate(data):
+        # Q-BRIDGE PortList uses MSB-first within each octet
+        for bit in range(8):
+            if b & (0x80 >> bit):
+                ports.add(oct_i * 8 + bit + 1)
+    return ports
