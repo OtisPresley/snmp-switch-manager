@@ -304,33 +304,73 @@ Once complete, everything will be fully managed by HACS and you will continue to
 
    ```yaml
     type: custom:snmp-switch-manager-card
-    type: custom:snmp-switch-manager-card
-    title: Core Switch
+    title: ""
     view: panel
-    
-    # Select the SNMP Switch Manager device
-    device: SWITCH-BONUSCLOSET
-    
+    color_mode: state
     ports_per_row: 24
-    info_position: below
-    label_size: 6
-    port_size: 18
+    panel_width: 940
     gap: 10
-    
-    # Optional display controls
+    show_labels: false
+    label_size: 6
+    info_position: below
     hide_diagnostics: false
     hide_virtual_interfaces: false
-    
-    # Optional panel background image (panel view only)
-    background_image: /local/switches/core-switch.png
-    ports_offset_x: 0
-    ports_offset_y: 0
-    ports_scale: 1
-    
-    # Optional per-port positioning overrides
+    calibration_mode: false
+    device: switch_study
+    background_image: /local/images/N1108P-ON_front_black.png
     port_positions:
-      Gi1/0/1: { x: 120, y: 80 }
-      Gi1/0/2: { x: 150, y: 80 }
+      Gi1/0/1:
+        x: 386.4295959472656
+        "y": 24.34100341796875
+      Gi1/0/2:
+        x: 386.4295959472656
+        "y": 55.947601318359375
+      Gi1/0/3:
+        x: 422.4835205078125
+        "y": 24.34100341796875
+      Gi1/0/4:
+        x: 422.4835205078125
+        "y": 55.947601318359375
+      Gi1/0/5:
+        x: 458.5374450683594
+        "y": 24.34100341796875
+      Gi1/0/6:
+        x: 458.5374450683594
+        "y": 55.947601318359375
+      Gi1/0/7:
+        x: 494.59136962890625
+        "y": 24.34100341796875
+      Gi1/0/8:
+        x: 494.59136962890625
+        "y": 55.947601318359375
+      Gi1/0/10:
+        x: 543.7317199707031
+        "y": 55.947601318359375
+      Gi1/0/9:
+        x: 543.7317199707031
+        "y": 24.34100341796875
+      Gi1/0/11:
+        x: 591.5968017578125
+        "y": 20.962440490722656
+      Gi1/0/12:
+        x: 591.5968017578125
+        "y": 59.34493637084961
+    state_colors:
+      up_up: "#118d3c"
+      up_down: "#9c3030"
+      down_down: "#9d6606"
+    port_scale: 1.2
+    label_bg_color: "#050505"
+    label_numbers_only: false
+    virtual_overrides: []
+    show_uplinks_separately: false
+    uplink_ports:
+      - Gi1/0/9
+      - Gi1/0/10
+      - Gi1/0/11
+      - Gi1/0/12
+    speed_click_opens_graph: false
+    hide_ports: []
    ```
 
    The follows are descriptions of the settings:
