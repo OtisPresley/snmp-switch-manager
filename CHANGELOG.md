@@ -224,6 +224,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🎯 Corrected **PVID (native VLAN) detection** for switches that expose PVID via `dot1qPvid` (including ZyXEL and similar platforms)
 - 🌐 Improved **per-port IP address detection** to avoid displaying invalid or non-routable addresses (e.g. loopback addresses on physical ports)
 
+---
+
+## [0.4.0] - 2026-01-07
+### Added
+- 🔀 **Trunk port VLAN visibility** using standard IEEE 802.1Q SNMP MIBs when available:
+  - 🏷️ Native VLAN (PVID)
+  - 📋 Allowed VLAN list
+  - 🧵 Tagged VLAN list
+  - 🚫 Untagged VLAN list
+  - 🔗 Trunk detection flag
+- 🧠 **Automatic fallback to static VLAN membership tables** for platforms that do
+  not expose current VLAN membership tables
+- 🌡️ **Switch Environmentals & CPU / Memory Usage**
+  - Supports **Attributes** and **Sensors** modes
+  - CPU 5s/60s/300s, Memory Total/Available/Used, System Temperature + Status
+  - Fan + PSU telemetry (when supported)
+  - Separate per-device **Environmental polling interval**
+- ⚡ **Power over Ethernet (PoE) Statistics**
+  - Supports **Attributes** and **Sensors** modes
+  - PoE Budget Total / Power Used / Power Available (all in **W**)
+  - PoE Health Status mapping: **HEALTHY / DISABLED / FAULTY**
+  - Separate per-device **PoE polling interval**
+- 📶 **Bandwidth mode: Attributes vs Sensors**
+  - When set to **Attributes**, bandwidth stats are exposed as attributes on the corresponding port entities
+  - When set to **Sensors**, existing bandwidth sensors remain available
+
+### Improved
+- Entity creation now avoids generating environmental/PoE entities when SNMP data is unsupported or invalid
+- Environmental and PoE status strings normalized to ALL CAPS for consistency
+
+### Fixed
+- 🚧 VLAN ID not displaying in port attributes
+- 🚧 Issues reporting speed with very large values
+- 🚧 Restored Cisco SG-specific rules impacting which interfaces get created and how they are named
+- 🎯 Corrected **PVID (native VLAN) detection** for switches that expose PVID via `dot1qPvid` (including ZyXEL and similar platforms)
+- 🌐 Improved **per-port IP address detection** to avoid displaying invalid or non-routable addresses (e.g. loopback addresses on physical ports)
+- 🚧 Fixed IP misalignment for some switches, including ZyXEL
+
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-bandwidth-sensors"></a>
