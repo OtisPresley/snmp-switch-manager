@@ -100,88 +100,29 @@ This roadmap reflects **active development priorities** and **realistic implemen
 - ✅ Optional Physical vs Virtual interface classification
   - If unset, the card uses its built-in defaults
 
+- ✅ 🌡️ Switch Environmentals & CPU / Memory Usage
+  - Supports **Attributes mode** (single `Environment` entity with rich attributes)
+  - Supports **Sensors mode** (graphable CPU/Memory/System Temp/Fan/PSU sensors)
+  - Per-device **Environmental polling interval** (separate from main poll)
+  - Creates entities **only when valid SNMP data exists** (no junk/Unknown entities)
+  - CPU parsed into **5s / 60s / 300s** values
+  - Memory supports **Total / Available (kB)** and **Used (%)**
+  - System temperature + status mapping (ALL CAPS)
+
+- ✅ ⚡ Power over Ethernet (PoE) Statistics
+  - Supports **Attributes mode** (`Power over Ethernet` entity with budget/used/available/status)
+  - Supports **Sensors mode** (graphable PoE budget/used/available + health status)
+  - Per-device **PoE polling interval**
+  - Creates entities **only when PoE OIDs are supported**
+  - PoE health status mapping (ALL CAPS): **HEALTHY / DISABLED / FAULTY**
+
 ---
 
 ## 📝 Planned
 
-### 🌡️ Switch Environmentals & CPU / Memory Usage  
-**Priority:** 🔴 High  
-**Target Release:** v0.4.0  
-**Tracking:** [`#roadmap-switch-environmentals`](./CHANGELOG.md#roadmap-switch-environmentals)
-
-Add environmental monitoring and system performance telemetry for supported switches and routers.
-
-#### Planned Capabilities
-- 🌡️ **Temperature Monitoring**  
-  - CPU, PSU, and chassis temperature sensors (when available via SNMP)  
-- 🧠 **CPU Utilization**  
-  - Current system CPU usage percentage  
-- 💾 **Memory Utilization**  
-  - Current system memory usage percentage  
-
-#### Design Goals
-- ✅ Works across **all supported platforms**
-  - Cisco SG / CBS  
-  - Arista  
-  - Juniper (EX series)  
-  - OPNsense / pfSense  
-- ✅ Uses **standard SNMP environmental and performance OIDs**
-- ✅ **Automatic unit handling**
-  - Celsius ↔ Fahrenheit conversion where applicable  
-- ✅ **Efficient polling** via the existing coordinator
-- ✅ **Minimal Home Assistant performance impact**
-- ✅ Default exposure as **dedicated sensor entities**
-
-#### Immediate Capabilities Enabled by This Feature
-- 📈 **Historical temperature and utilization graphs** (via Home Assistant statistics)
-- 🚨 **Temperature & performance alerting** via automations
-- 📊 **Live environmental and system load display** in the Switch Manager UI
-
----
-
-### ⚡ Power over Ethernet (PoE) Statistics  
-**Priority:** 🔴 High  
-**Target Release:** v0.4.0  
-**Tracking:** [`#roadmap-poe-statistics`](./CHANGELOG.md#roadmap-poe-statistics)
-
-Add real-time **PoE power usage, status, and budget monitoring** for supported PoE-capable switches.
-
-#### Planned Capabilities
-- ⚡ **Per-Port Power Usage (Watts)**  
-  - Real-time PoE draw per interface  
-- 🔌 **Per-Port PoE Status**  
-  - Enabled / Disabled / Fault state  
-- 🧮 **Total PoE Budget Usage**  
-  - Overall switch PoE utilization percentage  
-- 📊 **Available vs Used Power Budget**  
-  - Remaining PoE headroom for new devices  
-
-#### Design Goals
-- ✅ Uses **standard and vendor-specific PoE SNMP OIDs**
-  - Cisco  
-  - Arista  
-  - Juniper  
-  - MikroTik (where supported)  
-- ✅ **Automatic unit normalization** (W, mW, percentage)
-- ✅ **Efficient polling** via the existing coordinator
-- ✅ **Minimal Home Assistant performance impact**
-- ✅ Default exposure as:
-  - 📎 **Attributes on port switch entities**, and/or  
-  - ⚙️ **Dedicated diagnostic sensor entities**
-
-#### Immediate Capabilities Enabled by This Feature
-- 🚨 **PoE overload and fault alerting**
-- 📈 **Historical PoE power usage graphs**
-- 🔍 **Fast detection of non-responsive powered devices**
-- 📊 **Live PoE power display** in the Switch Manager UI
-
----
-
-## 📦 Backlog (Advanced / Long-Term)
-
 ### 🎛️ Simple Mode (Rule Helpers)
 **Priority:** 🟡 Medium  
-**Target Release:** v0.3.4+
+**Target Release:** v0.5.0
 
 - Optional simplified UI for:
   - Port Name Rules
@@ -194,7 +135,7 @@ Add real-time **PoE power usage, status, and budget monitoring** for supported P
 
 ### 🔐 SNMPv3 Support (Secure SNMP)
 **Priority:** 🟡 Medium  
-**Target Release:** TBD (post v0.4.x)
+**Target Release:** v0.5.0
 
 Add optional support for **SNMPv3** to enable secure, authenticated, and encrypted communication with supported network devices.
 
@@ -225,4 +166,9 @@ Add optional support for **SNMPv3** to enable secure, authenticated, and encrypt
   (WALK support may be expanded incrementally)
 - Feature is optional and **will not be required** for standard operation
 - Implementation scope depends on device compatibility and performance validation
+
+---
+
+## 📦 Backlog (Advanced / Long-Term)
+### _Nothing here yet_
 
