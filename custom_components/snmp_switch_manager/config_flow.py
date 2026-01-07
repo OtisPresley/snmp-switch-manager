@@ -30,20 +30,42 @@ from .const import (
     CONF_EXCLUDE_ENDS_WITH,
     CONF_PORT_RENAME_USER_RULES,
     CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
+    CONF_ICON_RULES,
     DEFAULT_PORT_RENAME_RULES,
     BUILTIN_VENDOR_FILTER_RULES,
     CONF_DISABLED_VENDOR_FILTER_RULE_IDS,
-    CONF_BW_ENABLED,
+    CONF_BW_ENABLE,
     CONF_BW_INCLUDE_RULES,
     CONF_BW_EXCLUDE_RULES,
     CONF_BANDWIDTH_POLL_INTERVAL,
     DEFAULT_BANDWIDTH_POLL_INTERVAL,
+    CONF_POE_POLL_INTERVAL,
+    DEFAULT_POE_POLL_INTERVAL,
+    CONF_ENV_POLL_INTERVAL,
+    DEFAULT_ENV_POLL_INTERVAL,
     CONF_BW_INCLUDE_STARTS_WITH,
     CONF_BW_INCLUDE_CONTAINS,
     CONF_BW_INCLUDE_ENDS_WITH,
     CONF_BW_EXCLUDE_STARTS_WITH,
     CONF_BW_EXCLUDE_CONTAINS,
     CONF_BW_EXCLUDE_ENDS_WITH,
+    # Bandwidth history mode
+    CONF_BW_MODE,
+    BW_MODE_SENSORS,
+    BW_MODE_ATTRIBUTES,
+    # Environmental & PoE options
+    CONF_ENV_ENABLE,
+    CONF_ENV_MODE,
+    ENV_MODE_SENSORS,
+    ENV_MODE_ATTRIBUTES,
+    CONF_POE_ENABLE,
+    CONF_POE_MODE,
+    POE_MODE_SENSORS,
+    POE_MODE_ATTRIBUTES,
+    CONF_BW_RX_THROUGHPUT_ICON,
+    CONF_BW_TX_THROUGHPUT_ICON,
+    CONF_BW_RX_TOTAL_ICON,
+    CONF_BW_TX_TOTAL_ICON,
 )
 from .snmp import test_connection, get_sysname
 
@@ -140,224 +162,272 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         self._options: dict = dict(config_entry.options)
 
     def _apply_options(self) -> None:
-        """Persist options immediately.
+        """Persist options immediately (only if changed).
 
-        Note: We intentionally do NOT await an entry reload here.
-        Reloading can take a long time on large switches and causes the UI
-        to report an "Unknown error". The integration already registers an
-        update listener that will reload the entry after options change.
+        We avoid forcing a reload when the resulting options are identical,
+        to prevent unnecessary coordinator churn.
         """
-        self.hass.config_entries.async_update_entry(self._entry, options=self._options)
+        old = dict(self._entry.options)
+        new = dict(self._options)
+        if old == new:
+            return
+
+        self.hass.config_entries.async_update_entry(self._entry, options=new)
+
+        # Reload entry so changes apply without requiring user to restart HA.
+        # Schedule rather than await (OptionsFlow methods are sync helpers here).
+        self.hass.async_create_task(self.hass.config_entries.async_reload(self._entry.entry_id))
+
+
+    async def async_step_device_options(self, user_input=None) -> FlowResult:
+        """Top-level Device Options menu.
+
+        The menu step_id is "device_options". Home Assistant may resume
+        an options flow directly at that step, so we provide a handler
+        method with the matching name.
+        """
+
+        return await self.async_step_init(user_input)
 
     async def async_step_init(self, user_input=None) -> FlowResult:
-        """Entry point for the options flow."""
+        """Manage the options."""
         return self.async_show_menu(
-            step_id="init",
+            step_id="device_options",
             menu_options=[
-                "device",
-                "include_rules",
-                "exclude_rules",
-                "builtin_filters",
-                "port_name_rules",
-                "custom_oids",
+                # Keep Connection & Name first per UX request
+                "connection_and_naming_overrides",
+                "manage_interfaces",
                 "bandwidth_sensors",
+                "environmental_sensors",
+                "custom_oids",
             ],
         )
 
-    async def async_step_port_name_rules(self, user_input=None) -> FlowResult:
-        """Menu for managing port display name rules."""
+    async def async_step_back(self, user_input=None):
+        """Return to the previous/top-level menu."""
+        return await self.async_step_init()
+
+    async def async_step_manage_interfaces(self, user_input=None) -> FlowResult:
+        """Interface management options."""
         return self.async_show_menu(
-            step_id="port_name_rules",
+            step_id="manage_interfaces",
             menu_options=[
-                "port_rename_defaults",
-                "port_rename_custom",
-                "port_rename_restore_defaults",
-                "init",
+                "included_interfaces",
+                "excluded_interfaces",
+                "builtin_vendor_filters",
+                "interface_name_rules",
+                "entity_icon_rules",
+                "back",
             ],
         )
 
-    
-    async def async_step_builtin_filters(self, user_input=None) -> FlowResult:
-        """Enable/disable built-in vendor interface filtering rules."""
-        # Store disabled rule IDs (unchecked == enabled)
-        current_disabled: list[str] = list(self._options.get(CONF_DISABLED_VENDOR_FILTER_RULE_IDS, []) or [])
-        options_map = {r["id"]: r["label"] for r in BUILTIN_VENDOR_FILTER_RULES}
+    async def async_step_builtin_vendor_filters(self, user_input=None) -> FlowResult:
+        """Alias for built-in vendor filters (Manage Interfaces submenu)."""
+        return await self.async_step_builtin_filters(user_input)
 
+    async def async_step_included_interfaces(self, user_input=None) -> FlowResult:
+        """Alias for interface include rules (Manage Interfaces submenu)."""
+        return await self.async_step_include_rules(user_input)
+
+    async def async_step_excluded_interfaces(self, user_input=None) -> FlowResult:
+        """Alias for interface exclude rules (Manage Interfaces submenu)."""
+        return await self.async_step_exclude_rules(user_input)
+
+    async def async_step_interface_name_rules(self, user_input=None) -> FlowResult:
+        """Alias for interface name rules (Manage Interfaces submenu)."""
+        return await self.async_step_port_name_rules(user_input)
+
+
+    async def async_step_entity_icon_rules(self, user_input=None) -> FlowResult:
+        """Manage per-interface entity icon override rules."""
         if user_input is not None:
-            disabled = list(user_input.get(CONF_DISABLED_VENDOR_FILTER_RULE_IDS, []) or [])
-            if disabled:
-                self._options[CONF_DISABLED_VENDOR_FILTER_RULE_IDS] = disabled
-            else:
-                self._options.pop(CONF_DISABLED_VENDOR_FILTER_RULE_IDS, None)
-            self._apply_options()
-            return await self.async_step_init()
-
-        schema = vol.Schema(
-            {
-                vol.Optional(
-                    CONF_DISABLED_VENDOR_FILTER_RULE_IDS,
-                    default=current_disabled,
-                ): cv.multi_select(options_map),
-            }
-        )
+            return await self._step_icon_rules(user_input)
 
         return self.async_show_form(
-            step_id="builtin_filters",
-            description_placeholders={},
-            data_schema=schema,
+            step_id="entity_icon_rules",
+            data_schema=self._icon_rules_schema(),
+            description_placeholders={
+                "current": self._describe_icon_rules(),
+            },
         )
 
-    async def async_step_port_rename_restore_defaults(self, user_input=None) -> FlowResult:
-        """Restore built-in default port rename rules (re-enable all)."""
-        self._options.pop(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS, None)
-        self._apply_options()
-        return await self.async_step_port_name_rules()
-
-    async def async_step_port_rename_defaults(self, user_input=None) -> FlowResult:
-        """Enable/disable built-in default port rename rules."""
-        # Provide an explicit back navigation option without saving.
-        # (The window close button cancels the flow entirely.)
-        if user_input is not None:
-            if user_input.get("defaults_action") == "back":
-                return await self.async_step_port_name_rules()
-
-            disabled: list[str] = []
-            for r in DEFAULT_PORT_RENAME_RULES:
-                rid = r.get("id")
-                if not rid:
-                    continue
-                enabled = bool(user_input.get(f"builtin_{rid}", True))
-                if not enabled:
-                    disabled.append(rid)
-
-            if disabled:
-                self._options[CONF_PORT_RENAME_DISABLED_DEFAULT_IDS] = disabled
-            else:
-                self._options.pop(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS, None)
-
-            self._apply_options()
-            return await self.async_step_port_name_rules()
-
-        disabled = set(self._options.get(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS) or [])
-
-        schema_dict = {
-            vol.Required("defaults_action", default="save"): vol.In(
-                {"save": "Save", "back": "Back"}
-            ),
-        }
-
-        lines: list[str] = []
-        for r in DEFAULT_PORT_RENAME_RULES:
-            rid = r.get("id")
-            if not rid:
-                continue
-            desc = (r.get("description") or "").strip()
-            pat = (r.get("pattern") or "").strip()
-            rep = (r.get("replace") or "").strip()
-
-            # Human-readable built-ins list (rendered via description placeholder)
-            lines.append(
-                "• {rid}: {desc}\n  `{pat}` → `{rep}`".format(
-                    rid=rid,
-                    desc=desc or "(no description)",
-                    pat=pat,
-                    rep=rep,
-                )
-            )
-
-            # Checkboxes use predictable keys so they can be translated.
-            schema_dict[vol.Optional(f"builtin_{rid}", default=(rid not in disabled))] = bool
-
-        return self.async_show_form(
-            step_id="port_rename_defaults",
-            data_schema=vol.Schema(schema_dict),
-            description_placeholders={"rules": "\n".join(lines) if lines else ""},
-        )
-
-    async def async_step_port_rename_custom(self, user_input=None) -> FlowResult:
-        """Menu for adding/removing custom port rename rules."""
-        return self.async_show_menu(
-            step_id="port_rename_custom",
-            menu_options=["port_rename_custom_add", "port_rename_custom_remove", "port_name_rules"],
-        )
-
-    async def async_step_port_rename_custom_add(self, user_input=None) -> FlowResult:
-        """Add a custom port rename regex rule."""
-        errors: dict[str, str] = {}
-
-        if user_input is not None:
-            pattern = (user_input.get("pattern") or "").strip()
-            replace = user_input.get("replace") or ""
-            description = (user_input.get("description") or "").strip()
-
-            if not pattern:
-                errors["pattern"] = "required"
-            else:
-                try:
-                    re.compile(pattern)
-                except Exception:
-                    errors["pattern"] = "invalid_regex"
-
-            if not errors:
-                rules = list(self._options.get(CONF_PORT_RENAME_USER_RULES) or [])
-                rules.append({"pattern": pattern, "replace": replace, "description": description})
-                self._options[CONF_PORT_RENAME_USER_RULES] = rules
-                self._apply_options()
-                return await self.async_step_port_rename_custom()
-
-        schema = vol.Schema(
-            {
-                vol.Required("pattern"): str,
-                vol.Optional("replace", default=""): str,
-                vol.Optional("description", default=""): str,
-            }
-        )
-        return self.async_show_form(step_id="port_rename_custom_add", data_schema=schema, errors=errors)
-
-    async def async_step_port_rename_custom_remove(self, user_input=None) -> FlowResult:
-        """Remove a custom port rename rule."""
-        rules = list(self._options.get(CONF_PORT_RENAME_USER_RULES) or [])
-
-        if not rules:
-            return self.async_show_form(
-                step_id="port_rename_custom_remove",
-                data_schema=vol.Schema({}),
-                description_placeholders={"current_rules": "• (none)"},
-            )
-
-        if user_input is not None:
-            idx = user_input.get("remove_index")
+    def _describe_icon_rules(self) -> str:
+        rules = self._options.get(CONF_ICON_RULES, []) or []
+        parts: list[str] = []
+        for r in rules:
             try:
-                i = int(idx)
-                if 0 <= i < len(rules):
-                    rules.pop(i)
+                m = str(r.get("match") or "")
+                v = str(r.get("value") or "")
+                ic = str(r.get("icon") or "")
+                if m and v and ic:
+                    parts.append(f"{m}: {v} -> {ic}")
             except Exception:
-                pass
+                continue
+        return "\n".join(parts) if parts else "(none)"
 
-            if rules:
-                self._options[CONF_PORT_RENAME_USER_RULES] = rules
-            else:
-                self._options.pop(CONF_PORT_RENAME_USER_RULES, None)
+    def _icon_rules_schema(self) -> vol.Schema:
+        KEY_ACTION = "icon_action"
+        KEY_MATCH = "icon_match"
+        KEY_VALUE = "icon_value"
+        KEY_ICON = "icon_icon"
+        KEY_EXISTING = "icon_existing"
 
-            self._apply_options()
-            return await self.async_step_port_rename_custom()
+        existing = self._options.get(CONF_ICON_RULES, []) or []
+        existing_labels: list[str] = []
+        for idx, r in enumerate(existing):
+            try:
+                existing_labels.append(f"{idx+1}. {r.get('match')}: {r.get('value')} -> {r.get('icon')}")
+            except Exception:
+                continue
 
-        opts = {}
-        lines: list[str] = []
-        for i, r in enumerate(rules):
-            pat = (r.get("pattern") or "").strip()
-            rep = (r.get("replace") or "").strip()
-            desc = (r.get("description") or "").strip()
-            label = desc or f"{pat} → {rep}"
-            opts[str(i)] = f"{i+1}. {label}"
-            lines.append(f"{i+1}. {pat} → {rep}" + (f" — {desc}" if desc else ""))
-
-        schema = vol.Schema({vol.Required("remove_index"): vol.In(opts)})
-        return self.async_show_form(
-            step_id="port_rename_custom_remove",
-            data_schema=schema,
-            description_placeholders={"current_rules": "\n".join(lines) if lines else "• (none)"},
+        return vol.Schema(
+            {
+                vol.Required(KEY_ACTION, default="add"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="add", label="Add"),
+                            selector.SelectOptionDict(value="edit", label="Edit"),
+                            selector.SelectOptionDict(value="remove", label="Remove"),
+                            selector.SelectOptionDict(value="clear", label="Clear all"),
+                            selector.SelectOptionDict(value="done", label="Back"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                # Only meaningful for edit/remove when rules exist
+                vol.Optional(KEY_EXISTING): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[selector.SelectOptionDict(value=v, label=v) for v in existing_labels],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ) if existing_labels else cv.string,
+                vol.Optional(KEY_MATCH, default="starts with"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="starts with", label="Starts with"),
+                            selector.SelectOptionDict(value="contains", label="Contains"),
+                            selector.SelectOptionDict(value="ends with", label="Ends with"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(KEY_VALUE): cv.string,
+                vol.Optional(KEY_ICON): cv.string,
+            }
         )
+
+    async def _step_icon_rules(self, user_input) -> FlowResult:
+        KEY_ACTION = "icon_action"
+        KEY_MATCH = "icon_match"
+        KEY_VALUE = "icon_value"
+        KEY_ICON = "icon_icon"
+        KEY_EXISTING = "icon_existing"
+
+        action = user_input.get(KEY_ACTION)
+        if action == "done":
+            return await self.async_step_manage_interfaces()
+
+        rules = list(self._options.get(CONF_ICON_RULES, []) or [])
+        # Build mapping label -> index
+        label_to_index: dict[str, int] = {}
+        for idx, r in enumerate(rules):
+            label = f"{idx+1}. {r.get('match')}: {r.get('value')} -> {r.get('icon')}"
+            label_to_index[label] = idx
+
+        if action == "clear":
+            self._options.pop(CONF_ICON_RULES, None)
+            return await self.async_step_manage_interfaces()
+
+        if action in ("remove", "edit"):
+            existing_label = user_input.get(KEY_EXISTING) or ""
+            if existing_label in label_to_index:
+                idx = label_to_index[existing_label]
+                if action == "remove":
+                    rules.pop(idx)
+                    self._options[CONF_ICON_RULES] = rules
+                    self._apply_options()
+                    return await self.async_step_entity_icon_rules()
+
+                # edit: replace selected rule with provided fields (match/value/icon).
+                match = (user_input.get(KEY_MATCH) or rules[idx].get("match") or "").strip()
+                value = (user_input.get(KEY_VALUE) or rules[idx].get("value") or "").strip()
+                icon = (user_input.get(KEY_ICON) or rules[idx].get("icon") or "").strip()
+                if match and value and icon:
+                    rules[idx] = {"match": match, "value": value, "icon": icon}
+                    self._options[CONF_ICON_RULES] = rules
+                    self._apply_options()
+                    return await self.async_step_entity_icon_rules()
+
+        if action == "add":
+            match = (user_input.get(KEY_MATCH) or "").strip()
+            value = (user_input.get(KEY_VALUE) or "").strip()
+            icon = (user_input.get(KEY_ICON) or "").strip()
+            if match and value and icon:
+                rules.append({"match": match, "value": value, "icon": icon})
+                self._options[CONF_ICON_RULES] = rules
+                self._apply_options()
+                return await self.async_step_entity_icon_rules()
+
+        # If validation fails, just re-render the form
+        return await self.async_step_entity_icon_rules()
+    async def async_step_environmental_sensors(self, user_input=None) -> FlowResult:
+        """Environmental / PoE options."""
+        return self.async_show_menu(
+            step_id="environmental_sensors",
+            menu_options=[
+                "environmental_enable_disable",
+                "poe_poll_interval",
+                "environmental_poll_interval",
+                "back",
+            ],
+        )
+    async def async_step_custom_oids(self, user_input=None) -> FlowResult:
+            """Manage per-device custom diagnostic OIDs."""
+            errors: dict[str, str] = {}
+            custom_oids: dict = dict(self._options.get(CONF_CUSTOM_OIDS, {}) or {})
+            enabled_default = bool(custom_oids)
+    
+            if user_input is not None:
+                enable_custom = user_input.get(CONF_ENABLE_CUSTOM_OIDS, False)
+                reset = user_input.get(CONF_RESET_CUSTOM_OIDS, False)
+    
+                if reset or not enable_custom:
+                    self._options[CONF_CUSTOM_OIDS] = {}
+                    self._apply_options()
+                    return await self.async_step_init()
+    
+                new_custom: dict[str, str] = {}
+                for key, _label in OID_FIELDS:
+                    field = f"{key}_oid"
+                    raw = (user_input.get(field) or "").strip()
+                    if raw and not _is_valid_numeric_oid(raw):
+                        errors[field] = "invalid_oid"
+                        continue
+                    norm = _normalize_oid(raw)
+                    if norm:
+                        new_custom[key] = norm
+    
+                if not errors:
+                    self._options[CONF_CUSTOM_OIDS] = new_custom
+                    self._apply_options()
+                    return await self.async_step_init()
+    
+            schema_dict = {
+                vol.Optional(CONF_ENABLE_CUSTOM_OIDS, default=enabled_default): bool,
+                vol.Optional(CONF_RESET_CUSTOM_OIDS, default=False): bool,
+            }
+            for key, _label in OID_FIELDS:
+                schema_dict[
+                    vol.Optional(f"{key}_oid", default=str(custom_oids.get(key, "")))
+                ] = str
+    
+            return self.async_show_form(
+                step_id="custom_oids",
+                data_schema=vol.Schema(schema_dict),
+                errors=errors,
+            )
+
+
 
     async def async_step_bandwidth_sensors(self, user_input=None) -> FlowResult:
         """Bandwidth Sensors menu."""
@@ -365,25 +435,36 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             step_id="bandwidth_sensors",
             menu_options=[
                 "bandwidth_enable_disable",
+                "bandwidth_poll_interval",
                 "bandwidth_include_rules",
                 "bandwidth_exclude_rules",
-                "bandwidth_poll_interval",
-                "init",
+                "bandwidth_icons",
+                "back",
             ],
         )
 
     async def async_step_bandwidth_enable_disable(self, user_input=None) -> FlowResult:
         """Enable/Disable bandwidth sensors."""
         if user_input is not None:
-            self._options[CONF_BW_ENABLED] = bool(user_input.get(CONF_BW_ENABLED))
+            self._options[CONF_BW_ENABLE] = bool(user_input.get(CONF_BW_ENABLE))
+            self._options[CONF_BW_MODE] = user_input.get(CONF_BW_MODE, BW_MODE_SENSORS)
             self._apply_options()
             # Return to the Bandwidth Sensors submenu (do not exit the options flow).
             return await self.async_step_bandwidth_sensors()
 
-        enabled = self._options.get(CONF_BW_ENABLED, False)
+        enabled = self._options.get(CONF_BW_ENABLE, False)
+        mode = self._options.get(CONF_BW_MODE, BW_MODE_SENSORS)
+
         schema = vol.Schema(
             {
-                vol.Required(CONF_BW_ENABLED, default=enabled): selector.BooleanSelector(),
+                vol.Required(CONF_BW_ENABLE, default=enabled): selector.BooleanSelector(),
+                vol.Required(CONF_BW_MODE, default=mode): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[BW_MODE_SENSORS, BW_MODE_ATTRIBUTES],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                        translation_key="bandwidth_data_as",
+                    )
+                ),
             }
         )
         return self.async_show_form(step_id="bandwidth_enable_disable", data_schema=schema)
@@ -432,12 +513,12 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(step_id="bandwidth_poll_interval", data_schema=schema, errors=errors)
 
     async def async_step_bandwidth_include_rules(self, user_input=None) -> FlowResult:
-        return await self._async_step_bw_rules(include=True, user_input=user_input)
+        return await self._async_step_bw_rules(include=True, user_input=user_input, return_to="bandwidth_sensors")
 
     async def async_step_bandwidth_exclude_rules(self, user_input=None) -> FlowResult:
-        return await self._async_step_bw_rules(include=False, user_input=user_input)
+        return await self._async_step_bw_rules(include=False, user_input=user_input, return_to="bandwidth_sensors")
 
-    async def async_step_device(self, user_input=None) -> FlowResult:
+    async def async_step_connection_and_naming_overrides(self, user_input=None) -> FlowResult:
         """Per-device connection overrides."""
         errors: dict[str, str] = {}
 
@@ -503,7 +584,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             }
         )
 
-        return self.async_show_form(step_id="device", data_schema=schema, errors=errors)
+        return self.async_show_form(
+            step_id="connection_and_naming_overrides",
+            data_schema=schema,
+            errors=errors,
+        )
 
     def _render_rules(self, *, include: bool) -> str:
         """Render current include/exclude rules for description text."""
@@ -548,258 +633,661 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         return '\n'.join(f"- {p}" for p in parts) if parts else 'none'
 
 
-    async def _async_step_rules(self, *, include: bool, user_input=None) -> FlowResult:
-        """Shared handler for include/exclude rule management."""
-
-        KEY_ACTION = "rule_action"
-        KEY_MATCH = "rule_match"
-        KEY_VALUE = "rule_value"
-
-        if user_input is not None:
-            action = user_input.get(KEY_ACTION)
-            match = user_input.get(KEY_MATCH)
-            value = (user_input.get(KEY_VALUE) or "").strip()
-
-            # Done -> back to menu (no additional changes)
-            if action == "done":
-                return await self.async_step_init()
-
-            # Clear all rules in this group
-            if action == "clear":
-                if include:
-                    self._options.pop(CONF_INCLUDE_STARTS_WITH, None)
-                    self._options.pop(CONF_INCLUDE_CONTAINS, None)
-                    self._options.pop(CONF_INCLUDE_ENDS_WITH, None)
-                else:
-                    self._options.pop(CONF_EXCLUDE_STARTS_WITH, None)
-                    self._options.pop(CONF_EXCLUDE_CONTAINS, None)
-                    self._options.pop(CONF_EXCLUDE_ENDS_WITH, None)
-
-                self._apply_options()
-                return await self.async_step_init()
-
-            # Add / Remove
-            if action in ("add", "remove") and value and match in (
-                "starts_with",
-                "contains",
-                "ends_with",
-            ):
-                if include:
-                    k_map = {
-                        "starts_with": CONF_INCLUDE_STARTS_WITH,
-                        "contains": CONF_INCLUDE_CONTAINS,
-                        "ends_with": CONF_INCLUDE_ENDS_WITH,
-                    }
-                else:
-                    k_map = {
-                        "starts_with": CONF_EXCLUDE_STARTS_WITH,
-                        "contains": CONF_EXCLUDE_CONTAINS,
-                        "ends_with": CONF_EXCLUDE_ENDS_WITH,
-                    }
-
-                store_key = k_map[match]
-                cur = list(self._options.get(store_key) or [])
-
-                if action == "add":
-                    if value not in cur:
-                        cur.append(value)
-                else:
-                    cur = [v for v in cur if v != value]
-
-                if cur:
-                    self._options[store_key] = cur
-                else:
-                    self._options.pop(store_key, None)
-
-                self._apply_options()
-                return await self.async_step_init()
-
-            # If incomplete input, just re-show the form (no errors)
-
-        schema = vol.Schema(
-            {
-                vol.Required(KEY_ACTION, default="add"): vol.In(
-                    {
-                        "add": "Add",
-                        "remove": "Remove",
-                        "clear": "Clear all",
-                        "done": "Done",
-                    }
-                ),
-                vol.Required(KEY_MATCH, default="starts_with"): vol.In(
-                    {
-                        "starts_with": "Starts with",
-                        "contains": "Contains",
-                        "ends_with": "Ends with",
-                    }
-                ),
-                vol.Optional(KEY_VALUE, default=""): str,
-            }
-        )
-
-        # NOTE: These are the *interface* include/exclude rules (not bandwidth rules).
-        # They must use their own step ids so they render the correct titles/labels.
-        # Interface include/exclude rules must render from the interface rule keys.
-        # Bandwidth include/exclude rules must render from the bandwidth rule keys.
-        desc = self._render_rules(include=include)
-        step_id = "include_rules" if include else "exclude_rules"
-        return self.async_show_form(
-            step_id=step_id,
-            data_schema=schema,
-            description_placeholders={"current_rules": desc},
-        )
-
-
-    async def _async_step_bw_rules(self, *, include: bool, user_input=None) -> FlowResult:
-        """Shared handler for include/exclude rule management."""
-
-        KEY_ACTION = "rule_action"
-        KEY_MATCH = "rule_match"
-        KEY_VALUE = "rule_value"
-
-        if user_input is not None:
-            action = user_input.get(KEY_ACTION)
-            match = user_input.get(KEY_MATCH)
-            value = (user_input.get(KEY_VALUE) or "").strip()
-
-            # Done -> back to menu (no additional changes)
-            if action == "done":
-                return await self.async_step_init()
-
-            # Clear all rules in this group
-            if action == "clear":
-                if include:
-                    self._options.pop(CONF_BW_INCLUDE_STARTS_WITH, None)
-                    self._options.pop(CONF_BW_INCLUDE_CONTAINS, None)
-                    self._options.pop(CONF_BW_INCLUDE_ENDS_WITH, None)
-                else:
-                    self._options.pop(CONF_BW_EXCLUDE_STARTS_WITH, None)
-                    self._options.pop(CONF_BW_EXCLUDE_CONTAINS, None)
-                    self._options.pop(CONF_BW_EXCLUDE_ENDS_WITH, None)
-
-                self._apply_options()
-                return await self.async_step_init()
-
-            # Add / Remove
-            if action in ("add", "remove") and value and match in (
-                "starts_with",
-                "contains",
-                "ends_with",
-            ):
-                if include:
-                    k_map = {
-                        "starts_with": CONF_BW_INCLUDE_STARTS_WITH,
-                        "contains": CONF_BW_INCLUDE_CONTAINS,
-                        "ends_with": CONF_BW_INCLUDE_ENDS_WITH,
-                    }
-                else:
-                    k_map = {
-                        "starts_with": CONF_BW_EXCLUDE_STARTS_WITH,
-                        "contains": CONF_BW_EXCLUDE_CONTAINS,
-                        "ends_with": CONF_BW_EXCLUDE_ENDS_WITH,
-                    }
-
-                store_key = k_map[match]
-                cur = list(self._options.get(store_key) or [])
-
-                if action == "add":
-                    if value not in cur:
-                        cur.append(value)
-                else:
-                    cur = [v for v in cur if v != value]
-
-                if cur:
-                    self._options[store_key] = cur
-                else:
-                    self._options.pop(store_key, None)
-
-                self._apply_options()
-                return await self.async_step_init()
-
-            # If incomplete input, just re-show the form (no errors)
-
-        schema = vol.Schema(
-            {
-                vol.Required(KEY_ACTION, default="add"): vol.In(
-                    {
-                        "add": "Add",
-                        "remove": "Remove",
-                        "clear": "Clear all",
-                        "done": "Done",
-                    }
-                ),
-                vol.Required(KEY_MATCH, default="starts_with"): vol.In(
-                    {
-                        "starts_with": "Starts with",
-                        "contains": "Contains",
-                        "ends_with": "Ends with",
-                    }
-                ),
-                vol.Optional(KEY_VALUE, default=""): str,
-            }
-        )
-
-        # Bandwidth include/exclude rules must render from the bandwidth rule keys.
-        desc = self._render_bw_rules(include=include)
-        step_id = "bandwidth_include_rules" if include else "bandwidth_exclude_rules"
-        return self.async_show_form(
-            step_id=step_id,
-            data_schema=schema,
-            description_placeholders={"current_rules": desc},
-        )
-
+    
     async def async_step_include_rules(self, user_input=None) -> FlowResult:
-        return await self._async_step_rules(include=True, user_input=user_input)
+        """Interface include rules (Add/Edit/Remove/Clear)."""
+        return await self._async_step_rules(include=True, user_input=user_input, return_to="manage_interfaces")
 
     async def async_step_exclude_rules(self, user_input=None) -> FlowResult:
-        return await self._async_step_rules(include=False, user_input=user_input)
+        """Interface exclude rules (Add/Edit/Remove/Clear)."""
+        return await self._async_step_rules(include=False, user_input=user_input, return_to="manage_interfaces")
 
-    async def async_step_custom_oids(self, user_input=None) -> FlowResult:
-        """Manage per-device custom diagnostic OIDs."""
-        errors: dict[str, str] = {}
-        custom_oids: dict = dict(self._options.get(CONF_CUSTOM_OIDS, {}) or {})
-        enabled_default = bool(custom_oids)
+    async def _async_step_rules(
+        self, *, include: bool, user_input=None, return_to: str = "init"
+    ) -> FlowResult:
+        """Shared handler for interface include/exclude rule management.
+
+        Uses the same Add/Edit/Remove/Clear pattern as Entity Icon Rules.
+        """
+
+        STEP_ID = "include_rules" if include else "exclude_rules"
+
+        KEY_ACTION = "rule_action"
+        KEY_EXISTING = "rule_existing"
+        KEY_MATCH = "rule_match"
+        KEY_VALUE = "rule_value"
+
+        # Map UI match -> option keys
+        if include:
+            k_map = {
+                "starts with": CONF_INCLUDE_STARTS_WITH,
+                "contains": CONF_INCLUDE_CONTAINS,
+                "ends with": CONF_INCLUDE_ENDS_WITH,
+            }
+        else:
+            k_map = {
+                "starts with": CONF_EXCLUDE_STARTS_WITH,
+                "contains": CONF_EXCLUDE_CONTAINS,
+                "ends with": CONF_EXCLUDE_ENDS_WITH,
+            }
+
+        # Build current rules + labels
+        existing_labels: list[str] = []
+        label_to_rule: dict[str, tuple[str, str]] = {}  # label -> (match, value)
+
+        parts: list[str] = []
+        idx = 1
+        for m, opt_key in k_map.items():
+            vals = list(self._options.get(opt_key) or [])
+            for v in vals:
+                label = f"{idx}. {m}: {v}"
+                existing_labels.append(label)
+                label_to_rule[label] = (m, v)
+                parts.append(f"{m}: {v}")
+                idx += 1
+
+        current_rules = "\n".join(parts) if parts else "(none)"
 
         if user_input is not None:
-            enable_custom = user_input.get(CONF_ENABLE_CUSTOM_OIDS, False)
-            reset = user_input.get(CONF_RESET_CUSTOM_OIDS, False)
+            action = user_input.get(KEY_ACTION)
 
-            if reset or not enable_custom:
-                self._options[CONF_CUSTOM_OIDS] = {}
+            if action == "done":
+                return await getattr(self, f"async_step_{return_to}")()
+
+            if action == "clear":
+                for opt_key in k_map.values():
+                    self._options.pop(opt_key, None)
                 self._apply_options()
-                return await self.async_step_init()
+                return await getattr(self, f"async_step_{STEP_ID}")()
 
-            new_custom: dict[str, str] = {}
-            for key, _label in OID_FIELDS:
-                field = f"{key}_oid"
-                raw = (user_input.get(field) or "").strip()
-                if raw and not _is_valid_numeric_oid(raw):
-                    errors[field] = "invalid_oid"
-                    continue
-                norm = _normalize_oid(raw)
-                if norm:
-                    new_custom[key] = norm
+            if action == "add":
+                match = (user_input.get(KEY_MATCH) or "starts with").strip()
+                value = (user_input.get(KEY_VALUE) or "").strip()
+                if match in k_map and value:
+                    opt_key = k_map[match]
+                    cur = list(self._options.get(opt_key) or [])
+                    if value not in cur:
+                        cur.append(value)
+                    self._options[opt_key] = cur
+                    self._apply_options()
+                return await getattr(self, f"async_step_{STEP_ID}")()
 
-            if not errors:
-                self._options[CONF_CUSTOM_OIDS] = new_custom
-                self._apply_options()
-                return await self.async_step_init()
+            if action in ("remove", "edit"):
+                selected = user_input.get(KEY_EXISTING) or ""
+                if selected in label_to_rule:
+                    old_match, old_value = label_to_rule[selected]
+                    # remove old
+                    old_key = k_map[old_match]
+                    cur_old = [v for v in (self._options.get(old_key) or []) if v != old_value]
+                    if cur_old:
+                        self._options[old_key] = cur_old
+                    else:
+                        self._options.pop(old_key, None)
 
-        schema_dict = {
-            vol.Optional(CONF_ENABLE_CUSTOM_OIDS, default=enabled_default): bool,
-            vol.Optional(CONF_RESET_CUSTOM_OIDS, default=False): bool,
-        }
-        for key, _label in OID_FIELDS:
-            schema_dict[
-                vol.Optional(f"{key}_oid", default=str(custom_oids.get(key, "")))
-            ] = str
+                    if action == "edit":
+                        new_match = (user_input.get(KEY_MATCH) or old_match).strip()
+                        new_value = (user_input.get(KEY_VALUE) or old_value).strip() or old_value
+                        if new_match in k_map and new_value:
+                            new_key = k_map[new_match]
+                            cur_new = list(self._options.get(new_key) or [])
+                            if new_value not in cur_new:
+                                cur_new.append(new_value)
+                            self._options[new_key] = cur_new
 
-        return self.async_show_form(
-            step_id="custom_oids",
-            data_schema=vol.Schema(schema_dict),
-            errors=errors,
+                    self._apply_options()
+
+                return await getattr(self, f"async_step_{STEP_ID}")()
+
+            # Anything else -> re-show
+            return await getattr(self, f"async_step_{STEP_ID}")()
+
+        # Schema (selectors)
+        schema = vol.Schema(
+            {
+                vol.Required(KEY_ACTION, default="add"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="add", label="Add"),
+                            selector.SelectOptionDict(value="edit", label="Edit"),
+                            selector.SelectOptionDict(value="remove", label="Remove"),
+                            selector.SelectOptionDict(value="clear", label="Clear all"),
+                            selector.SelectOptionDict(value="done", label="Back"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(KEY_EXISTING): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[selector.SelectOptionDict(value=v, label=v) for v in existing_labels],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ) if existing_labels else cv.string,
+                vol.Optional(KEY_MATCH, default="starts with"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="starts with", label="Starts with"),
+                            selector.SelectOptionDict(value="contains", label="Contains"),
+                            selector.SelectOptionDict(value="ends with", label="Ends with"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(KEY_VALUE, default=""): cv.string,
+            }
         )
 
-    # -------------------------------------------------------------------------
-    # Bandwidth Sensors (fixed): dedicated step_ids + dedicated option keys
-    # -------------------------------------------------------------------------
+        return self.async_show_form(
+            step_id=STEP_ID,
+            data_schema=schema,
+            description_placeholders={"current": current_rules},
+        )
+
+
+    async def _async_step_bw_rules(
+        self, *, include: bool, user_input=None, return_to: str = "bandwidth_sensors"
+    ) -> FlowResult:
+        """Shared handler for bandwidth include/exclude rule management.
+
+        Uses the same Add/Edit/Remove/Clear pattern as Entity Icon Rules.
+        """
+
+        STEP_ID = "bandwidth_include_rules" if include else "bandwidth_exclude_rules"
+
+        KEY_ACTION = "rule_action"
+        KEY_EXISTING = "rule_existing"
+        KEY_MATCH = "rule_match"
+        KEY_VALUE = "rule_value"
+
+        if include:
+            k_map = {
+                "starts with": CONF_BW_INCLUDE_STARTS_WITH,
+                "contains": CONF_BW_INCLUDE_CONTAINS,
+                "ends with": CONF_BW_INCLUDE_ENDS_WITH,
+            }
+        else:
+            k_map = {
+                "starts with": CONF_BW_EXCLUDE_STARTS_WITH,
+                "contains": CONF_BW_EXCLUDE_CONTAINS,
+                "ends with": CONF_BW_EXCLUDE_ENDS_WITH,
+            }
+
+        existing_labels: list[str] = []
+        label_to_rule: dict[str, tuple[str, str]] = {}
+
+        parts: list[str] = []
+        idx = 1
+        for m, opt_key in k_map.items():
+            vals = list(self._options.get(opt_key) or [])
+            for v in vals:
+                label = f"{idx}. {m}: {v}"
+                existing_labels.append(label)
+                label_to_rule[label] = (m, v)
+                parts.append(f"{m}: {v}")
+                idx += 1
+
+        current_rules = "\n".join(parts) if parts else "(none)"
+
+        if user_input is not None:
+            action = user_input.get(KEY_ACTION)
+
+            if action == "done":
+                return await getattr(self, f"async_step_{return_to}")()
+
+            if action == "clear":
+                for opt_key in k_map.values():
+                    self._options.pop(opt_key, None)
+                self._apply_options()
+                return await getattr(self, f"async_step_{STEP_ID}")()
+
+            if action == "add":
+                match = (user_input.get(KEY_MATCH) or "starts with").strip()
+                value = (user_input.get(KEY_VALUE) or "").strip()
+                if match in k_map and value:
+                    opt_key = k_map[match]
+                    cur = list(self._options.get(opt_key) or [])
+                    if value not in cur:
+                        cur.append(value)
+                    self._options[opt_key] = cur
+                    self._apply_options()
+                return await getattr(self, f"async_step_{STEP_ID}")()
+
+            if action in ("remove", "edit"):
+                selected = user_input.get(KEY_EXISTING) or ""
+                if selected in label_to_rule:
+                    old_match, old_value = label_to_rule[selected]
+                    old_key = k_map[old_match]
+                    cur_old = [v for v in (self._options.get(old_key) or []) if v != old_value]
+                    if cur_old:
+                        self._options[old_key] = cur_old
+                    else:
+                        self._options.pop(old_key, None)
+
+                    if action == "edit":
+                        new_match = (user_input.get(KEY_MATCH) or old_match).strip()
+                        new_value = (user_input.get(KEY_VALUE) or old_value).strip() or old_value
+                        if new_match in k_map and new_value:
+                            new_key = k_map[new_match]
+                            cur_new = list(self._options.get(new_key) or [])
+                            if new_value not in cur_new:
+                                cur_new.append(new_value)
+                            self._options[new_key] = cur_new
+
+                    self._apply_options()
+
+                return await getattr(self, f"async_step_{STEP_ID}")()
+
+            return await getattr(self, f"async_step_{STEP_ID}")()
+
+        schema = vol.Schema(
+            {
+                vol.Required(KEY_ACTION, default="add"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="add", label="Add"),
+                            selector.SelectOptionDict(value="edit", label="Edit"),
+                            selector.SelectOptionDict(value="remove", label="Remove"),
+                            selector.SelectOptionDict(value="clear", label="Clear all"),
+                            selector.SelectOptionDict(value="done", label="Back"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(KEY_EXISTING): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[selector.SelectOptionDict(value=v, label=v) for v in existing_labels],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ) if existing_labels else cv.string,
+                vol.Optional(KEY_MATCH, default="starts with"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="starts with", label="Starts with"),
+                            selector.SelectOptionDict(value="contains", label="Contains"),
+                            selector.SelectOptionDict(value="ends with", label="Ends with"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(KEY_VALUE, default=""): cv.string,
+            }
+        )
+
+        return self.async_show_form(
+            step_id=STEP_ID,
+            data_schema=schema,
+            description_placeholders={"current": current_rules},
+        )
+
+
+    async def async_step_builtin_filters(self, user_input=None) -> FlowResult:
+        """Enable/disable built-in vendor interface filtering rules."""
+        # Store disabled rule IDs (unchecked == enabled)
+        current_disabled: list[str] = list(self._options.get(CONF_DISABLED_VENDOR_FILTER_RULE_IDS, []) or [])
+        options_map = {r["id"]: r["label"] for r in BUILTIN_VENDOR_FILTER_RULES}
+
+        if user_input is not None:
+            disabled = list(user_input.get(CONF_DISABLED_VENDOR_FILTER_RULE_IDS, []) or [])
+            if disabled:
+                self._options[CONF_DISABLED_VENDOR_FILTER_RULE_IDS] = disabled
+            else:
+                self._options.pop(CONF_DISABLED_VENDOR_FILTER_RULE_IDS, None)
+            self._apply_options()
+            return await self.async_step_manage_interfaces()
+
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_DISABLED_VENDOR_FILTER_RULE_IDS,
+                    default=current_disabled,
+                ): cv.multi_select(options_map),
+            }
+        )
+
+        return self.async_show_form(
+            step_id="builtin_filters",
+            description_placeholders={},
+            data_schema=schema,
+        )
+
+
+    async def async_step_port_name_rules(self, user_input=None) -> FlowResult:
+        """Menu for managing port display name rules."""
+        return self.async_show_menu(
+            step_id="port_name_rules",
+            menu_options=[
+                "port_rename_defaults",
+                "port_rename_custom",
+                "port_rename_restore_defaults",
+                "manage_interfaces",
+            ],
+        )
+
+
+    async def async_step_port_rename_custom(self, user_input=None) -> FlowResult:
+        """Menu for adding/removing custom port rename rules."""
+        return self.async_show_menu(
+            step_id="port_rename_custom",
+            menu_options=["port_rename_custom_add", "port_rename_custom_edit", "port_rename_custom_remove", "port_name_rules"],
+        )
+
+
+    async def async_step_port_rename_custom_add(self, user_input=None) -> FlowResult:
+        """Add a custom port rename regex rule."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            pattern = (user_input.get("pattern") or "").strip()
+            replace = user_input.get("replace") or ""
+            description = (user_input.get("description") or "").strip()
+
+            if not pattern:
+                errors["pattern"] = "required"
+            else:
+                try:
+                    re.compile(pattern)
+                except Exception:
+                    errors["pattern"] = "invalid_regex"
+
+            if not errors:
+                rules = list(self._options.get(CONF_PORT_RENAME_USER_RULES) or [])
+                rules.append({"pattern": pattern, "replace": replace, "description": description})
+                self._options[CONF_PORT_RENAME_USER_RULES] = rules
+                self._apply_options()
+                return await self.async_step_port_rename_custom()
+
+        schema = vol.Schema(
+            {
+                vol.Required("pattern"): str,
+                vol.Optional("replace", default=""): str,
+                vol.Optional("description", default=""): str,
+            }
+        )
+        return self.async_show_form(step_id="port_rename_custom_add", data_schema=schema, errors=errors)
+
+
+
+    async def async_step_port_rename_custom_edit(self, user_input=None) -> FlowResult:
+        """Edit an existing custom port rename regex rule."""
+        rules = list(self._options.get(CONF_PORT_RENAME_USER_RULES, []) or [])
+        # Build label -> index mapping
+        labels: dict[str, int] = {}
+        for idx, r in enumerate(rules):
+            pat = r.get("pattern")
+            rep = r.get("replace")
+            labels[f"{idx+1}. {pat} -> {rep}"] = idx
+
+        if user_input is not None:
+            sel = user_input.get("selected")
+            if sel in labels:
+                idx = labels[sel]
+                pattern = (user_input.get("pattern") or "").strip()
+                replace = (user_input.get("replace") or "").strip()
+                errors = {}
+                try:
+                    re.compile(pattern)
+                except Exception:
+                    errors["pattern"] = "invalid_regex"
+                if errors:
+                    return self.async_show_form(
+                        step_id="port_rename_custom_edit",
+                        data_schema=self._port_rename_edit_schema(labels, rules, sel),
+                        errors=errors,
+                    )
+                rules[idx] = {"pattern": pattern, "replace": replace}
+                self._options[CONF_PORT_RENAME_USER_RULES] = rules
+                self._apply_options()
+                return await self.async_step_port_rename_custom()
+            return await self.async_step_port_rename_custom()
+
+        return self.async_show_form(
+            step_id="port_rename_custom_edit",
+            data_schema=self._port_rename_edit_schema(labels, rules),
+        )
+
+    def _port_rename_edit_schema(self, labels: dict[str, int], rules: list[dict], selected: str | None = None) -> vol.Schema:
+        if not labels:
+            return vol.Schema({vol.Optional("selected"): str})
+        if selected is None:
+            selected = list(labels.keys())[0]
+        idx = labels.get(selected, 0)
+        cur = rules[idx] if rules else {"pattern": "", "replace": ""}
+        return vol.Schema(
+            {
+                vol.Required("selected", default=selected): vol.In(list(labels.keys())),
+                vol.Required("pattern", default=str(cur.get("pattern") or "")): str,
+                vol.Required("replace", default=str(cur.get("replace") or "")): str,
+            }
+        )
+    async def async_step_port_rename_custom_remove(self, user_input=None) -> FlowResult:
+        """Remove a custom port rename rule."""
+        rules = list(self._options.get(CONF_PORT_RENAME_USER_RULES) or [])
+
+        if not rules:
+            return self.async_show_form(
+                step_id="port_rename_custom_remove",
+                data_schema=vol.Schema({}),
+                description_placeholders={"current_rules": "• (none)"},
+            )
+
+        if user_input is not None:
+            idx = user_input.get("remove_index")
+            try:
+                i = int(idx)
+                if 0 <= i < len(rules):
+                    rules.pop(i)
+            except Exception:
+                pass
+
+            if rules:
+                self._options[CONF_PORT_RENAME_USER_RULES] = rules
+            else:
+                self._options.pop(CONF_PORT_RENAME_USER_RULES, None)
+
+            self._apply_options()
+            return await self.async_step_port_rename_custom()
+
+        opts = {}
+        lines: list[str] = []
+        for i, r in enumerate(rules):
+            pat = (r.get("pattern") or "").strip()
+            rep = (r.get("replace") or "").strip()
+            desc = (r.get("description") or "").strip()
+            label = desc or f"{pat} → {rep}"
+            opts[str(i)] = f"{i+1}. {label}"
+            lines.append(f"{i+1}. {pat} → {rep}" + (f" — {desc}" if desc else ""))
+
+        schema = vol.Schema({vol.Required("remove_index"): vol.In(opts)})
+        return self.async_show_form(
+            step_id="port_rename_custom_remove",
+            data_schema=schema,
+            description_placeholders={"current_rules": "\n".join(lines) if lines else "• (none)"},
+        )
+
+
+    async def async_step_port_rename_defaults(self, user_input=None) -> FlowResult:
+        """Enable/disable built-in display name rules for this device."""
+        current_disabled: list[str] = list(self._options.get(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS, []) or [])
+        options_map: dict[str, str] = {}
+
+        for r in DEFAULT_PORT_RENAME_RULES:
+            rid = str(r.get("id") or "").strip()
+            if not rid:
+                continue
+            desc = str(r.get("description") or "").strip()
+            pat = str(r.get("pattern") or "").strip()
+            rep = str(r.get("replace") or "").strip()
+            label = f"{rid}: {desc}" if desc else rid
+            if pat and rep:
+                label = f"{label} ({pat} → {rep})"
+            options_map[rid] = label
+
+        if user_input is not None:
+            disabled = list(user_input.get(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS, []) or [])
+            changed = disabled != current_disabled
+
+            if disabled:
+                self._options[CONF_PORT_RENAME_DISABLED_DEFAULT_IDS] = disabled
+            else:
+                self._options.pop(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS, None)
+
+            if changed:
+                self._apply_options()
+
+            return await self.async_step_port_name_rules()
+
+
+        # Build the {rules} placeholder text used by the translation string
+        enabled_ids = [rid for rid in options_map.keys() if rid not in current_disabled]
+        if enabled_ids:
+            rules_text = "\n".join([f"- {rid}" for rid in enabled_ids])
+        else:
+            rules_text = "(none)"
+
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
+                    default=current_disabled,
+                ): cv.multi_select(options_map),
+            }
+        )
+
+        return self.async_show_form(
+            step_id="port_rename_defaults",
+            data_schema=schema,
+            description_placeholders={"rules": rules_text},
+        )
+    async def async_step_port_rename_restore_defaults(self, user_input=None) -> FlowResult:
+        """Restore built-in default port rename rules (re-enable all)."""
+        self._options.pop(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS, None)
+        self._apply_options()
+        return await self.async_step_port_name_rules()
+
+
+    async def async_step_interface_name_rules(self, user_input=None):
+        """Backward/forward-compatible alias for the Interface Name Rules menu."""
+        return await self.async_step_port_name_rules(user_input)
+
+
+    async def async_step_environmental_enable_disable(self, user_input=None) -> FlowResult:
+        """Enable/disable Environmental + PoE options (and choose attributes vs sensors mode)."""
+
+        if user_input is not None:
+            self._options[CONF_ENV_ENABLE] = user_input.get(CONF_ENV_ENABLE, False)
+            self._options[CONF_ENV_MODE] = user_input.get(CONF_ENV_MODE, ENV_MODE_ATTRIBUTES)
+            self._options[CONF_POE_ENABLE] = user_input.get(CONF_POE_ENABLE, False)
+            self._options[CONF_POE_MODE] = user_input.get(CONF_POE_MODE, POE_MODE_ATTRIBUTES)
+            self._apply_options()
+            return await self.async_step_environmental_sensors()
+
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_ENV_ENABLE,
+                    default=self._options.get(CONF_ENV_ENABLE, False),
+                ): selector.BooleanSelector(),
+                vol.Optional(
+                    CONF_ENV_MODE,
+                    default=self._options.get(CONF_ENV_MODE, ENV_MODE_SENSORS),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[ENV_MODE_SENSORS, ENV_MODE_ATTRIBUTES],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                        translation_key="env_data_as",
+                    )
+                ),
+                vol.Optional(
+                    CONF_POE_ENABLE,
+                    default=self._options.get(CONF_POE_ENABLE, False),
+                ): selector.BooleanSelector(),
+                vol.Optional(
+                    CONF_POE_MODE,
+                    default=self._options.get(CONF_POE_MODE, POE_MODE_SENSORS),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[POE_MODE_SENSORS, POE_MODE_ATTRIBUTES],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                        translation_key="poe_data_as",
+                    )
+                ),
+            }
+        )
+
+        return self.async_show_form(step_id="environmental_enable_disable", data_schema=schema)
+
+    async def async_step_poe_poll_interval(self, user_input=None) -> FlowResult:
+        """Set PoE polling interval (seconds)."""
+        if user_input is not None:
+            self._options[CONF_POE_POLL_INTERVAL] = user_input[CONF_POE_POLL_INTERVAL]
+            self._apply_options()
+            return await self.async_step_environmental_sensors()
+
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_POE_POLL_INTERVAL,
+                    default=self._options.get(CONF_POE_POLL_INTERVAL, DEFAULT_POE_POLL_INTERVAL),
+                ): vol.All(vol.Coerce(int), vol.Range(min=5, max=3600))
+            }
+        )
+        return self.async_show_form(step_id="poe_poll_interval", data_schema=schema)
+
+    async def async_step_environmental_poll_interval(self, user_input=None) -> FlowResult:
+        """Set Environmental polling interval (seconds)."""
+        if user_input is not None:
+            self._options[CONF_ENV_POLL_INTERVAL] = user_input[CONF_ENV_POLL_INTERVAL]
+            self._apply_options()
+            return await self.async_step_environmental_sensors()
+
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_ENV_POLL_INTERVAL,
+                    default=self._options.get(CONF_ENV_POLL_INTERVAL, DEFAULT_ENV_POLL_INTERVAL),
+                ): vol.All(vol.Coerce(int), vol.Range(min=5, max=3600))
+            }
+        )
+        return self.async_show_form(step_id="environmental_poll_interval", data_schema=schema)
+
+
+    async def async_step_bandwidth_icons(self, user_input=None) -> FlowResult:
+        """Optional icon overrides for bandwidth sensors (configured separately from interface icon rules)."""
+        options = dict(self._options)
+
+        current = {
+            CONF_BW_RX_THROUGHPUT_ICON: (options.get(CONF_BW_RX_THROUGHPUT_ICON) or "").strip(),
+            CONF_BW_TX_THROUGHPUT_ICON: (options.get(CONF_BW_TX_THROUGHPUT_ICON) or "").strip(),
+            CONF_BW_RX_TOTAL_ICON: (options.get(CONF_BW_RX_TOTAL_ICON) or "").strip(),
+            CONF_BW_TX_TOTAL_ICON: (options.get(CONF_BW_TX_TOTAL_ICON) or "").strip(),
+        }
+
+        if user_input is not None:
+            changed = False
+            for k, old in current.items():
+                new = (user_input.get(k) or "").strip()
+                if new != old:
+                    changed = True
+                if new:
+                    options[k] = new
+                else:
+                    options.pop(k, None)
+
+            if changed:
+                self._options = options
+                self._apply_options()
+
+            return await self.async_step_bandwidth_sensors()
+
+        schema = vol.Schema(
+            {
+                vol.Optional(CONF_BW_RX_THROUGHPUT_ICON, default=current[CONF_BW_RX_THROUGHPUT_ICON]): cv.string,
+                vol.Optional(CONF_BW_TX_THROUGHPUT_ICON, default=current[CONF_BW_TX_THROUGHPUT_ICON]): cv.string,
+                vol.Optional(CONF_BW_RX_TOTAL_ICON, default=current[CONF_BW_RX_TOTAL_ICON]): cv.string,
+                vol.Optional(CONF_BW_TX_TOTAL_ICON, default=current[CONF_BW_TX_TOTAL_ICON]): cv.string,
+            }
+        )
+
+        return self.async_show_form(
+            step_id="bandwidth_icons",
+            data_schema=schema,
+        )
