@@ -12,13 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🛣️ Roadmap Tracking
 
-- 🌡️ **Switch Environmentals & CPU / Memory Usage**  
-  Planned for **v0.4.0**  
-  🔗 See roadmap: [`#roadmap-switch-environmentals`](./ROADMAP.md#roadmap-switch-environmentals)
+- 🎛️ **Simple Mode (Rule Helpers)**
+  Planned for **v0.5.0**  
+  🔗 See roadmap: [`#roadmap-switch-environmentals`](./ROADMAP.md#roadmap-simple-mode)
 
-- ⚡ **Power over Ethernet (PoE) Statistics**  
-  Planned for **v0.4.0**  
-  🔗 See roadmap: [`#roadmap-poe-statistics`](./ROADMAP.md#roadmap-poe-statistics)
+- 🔐 **SNMPv3 Support (Secure SNMP)**
+  Planned for **v0.5.0**  
+  🔗 See roadmap: [`#roadmap-poe-statistics`](./ROADMAP.md#roadmap-snmpv3-support)
 
 ### Added
 - Created the initial integration
@@ -264,6 +264,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ROADMAP ANCHOR LINKS -->
 
-<a name="roadmap-bandwidth-sensors"></a>
-<a name="roadmap-switch-environmentals"></a>
-<a name="roadmap-poe-statistics"></a>
+<a name="roadmap-simple-mode"></a>
+<a name="roadmap-snmpv3-support"></a>
