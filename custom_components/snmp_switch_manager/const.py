@@ -96,6 +96,17 @@ DEFAULT_BANDWIDTH_POLL_INTERVAL = 30  # seconds
 MIN_BANDWIDTH_POLL_INTERVAL = 5  # seconds
 MAX_BANDWIDTH_POLL_INTERVAL = 3600  # seconds
 
+# Optional per-feature polling intervals (seconds)
+CONF_POE_POLL_INTERVAL = "poe_poll_interval"
+DEFAULT_POE_POLL_INTERVAL = 30
+MIN_POE_POLL_INTERVAL = 5
+MAX_POE_POLL_INTERVAL = 3600
+
+CONF_ENV_POLL_INTERVAL = "env_poll_interval"
+DEFAULT_ENV_POLL_INTERVAL = 30
+MIN_ENV_POLL_INTERVAL = 5
+MAX_ENV_POLL_INTERVAL = 3600
+
 CONF_OVERRIDE_COMMUNITY = "override_community"
 CONF_OVERRIDE_PORT = "override_port" 
 
@@ -107,6 +118,8 @@ CONF_INCLUDE_ENDS_WITH = "include_ends_with"
 CONF_EXCLUDE_STARTS_WITH = "exclude_starts_with"
 CONF_EXCLUDE_CONTAINS = "exclude_contains"
 CONF_EXCLUDE_ENDS_WITH = "exclude_ends_with"
+
+CONF_ICON_RULES = "icon_rules"
 
 # Bandwidth sensor options (per-device)
 CONF_BW_ENABLE = "enable_bandwidth_sensors"
@@ -199,3 +212,30 @@ DEFAULT_PORT_RENAME_RULES: list[dict[str, str]] = [
         "replace": r"Fa\1/\2/\3",
     },
 ]
+
+# -----------------------------
+# v0.4.0+ (planned): history vs attributes mode selectors
+# -----------------------------
+# Bandwidth collection mode:
+# - sensors: create separate sensor entities (history)
+# - attributes: add values to port entities as attributes (no history)
+CONF_BW_MODE = "bw_mode"
+BW_MODE_SENSORS = "sensors"
+BW_MODE_ATTRIBUTES = "attributes"
+
+# Environmental sensors enable/mode
+CONF_ENV_ENABLE = "env_enabled"
+CONF_ENV_MODE = "env_mode"
+ENV_MODE_SENSORS = "sensors"
+ENV_MODE_ATTRIBUTES = "attributes"
+
+# PoE per-port statistics enable/mode
+CONF_POE_ENABLE = "poe_enabled"
+CONF_POE_MODE = "poe_mode"
+POE_MODE_SENSORS = "sensors"
+POE_MODE_ATTRIBUTES = "attributes"
+# Bandwidth sensor icon overrides (optional, per type)
+CONF_BW_RX_THROUGHPUT_ICON = "bw_rx_throughput_icon"
+CONF_BW_TX_THROUGHPUT_ICON = "bw_tx_throughput_icon"
+CONF_BW_RX_TOTAL_ICON = "bw_rx_total_icon"
+CONF_BW_TX_TOTAL_ICON = "bw_tx_total_icon"
