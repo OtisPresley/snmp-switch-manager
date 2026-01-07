@@ -19,12 +19,23 @@ from .const import (
     CONF_UPTIME_POLL_INTERVAL,
     DEFAULT_UPTIME_POLL_INTERVAL,
     CONF_BW_ENABLE,
+    CONF_BW_MODE,
     CONF_BW_INCLUDE_STARTS_WITH,
     CONF_BW_INCLUDE_CONTAINS,
     CONF_BW_INCLUDE_ENDS_WITH,
     CONF_BW_EXCLUDE_STARTS_WITH,
     CONF_BW_EXCLUDE_CONTAINS,
     CONF_BW_EXCLUDE_ENDS_WITH,
+    CONF_POE_ENABLE,
+    CONF_POE_MODE,
+    CONF_POE_POLL_INTERVAL,
+    POE_MODE_ATTRIBUTES,
+    DEFAULT_POE_POLL_INTERVAL,
+    CONF_ENV_ENABLE,
+    CONF_ENV_MODE,
+    CONF_ENV_POLL_INTERVAL,
+    ENV_MODE_ATTRIBUTES,
+    DEFAULT_ENV_POLL_INTERVAL,
 )
 from .snmp import SwitchSnmpClient
 
@@ -41,7 +52,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
     port = entry.data.get("port")
     community = entry.data.get("community")
 
-    client = SwitchSnmpClient(hass, host, community, port, custom_oids=entry.options.get(CONF_CUSTOM_OIDS) or {}, bandwidth_options={
+    bandwidth_options = {
+        CONF_BW_MODE: entry.options.get(CONF_BW_MODE, None),
         CONF_BW_ENABLE: entry.options.get(CONF_BW_ENABLE, False),
         CONF_BW_INCLUDE_STARTS_WITH: entry.options.get(CONF_BW_INCLUDE_STARTS_WITH, []) or [],
         CONF_BW_INCLUDE_CONTAINS: entry.options.get(CONF_BW_INCLUDE_CONTAINS, []) or [],
@@ -50,7 +62,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
         CONF_BW_EXCLUDE_CONTAINS: entry.options.get(CONF_BW_EXCLUDE_CONTAINS, []) or [],
         CONF_BW_EXCLUDE_ENDS_WITH: entry.options.get(CONF_BW_EXCLUDE_ENDS_WITH, []) or [],
         CONF_BANDWIDTH_POLL_INTERVAL: entry.options.get(CONF_BANDWIDTH_POLL_INTERVAL, DEFAULT_BANDWIDTH_POLL_INTERVAL),
-    })
+    }
+
+    # Always provide a non-None default for mode values.
+    # If the option key exists but its value is None, dict.get() will return None
+    # (not the provided default), which breaks downstream comparisons.
+    poe_options = {
+        CONF_POE_ENABLE: entry.options.get(CONF_POE_ENABLE, False),
+        CONF_POE_MODE: entry.options.get(CONF_POE_MODE, POE_MODE_ATTRIBUTES),
+        CONF_POE_POLL_INTERVAL: entry.options.get(CONF_POE_POLL_INTERVAL, DEFAULT_POE_POLL_INTERVAL),
+    }
+
+    env_options = {
+        CONF_ENV_ENABLE: entry.options.get(CONF_ENV_ENABLE, False),
+        CONF_ENV_MODE: entry.options.get(CONF_ENV_MODE, ENV_MODE_ATTRIBUTES),
+        CONF_ENV_POLL_INTERVAL: entry.options.get(CONF_ENV_POLL_INTERVAL, DEFAULT_ENV_POLL_INTERVAL),
+    }
+
+    client = SwitchSnmpClient(
+        hass,
+        host,
+        community,
+        port,
+        custom_oids=entry.options.get(CONF_CUSTOM_OIDS) or {},
+        bandwidth_options=bandwidth_options,
+        poe_options=poe_options,
+        env_options=env_options,
+    )
     await client.async_initialize()
 
     # Apply per-device option for sysUpTime throttling
@@ -61,6 +99,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
         _LOGGER,
         name=f"{DOMAIN}-coordinator-{host}",
         update_interval=timedelta(seconds=DEFAULT_POLL_INTERVAL),
+        # IMPORTANT: use the client's poll method directly. The client is
+        # responsible for handling/guarding poll errors so we don't mark all
+        # coordinator-backed entities unavailable.
         update_method=client.async_poll,
     )
     await coordinator.async_config_entry_first_refresh()
