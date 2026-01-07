@@ -13,6 +13,7 @@ from .const import (
     DOMAIN,
     CONF_PORT_RENAME_USER_RULES,
     CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
+    CONF_ICON_RULES,
     DEFAULT_PORT_RENAME_RULES,
     CONF_INCLUDE_STARTS_WITH,
     CONF_INCLUDE_CONTAINS,
@@ -21,6 +22,10 @@ from .const import (
     CONF_EXCLUDE_CONTAINS,
     CONF_EXCLUDE_ENDS_WITH,
     CONF_DISABLED_VENDOR_FILTER_RULE_IDS,
+    POE_MODE_ATTRIBUTES,
+    CONF_BW_ENABLE,
+    CONF_BW_MODE,
+    BW_MODE_ATTRIBUTES,
 )
 from .snmp import SwitchSnmpClient
 from .helpers import format_interface_name
@@ -33,9 +38,9 @@ def _format_bps(bps: Any) -> str:
     try:
         v = int(bps)
     except Exception:
-        return "Unknown"
+        return "Disconnected"
     if v <= 0:
-        return "Unknown"
+        return "Disconnected"
     if v >= 1_000_000_000:
         g = v / 1_000_000_000
         return f"{g:g} Gbps"
@@ -46,6 +51,25 @@ def _format_bps(bps: Any) -> str:
         k = v / 1_000
         return f"{k:g} Kbps"
     return f"{v} bps"
+
+def _speed_display(row: Any) -> str:
+    """Return a human-friendly interface speed string for a row from ifTable."""
+    try:
+        admin = int(row.get('admin', 0) or 0)
+    except Exception:
+        admin = 0
+    try:
+        oper = int(row.get('oper', 0) or 0)
+    except Exception:
+        oper = 0
+
+    # If admin is up but the link is not operationally up, treat as disconnected
+    if admin == 1 and oper != 1:
+        return 'Disconnected'
+
+    bps = row.get('speed_bps')
+    return _format_bps(bps)
+
 
 ADMIN_STATE = {1: "Up", 2: "Down", 3: "Testing"}
 OPER_STATE = {
@@ -125,6 +149,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
     any_include_rules = bool(include_starts or include_contains or include_ends)
 
     disabled_vendor_filter_ids = set(entry.options.get(CONF_DISABLED_VENDOR_FILTER_RULE_IDS, []) or [])
+
+    icon_rules = entry.options.get(CONF_ICON_RULES, []) or []
 
     def _matches_any(name_l: str, starts: list[str], contains: list[str], ends: list[str]) -> bool:
         return (
@@ -227,7 +253,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                             lower_name = name.lower()
                             include = True
                     else:
-                        if oper == 1 or admin == 2:
+                        if admin in (1, 2) and oper in (1, 2, 6, 7):
                             include = True
 
                 # 3) Link Access Group / PortChannel interfaces should also be displayed if operationally up
@@ -271,7 +297,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
                 # 3) VLAN interfaces that are operationally up or administratively disabled
                 elif enable_vlan and lower_name.startswith("vlan"):
-                    if oper == 1 or admin == 2:
+                    if admin in (1, 2) and oper in (1, 2, 6, 7):
                         include = True
 
                 # 4) Any other non-physical interface with an IP address configured
@@ -287,7 +313,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         # _apply_port_rename() closes over port_rename_rules
         raw_for_display = _apply_port_rename((raw_name or "").strip())
 
-# Try to parse Gi1/0/1 style to preserve unit/slot/port in display name
+        # Try to parse Gi1/0/1 style to preserve unit/slot/port in display name
         unit = 1
         slot = 0
         port = None
@@ -316,6 +342,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 hostname=hostname,
                 device_info=device_info,
                 client=client,
+                icon_rules=icon_rules,
             )
         )
 
@@ -339,21 +366,21 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     async_add_entities(entities)
 
-def _ip_for_index(if_index: int, ip_index: Dict[str, int], ip_mask: Dict[str, str]) -> Optional[str]:
+def _ip_for_index(if_index: int, ip_by_ifindex: Dict[int, str], ip_mask_by_ifindex: Dict[int, str]) -> Optional[str]:
     """Return IP/maskbits string for an ifIndex if present."""
-    for ip, idx in ip_index.items():
-        if idx == if_index:
-            mask = ip_mask.get(ip)
-            if not mask:
-                return ip
-            try:
-                import ipaddress
+    ip = ip_by_ifindex.get(if_index)
+    if not ip:
+        return None
+    mask = ip_mask_by_ifindex.get(if_index)
+    if not mask:
+        return ip
+    try:
+        import ipaddress
 
-                net = ipaddress.IPv4Network((ip, mask), strict=False)
-                return f"{ip}/{net.prefixlen}"
-            except Exception:
-                return ip
-    return None
+        net = ipaddress.IPv4Network((ip, mask), strict=False)
+        return f"{ip}/{net.prefixlen}"
+    except Exception:
+        return ip
 
 
 class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
@@ -368,11 +395,15 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
         hostname: str,
         device_info: DeviceInfo,
         client: SwitchSnmpClient,
+        icon_rules: list[dict[str, str]] | None = None,
     ):
         super().__init__(coordinator)
+        self._display_name = None  # always defined for HA entity registry add
         self._entry_id = entry_id
         self._if_index = if_index
         self._raw_name = raw_name
+        self._display_name = display_name
+        self._icon_rules = icon_rules or []
         self._display = display_name
         self._alias = alias
         self._hostname = hostname
@@ -382,6 +413,28 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
         # Name includes hostname so entity_id becomes e.g. switch.switch1_gi1_0_1
         self._attr_name = f"{hostname} {display_name}"
         self._attr_device_info = device_info
+
+
+    @property
+    def icon(self) -> str | None:
+        """Return an optional icon override from user rules (first match wins)."""
+        name_l = (self._display_name or self._raw_name or "").lower()
+        for r in self._icon_rules:
+            try:
+                match = str(r.get("match") or "").lower()
+                value = str(r.get("value") or "").lower()
+                icon = str(r.get("icon") or "").strip()
+                if not (match and value and icon):
+                    continue
+                if match == "starts with" and name_l.startswith(value.lower()):
+                    return icon
+                if match == "contains" and value.lower() in name_l:
+                    return icon
+                if match == "ends with" and name_l.endswith(value.lower()):
+                    return icon
+            except Exception:
+                continue
+        return None
 
     @property
     def is_on(self) -> bool:
@@ -409,61 +462,91 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
             "Alias": row.get("alias") or "",
             "Admin": ADMIN_STATE.get(row.get("admin", 0), "Unknown"),
             "Oper": OPER_STATE.get(row.get("oper", 0), "Unknown"),
-            "Speed": _format_bps(row.get("speed_bps")),
+            "Speed": _speed_display(row),
         }
 
         vlan_id = row.get("vlan_id")
         if vlan_id is not None:
             try:
-                vlan_int = int(vlan_id)
+                attrs["VLAN ID"] = int(vlan_id)
             except Exception:
-                vlan_int = None
-            if vlan_int:
-                attrs["VLAN ID"] = vlan_int
-        # Hide redundant VLAN ID on trunk ports (Native VLAN covers this)
-        if row.get("is_trunk") is True and "VLAN ID" in attrs:
+                pass
+
+        # Trunk details
+        # NOTE: Access ports often have a single "allowed" VLAN (their PVID). Do not
+        # treat that as trunking. Prefer the coordinator's explicit flag, with a safe
+        # fallback that only treats the interface as trunk when it carries multiple VLANs
+        # and/or explicitly tagged VLANs are present.
+        allowed_vlans = row.get("allowed_vlans") or []
+        tagged_vlans = row.get("tagged_vlans") or []
+        is_trunk = bool(row.get("is_trunk")) or len(allowed_vlans) > 1 or bool(tagged_vlans)
+        if is_trunk:
+            # Hide redundant VLAN ID on trunk ports
             attrs.pop("VLAN ID", None)
-        ip = _ip_for_index(
-            self._if_index,
-            self.coordinator.data.get("ipIndex", {}),
-            self.coordinator.data.get("ipMask", {}),
-        )
-        if ip:
-            attrs["IP"] = ip
 
-        # Optional VLAN/trunk details (only present on switches that expose
-        # VLAN membership tables). Keep these additive and non-breaking.
-        def _fmt_vlan_list(val: Any) -> str:
-            if val is None:
-                return ""
-            if isinstance(val, (list, tuple, set)):
-                try:
-                    items = [int(v) for v in val if v not in (None, "")]
-                except Exception:
-                    items = [v for v in val if v not in (None, "")]
-                return items[0] if len(items) == 1 else (", ".join(str(v) for v in sorted(items)) if items else "")
-            return str(val)
-
-        # Only show VLAN membership details on trunk ports.
-        if row.get("is_trunk") is True:
             native_vlan = row.get("native_vlan")
-            if native_vlan not in (None, "", 0, "0"):
+            if native_vlan is not None:
                 try:
                     attrs["Native VLAN"] = int(native_vlan)
                 except Exception:
-                    attrs["Native VLAN"] = str(native_vlan)
+                    pass
 
-            allowed_vlans = _fmt_vlan_list(row.get("allowed_vlans"))
             if allowed_vlans:
-                attrs["Allowed VLANs"] = allowed_vlans
+                attrs["Allowed VLANs"] = ",".join(str(v) for v in allowed_vlans)
 
-            untagged_vlans = _fmt_vlan_list(row.get("untagged_vlans"))
-            if untagged_vlans:
-                attrs["Untagged VLANs"] = untagged_vlans
-
-            tagged_vlans = _fmt_vlan_list(row.get("tagged_vlans"))
             if tagged_vlans:
-                attrs["Tagged VLANs"] = tagged_vlans
+                attrs["Tagged VLANs"] = ",".join(str(v) for v in tagged_vlans)
 
-            attrs["Trunk"] = True
+            untagged_vlans = row.get("untagged_vlans") or []
+            if untagged_vlans:
+                attrs["Untagged VLANs"] = ",".join(str(v) for v in untagged_vlans)
+
+        ip = _ip_for_index(self._if_index, self.coordinator.data.get("ip_by_ifindex", {}), self.coordinator.data.get("ip_mask_by_ifindex", {}))
+        if ip:
+            attrs["IP"] = ip
+
+        # PoE per-port power (optional)
+        if (
+            self.coordinator.data.get("poe_enabled")
+            and self.coordinator.data.get("poe_mode") == POE_MODE_ATTRIBUTES
+        ):
+            poe_map = self.coordinator.data.get("poe_power_mw") or {}
+            mw = poe_map.get(self._if_index)
+            if mw is not None:
+                try:
+                    watts = float(mw) / 1000.0
+                    # Keep a numeric value for automations, and also provide a human-friendly
+                    # formatted string that includes the unit.
+                    # Show a single attribute line with unit in the label.
+                    attrs["PoE Power (W)"] = round(watts, 1)
+                except Exception:
+                    pass
+
+
+        # Bandwidth attributes (optional)
+        if (
+            self.coordinator.data.get('bw_enabled')
+            and self.coordinator.data.get('bw_mode') == BW_MODE_ATTRIBUTES
+        ):
+            bw_row = (self.coordinator.data.get('bandwidth') or {}).get(self._if_index) or {}
+            # Throughput (bit/s)
+            rx_bps = bw_row.get('rx_bps')
+            tx_bps = bw_row.get('tx_bps')
+            try:
+                if rx_bps is not None:
+                    attrs['RX Throughput (bps)'] = int(rx_bps)
+                if tx_bps is not None:
+                    attrs['TX Throughput (bps)'] = int(tx_bps)
+            except Exception:
+                pass
+            # Totals (bytes)
+            rx_oct = bw_row.get('rx_octets')
+            tx_oct = bw_row.get('tx_octets')
+            try:
+                if rx_oct is not None:
+                    attrs['RX Total (bytes)'] = int(rx_oct)
+                if tx_oct is not None:
+                    attrs['TX Total (bytes)'] = int(tx_oct)
+            except Exception:
+                pass
         return attrs
