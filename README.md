@@ -217,7 +217,9 @@ Notes:
 - A reset option is available to restore defaults
 
 #### Bandwidth Sensors
-Enable optional per-device bandwidth monitoring using SNMP counters.
+Enable optional per-device bandwidth monitoring using SNMP counters. Bandwidth monitoring supports **Sensors** and **Attributes** modes:
+- **Sensors mode:** per-port RX/TX bandwidth sensors
+- **Attributes mode:** bandwidth values exposed as attributes on each port entity
 
 - RX / TX throughput sensors (bits per second)
 - Total RX / TX traffic sensors
@@ -229,6 +231,86 @@ Notes:
 - Exclude rules always take precedence
 - Rule changes apply immediately and persist across restarts
 - Sensors are created only for interfaces matching the rules
+- Bandwidth values remain raw numeric values (bits per second / bytes) to ensure accuracy and consistency with switch CLIs
+
+#### Attributes vs Sensors Modes
+
+Several SNMP Switch Manager features support **two operating modes**: **Attributes mode** and **Sensors mode**.  
+Mode selection is configured **per device** via **Device Options** and applies immediately without restarting Home Assistant.
+Attributes contain no history in Home Assistant where Sensors do. If you want to create graphs or historical data, use Sensors.
+
+##### Sensors Mode
+In **Sensors mode**, individual Home Assistant `sensor` entities are created for each supported metric.
+
+**Best for:**
+- History graphs
+- Long-term statistics
+- Automations based on numeric thresholds
+
+**Characteristics:**
+- One sensor per metric (and per instance, where applicable)
+- Native numeric values suitable for charts and statistics
+- Higher entity count
+
+##### Attributes Mode
+In **Attributes mode**, metrics are exposed as **attributes on a single parent sensor** instead of individual sensor entities.
+
+**Best for:**
+- Cleaner entity lists
+- Dashboards and UI display
+- Reduced database and recorder load
+
+**Characteristics:**
+- No per-metric sensors are created
+- Values appear as attributes on a single sensor
+- Attributes update on the same polling interval as Sensors mode
+- Attributes are not recorded individually by Home Assistant
+
+#### Environment Monitoring
+
+Environment monitoring includes system health and operational metrics such as:
+- CPU utilization
+- Memory usage
+- System / chassis temperature
+- Fan speed and status
+- Power supply (PSU) status
+
+##### Environment — Sensors Mode
+- Individual sensors are created for each supported metric
+- Examples include CPU utilization (5s / 60s / 300s), memory usage, system temperature, fan RPM, and PSU status
+
+##### Environment — Attributes Mode
+- A single sensor named **Environment** is created
+- All supported environment values are exposed as attributes on that sensor
+
+> Environment sensors and attributes are created **only when valid SNMP data is reported** by the device.
+
+#### Power over Ethernet (PoE)
+
+PoE monitoring reports switch-wide power usage and health using standard SNMP PoE MIBs where available.
+
+##### Metrics
+- PoE budget total (W)
+- PoE power used (W)
+- PoE power available (W)
+- PoE health status (`HEALTHY`, `DISABLED`, `FAULTY`)
+
+##### PoE — Sensors Mode
+- Individual sensors are created for each PoE metric
+
+##### PoE — Attributes Mode
+- A single sensor named **Power over Ethernet** is created
+- All PoE metrics are exposed as attributes
+
+> PoE entities are created only when the device reports valid PoE data.
+
+#### Upgrade Notes (v0.4.0)
+
+Users upgrading from **v0.3.x** should note:
+- New Attributes vs Sensors modes are available for Environment, PoE, and Bandwidth
+- Switching modes automatically cleans up obsolete entities
+- No manual entity removal is required
+- Existing device and vendor support is preserved
 
 ---
 
