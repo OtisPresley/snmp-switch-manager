@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 import logging
+import re
 import ipaddress
 from typing import Any, Dict, Optional, Iterable, Tuple, List
 
@@ -57,17 +58,76 @@ from .const import (
     CONF_BW_EXCLUDE_STARTS_WITH,
     CONF_BW_EXCLUDE_CONTAINS,
     CONF_BW_EXCLUDE_ENDS_WITH,
+    CONF_BW_MODE,
+    BW_MODE_SENSORS,
+    BW_MODE_ATTRIBUTES,
     CONF_BANDWIDTH_POLL_INTERVAL,
     DEFAULT_BANDWIDTH_POLL_INTERVAL,
+    CONF_POE_ENABLE,
+    CONF_POE_MODE,
+    CONF_POE_POLL_INTERVAL,
+    POE_MODE_ATTRIBUTES,
+    POE_MODE_SENSORS,
+    DEFAULT_POE_POLL_INTERVAL,
+    CONF_ENV_ENABLE,
+    CONF_ENV_MODE,
+    CONF_ENV_POLL_INTERVAL,
+    ENV_MODE_ATTRIBUTES,
+    ENV_MODE_SENSORS,
+    DEFAULT_ENV_POLL_INTERVAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
+
+def _entity_sensor_scale_power(scale: int) -> int:
+    """ENTITY-SENSOR-MIB entPhySensorScale -> base-10 exponent."""
+    # yocto(1) ... yotta(17) with units(9) = 10^0
+    scale_map = {
+        1: -24,
+        2: -21,
+        3: -18,
+        4: -15,
+        5: -12,
+        6: -9,
+        7: -6,
+        8: -3,
+        9: 0,
+        10: 3,
+        11: 6,
+        12: 9,
+        13: 12,
+        14: 15,
+        15: 18,
+        16: 21,
+        17: 24,
+    }
+    return scale_map.get(int(scale), 0)
+
+
+def _entity_sensor_value_to_float(raw: Any, scale: int | None, precision: int | None) -> Optional[float]:
+    """Convert ENTITY-SENSOR-MIB value/scale/precision to a float."""
+    n = _parse_numeric(raw)
+    if n is None:
+        return None
+    try:
+        s_pow = _entity_sensor_scale_power(int(scale or 9))
+    except Exception:
+        s_pow = 0
+    try:
+        prec = int(precision or 0)
+    except Exception:
+        prec = 0
+    try:
+        return float(n) * (10 ** (s_pow - prec))
+    except Exception:
+        return None
+
 # Q-BRIDGE-MIB VLAN membership tables are not present in some older versions
 # of this integration's const.py. Keep these OID strings defined locally to
 # avoid import-time failures, while still using standard OIDs.
-OID_dot1qVlanCurrentEgressPorts = "1.3.6.1.2.1.17.7.1.2.2.1.4"
-OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.2.2.1.5"
+OID_dot1qVlanCurrentEgressPorts = "1.3.6.1.2.1.17.7.1.4.2.1.4"
+OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
 # Some platforms (incl. Dell N-series) expose VLAN membership only via the *static* tables.
 OID_dot1qVlanStaticEgressPorts = "1.3.6.1.2.1.17.7.1.4.3.1.2"
 OID_dot1qVlanStaticUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.3.1.4"
@@ -232,7 +292,7 @@ async def _do_set_admin_status(
 class SwitchSnmpClient:
     """SNMP client using PySNMP v7 asyncio API."""
 
-    def __init__(self, hass: HomeAssistant, host: str, community: str, port: int, custom_oids: Optional[Dict[str, str]] = None, bandwidth_options: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, hass: HomeAssistant, host: str, community: str, port: int, custom_oids: Optional[Dict[str, str]] = None, bandwidth_options: Optional[Dict[str, Any]] = None, poe_options: Optional[Dict[str, Any]] = None, env_options: Optional[Dict[str, Any]] = None) -> None:
         self.hass = hass
         self.host = host
         self.community = community
@@ -241,6 +301,11 @@ class SwitchSnmpClient:
 
         # Bandwidth sensor options (set by config entry options)
         self._bandwidth_options: Dict[str, Any] = dict(bandwidth_options or {})
+        self._poe_options = poe_options or {}
+        self._poe_last_poll: float = 0.0
+
+        self._env_options = env_options or {}
+        self._env_last_poll: float = 0.0
         self._bw_last_poll = None  # monotonic timestamp of last bandwidth counter poll
         self._bw_use_hc: Optional[bool] = None
         self._bw_last: Dict[int, Dict[str, Any]] = {}
@@ -562,35 +627,33 @@ class SwitchSnmpClient:
                     # Dell N-series (and some others) expose only the "static" tables.
                     try:
                         cur_allowed = await _collect_vlan_portlists(
-                            OID_dot1qVlanCurrentEgressPorts, allowed_by_baseport
+OID_dot1qVlanCurrentEgressPorts = "1.3.6.1.2.1.17.7.1.4.2.1.4"
                         )
                     except Exception:
                         cur_allowed = 0
 
                     try:
                         cur_untagged = await _collect_vlan_portlists(
-                            OID_dot1qVlanCurrentUntaggedPorts, untagged_by_baseport
+OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                         )
                     except Exception:
                         cur_untagged = 0
 
                     # Fall back to static membership when current tables are not implemented.
-                    if cur_allowed == 0:
-                        try:
-                            await _collect_vlan_portlists(
-                                OID_dot1qVlanStaticEgressPorts, allowed_by_baseport
-                            )
-                        except Exception:
-                            pass
-
-                    if cur_untagged == 0:
-                        try:
-                            await _collect_vlan_portlists(
-                                OID_dot1qVlanStaticUntaggedPorts, untagged_by_baseport
-                            )
-                        except Exception:
-                            pass
-
+                    # Some platforms expose richer/complete VLAN membership only via the static tables.
+                    # Even when current tables exist, merge static data to avoid missing VLANs (e.g., some JT-COM devices).
+                    try:
+                        await _collect_vlan_portlists(
+                            OID_dot1qVlanStaticEgressPorts, allowed_by_baseport
+                        )
+                    except Exception:
+                        pass
+                    try:
+                        await _collect_vlan_portlists(
+                            OID_dot1qVlanStaticUntaggedPorts, untagged_by_baseport
+                        )
+                    except Exception:
+                        pass
                     if pvid_by_baseport:
                         for if_index, base_port in baseport_by_ifindex.items():
                             rec = self.cache["ifTable"].setdefault(if_index, {})
@@ -740,7 +803,7 @@ class SwitchSnmpClient:
                     ip_index[ip] = int(_parse_numeric(val))
                 except Exception:
                     continue
-                    continue
+
 
             for oid, val in await self._async_walk(OID_ipAdEntNetMask):
                 parts = oid.split(".")[-4:]
@@ -750,24 +813,32 @@ class SwitchSnmpClient:
                 ip_mask[ip] = _normalize_ipv4(val)
 
         # ---- (2) IP-MIB ipAddressIfIndex: parse instance suffix (1.4.a.b.c.d)
+        # OID instance for IPv4 encodes: <addrType=1>.<addrLen=4>.<a>.<b>.<c>.<d>
+        # Value is the ifIndex.
         try:
             for oid, val in await self._async_walk(OID_ipAddressIfIndex):
-                suffix = oid[len(OID_ipAddressIfIndex) + 1 :]
-                parts = [int(x) for x in suffix.split(".") if x]
-                for i in range(len(parts) - 6 + 1):
-                    if parts[i] == 1 and parts[i + 1] == 4:
-                        a, b, c, d = parts[i + 2 : i + 6]
-                        ip = f"{a}.{b}.{c}.{d}"
-                        if not _is_usable_ipv4(ip):
+                try:
+                    suffix = oid[len(OID_ipAddressIfIndex) + 1 :]
+                    parts = [int(x) for x in suffix.split(".") if x]
+                    if len(parts) < 6:
+                        continue
+
+                    # Find the first occurrence of 1.4 in the suffix (addrType=ipv4, addrLen=4)
+                    ip = None
+                    for i in range(0, len(parts) - 5):
+                        if parts[i] == 1 and parts[i + 1] == 4:
+                            a, b, c, d = parts[i + 2 : i + 6]
+                            ip = f"{a}.{b}.{c}.{d}"
                             break
-                        try:
-                            idx = int(_parse_numeric(val))
-                            ip_index.setdefault(ip, idx)
-                        except Exception:
-                            pass
-                        except Exception:
-                            pass
-                        break
+                    if not ip or not _is_usable_ipv4(ip):
+                        continue
+
+                    idx = _parse_numeric(val)
+                    if idx is None:
+                        continue
+                    ip_index[ip] = int(idx)
+                except Exception:
+                    continue
         except Exception:
             pass  # IP-MIB may be absent
 
@@ -783,7 +854,7 @@ class SwitchSnmpClient:
                         ip = f"{a}.{b}.{c}.{d}"
                         if not _is_usable_ipv4(ip):
                             continue
-                        ip_index.setdefault(ip, int(if_index))
+                        ip_index[ip] = int(if_index)
                 except Exception:
                     continue
         except Exception:
@@ -895,6 +966,25 @@ class SwitchSnmpClient:
                 rec["ipv4_cidr"] = prefix
                 if prefix is not None:
                     rec["ip_cidr_str"] = f"{ip}/{prefix}"
+
+        # Precompute O(1) lookups for entities (performance + consistent display).
+        # These are used by the switch entity to display per-interface IP without scanning the full tables.
+        ip_by_ifindex: Dict[int, str] = {}
+        ip_mask_by_ifindex: Dict[int, str] = {}
+        for rec in if_table.values():
+            try:
+                idx = int(rec.get("index"))
+            except Exception:
+                continue
+            ip = rec.get("ip")
+            mask = rec.get("netmask")
+            if isinstance(ip, str) and ip:
+                ip_by_ifindex[idx] = ip
+            if isinstance(mask, str) and mask:
+                ip_mask_by_ifindex[idx] = mask
+        self.cache["ip_by_ifindex"] = ip_by_ifindex
+        self.cache["ip_mask_by_ifindex"] = ip_mask_by_ifindex
+
 
     async def async_refresh_all(self) -> None:
         await self._ensure_engine()
@@ -1205,6 +1295,565 @@ class SwitchSnmpClient:
                 except Exception as e:
                     _LOGGER.debug("Bandwidth polling failed: %s", e)
                     self.cache["bandwidth"] = {}
+
+        # PoE (optional)
+        #
+        # Two data sources may exist:
+        # 1) Dell N-Series per-port PoE power (private MIB table) -> cached as poe_power_mw
+        # 2) Standard PoE totals + health (POWER-ETHERNET-MIB) -> cached as poe_*_w + poe_health_status
+        poe_enabled = bool(self._poe_options.get(CONF_POE_ENABLE, False))
+        poe_mode = self._poe_options.get(CONF_POE_MODE, POE_MODE_ATTRIBUTES)
+        # Bandwidth mode/enable flags (used by port entities when BW mode is Attributes)
+        try:
+            bw_enabled = bool(self._bandwidth_options.get(CONF_BW_ENABLE, False))
+            bw_mode = self._bandwidth_options.get(CONF_BW_MODE) or BW_MODE_SENSORS
+            bw_mode = str(bw_mode).strip().lower()
+            if bw_mode not in (BW_MODE_SENSORS, BW_MODE_ATTRIBUTES):
+                bw_mode = BW_MODE_SENSORS
+        except Exception:
+            bw_enabled = False
+            bw_mode = BW_MODE_SENSORS
+        self.cache['bw_enabled'] = bw_enabled
+        self.cache['bw_mode'] = bw_mode
+
+        self.cache["poe_enabled"] = poe_enabled
+        self.cache["poe_mode"] = poe_mode
+
+        # Summary/stat keys (Watts)
+        # Only set these when we successfully read values; absence means "unsupported".
+        # - poe_budget_total_w
+        # - poe_power_used_w
+        # - poe_power_available_w
+        # - poe_health_status (text)
+        # - poe_health_status_raw (int)
+
+        # Keep per-port cache stable
+        self.cache.setdefault("poe_power_mw", {})
+
+        if not poe_enabled:
+            # Clear dynamic values when disabled (keep keys stable where appropriate)
+            self.cache["poe_power_mw"] = {}
+            for k in ("poe_budget_total_w", "poe_power_used_w", "poe_power_available_w", "poe_health_status", "poe_health_status_raw"):
+                self.cache.pop(k, None)
+        else:
+            # Throttle PoE polling based on the PoE polling interval option
+            interval = int(self._poe_options.get(CONF_POE_POLL_INTERVAL, DEFAULT_POE_POLL_INTERVAL))
+            interval = max(1, interval)
+            now_mono = time.monotonic()
+            should_poll = (now_mono - float(self._poe_last_poll or 0.0)) >= interval
+            # Always poll once after startup
+            should_poll = should_poll or float(self._poe_last_poll or 0.0) == 0.0
+
+            if should_poll:
+                self._poe_last_poll = now_mono
+
+                # --- (1) Standard PoE totals + health (POWER-ETHERNET-MIB) ---
+                # Standard columns (POWER-ETHERNET-MIB / RFC3621):
+                #   pethPsePortGroupIndex is typically the instance suffix (.1, .2, ...)
+                # Budget Total (W): 1.3.6.1.2.1.105.1.3.1.1.2.<idx>
+                # Power Used (mW):  1.3.6.1.2.1.105.1.3.1.1.4.<idx>
+                # Health Status:    1.3.6.1.2.1.105.1.3.1.1.3.<idx>
+                poe_budget_col = "1.3.6.1.2.1.105.1.3.1.1.2"
+                poe_used_mw_col = "1.3.6.1.2.1.105.1.3.1.1.4"
+                poe_health_col = "1.3.6.1.2.1.105.1.3.1.1.3"
+
+                def _worst_poe_health(raw_vals: list[int]) -> Optional[int]:
+                    if not raw_vals:
+                        return None
+                    # Conservative: unknown -> FAULTY
+                    rank = {1: 1, 2: 2, 3: 3}
+                    worst = 0
+                    for v in raw_vals:
+                        worst = max(worst, rank.get(int(v), 3))
+                    # Map back to 1/2/3
+                    inv = {1: 1, 2: 2, 3: 3}
+                    return inv.get(worst, 3)
+
+                budget_list: list[float] = []
+                used_mw_list: list[float] = []
+                health_list: list[int] = []
+
+                try:
+                    for oid, val in await self._async_walk(poe_budget_col):
+                        n = _parse_numeric(val)
+                        if n is None:
+                            continue
+                        if float(n) >= 0:
+                            budget_list.append(float(n))
+                except Exception:
+                    budget_list = []
+
+                try:
+                    for oid, val in await self._async_walk(poe_used_mw_col):
+                        n = _parse_numeric(val)
+                        if n is None:
+                            continue
+                        if float(n) >= 0:
+                            used_mw_list.append(float(n))
+                except Exception:
+                    used_mw_list = []
+
+                try:
+                    for oid, val in await self._async_walk(poe_health_col):
+                        n = _parse_numeric(val)
+                        if n is None:
+                            continue
+                        try:
+                            health_list.append(int(n))
+                        except Exception:
+                            continue
+                except Exception:
+                    health_list = []
+
+                # If the device doesn't support walking the columns, fall back to scalar index .1.
+                if not budget_list and not used_mw_list and not health_list:
+                    budget_w = _parse_numeric(await self._async_get_one(poe_budget_col + ".1"))
+                    used_mw = _parse_numeric(await self._async_get_one(poe_used_mw_col + ".1"))
+                    health_raw = _parse_numeric(await self._async_get_one(poe_health_col + ".1"))
+                    if budget_w is not None:
+                        budget_list = [float(budget_w)]
+                    if used_mw is not None:
+                        used_mw_list = [float(used_mw)]
+                    if health_raw is not None:
+                        try:
+                            health_list = [int(health_raw)]
+                        except Exception:
+                            health_list = []
+
+                # Only publish if at least one value is present (device supports PoE stats)
+                if budget_list or used_mw_list or health_list:
+                    try:
+                        budget_total_w = sum(budget_list) if budget_list else None
+                        used_w = (sum(used_mw_list) / 1000.0) if used_mw_list else None
+
+                        if budget_total_w is not None:
+                            self.cache["poe_budget_total_w"] = float(budget_total_w)
+                        else:
+                            self.cache.pop("poe_budget_total_w", None)
+
+                        if used_w is not None:
+                            self.cache["poe_power_used_w"] = round(float(used_w), 3)
+                        else:
+                            self.cache.pop("poe_power_used_w", None)
+
+                        if (budget_total_w is not None) and (used_w is not None):
+                            avail_w = float(budget_total_w) - float(used_w)
+                            if avail_w < 0:
+                                avail_w = 0.0
+                            self.cache["poe_power_available_w"] = round(avail_w, 3)
+                        else:
+                            self.cache.pop("poe_power_available_w", None)
+
+                        hr = _worst_poe_health(health_list)
+                        if hr is not None:
+                            self.cache["poe_health_status_raw"] = int(hr)
+                            self.cache["poe_health_status"] = {1: "HEALTHY", 2: "DISABLED", 3: "FAULTY"}.get(int(hr), str(hr))
+                        else:
+                            self.cache.pop("poe_health_status_raw", None)
+                            self.cache.pop("poe_health_status", None)
+                    except Exception:
+                        pass
+                else:
+                    for k in ("poe_budget_total_w", "poe_power_used_w", "poe_power_available_w", "poe_health_status", "poe_health_status_raw"):
+                        self.cache.pop(k, None)
+
+                # --- (2) Dell N-Series per-port PoE power (private MIB) ---
+                # Keep this for any existing features; not used by new PoE summary entities.
+                poe_power_mw: Dict[int, float] = {}
+                poe_oid = "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.15.1.1.1.2.1"
+                try:
+                    poe_table = await self._async_walk(poe_oid)
+                    for oid, val in poe_table:
+                        try:
+                            if_index = int(str(oid).split(".")[-1])
+                        except Exception:
+                            continue
+                        mw = _parse_numeric(val)
+                        if mw is None:
+                            continue
+                        poe_power_mw[if_index] = mw
+                except Exception:
+                    poe_power_mw = {}
+
+                self.cache["poe_power_mw"] = poe_power_mw
+
+
+        # Environmental power (Dell N-Series via private MIB)
+        env_enabled = bool(self._env_options.get(CONF_ENV_ENABLE, False))
+        env_mode = self._env_options.get(CONF_ENV_MODE, ENV_MODE_ATTRIBUTES)
+        self.cache["env_enabled"] = env_enabled
+        self.cache["env_mode"] = env_mode
+        self.cache.setdefault("env_power_mw", {})
+        self.cache.setdefault("env_power_mw_total", 0.0)
+
+        if not env_enabled:
+            # Keep keys stable, but clear values when disabled
+            self.cache["env_power_mw"] = {}
+            self.cache["env_power_mw_total"] = 0.0
+        else:
+            try:
+                interval = int(self._env_options.get(CONF_ENV_POLL_INTERVAL, DEFAULT_ENV_POLL_INTERVAL))
+            except Exception:
+                interval = DEFAULT_ENV_POLL_INTERVAL
+
+            should_poll = (now_mono - float(self._env_last_poll or 0.0)) >= interval
+            # Always poll once on startup so we have initial values.
+            should_poll = should_poll or float(self._env_last_poll or 0.0) == 0.0
+
+            if should_poll:
+                self._env_last_poll = now_mono
+                env_power_mw: Dict[int, float] = {}
+
+                # Dell N-Series (observed):
+                # 1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.9.1.4.1.<idx> = INTEGER: <mW>
+                # This aligns with CLI "show system" Current Power (Watts).
+                env_oid = "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.9.1.4.1"
+                env_table = await self._async_walk(env_oid)
+                for oid, val in env_table:
+                    try:
+                        env_idx = int(str(oid).split(".")[-1])
+                    except Exception:
+                        continue
+                    mw = _parse_numeric(val)
+                    if mw is None:
+                        continue
+                    env_power_mw[env_idx] = mw
+
+                self.cache["env_power_mw"] = env_power_mw
+                self.cache["env_power_mw_total"] = float(sum(env_power_mw.values()))
+
+                # Dell OS6 CPU / Memory / Fan metrics (best-effort; safe to ignore if not supported)
+
+                # Memory OIDs return values in KB on Dell OS6 (based on observed values).
+                # Values may come back as typed strings (e.g. "Gauge32: 12345"); parse numerics defensively.
+                try:
+                    mem_free_kb_raw = await self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.1.0")
+                    mem_free_kb = _parse_numeric(mem_free_kb_raw)
+                    self.cache["env_mem_free_kb"] = int(mem_free_kb) if mem_free_kb is not None else None
+                except Exception:
+                    self.cache["env_mem_free_kb"] = None
+
+                try:
+                    mem_total_kb_raw = await self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.2.0")
+                    mem_total_kb = _parse_numeric(mem_total_kb_raw)
+                    self.cache["env_mem_total_kb"] = int(mem_total_kb) if mem_total_kb is not None else None
+                except Exception:
+                    self.cache["env_mem_total_kb"] = None
+
+                try:
+                    cpu_s = str(await self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.9.0"))
+                    self.cache["env_cpu_raw"] = cpu_s
+                    # Observed example:
+                    #   "    5 Secs ( 10.5746%)   60 Secs ( 11.9951%)  300 Secs ( 12.3370%)"
+                    # Use a tolerant parse: grab the first 3 percentage-like numbers.
+                    nums = re.findall(r"([0-9]+(?:\.[0-9]+)?)\s*%", cpu_s)
+                    if len(nums) >= 3:
+                        self.cache["env_cpu_5s"] = float(nums[0])
+                        self.cache["env_cpu_60s"] = float(nums[1])
+                        self.cache["env_cpu_300s"] = float(nums[2])
+                    else:
+                        self.cache["env_cpu_5s"] = None
+                        self.cache["env_cpu_60s"] = None
+                        self.cache["env_cpu_300s"] = None
+                except Exception:
+                    self.cache["env_cpu_5s"] = None
+                    self.cache["env_cpu_60s"] = None
+                    self.cache["env_cpu_300s"] = None
+
+                try:
+                    fans: dict[int, int] = {}
+                    for oid, val in await self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.6.1.4.1"):
+                        try:
+                            idx = int(str(oid).split(".")[-1])
+                        except Exception:
+                            continue
+                        n = _parse_numeric(val)
+                        if n is None:
+                            continue
+                        fans[idx] = int(n)
+                    self.cache["env_fans_rpm"] = fans or None
+                except Exception:
+                    self.cache["env_fans_rpm"] = None
+
+                # Fan status (observed: 2 = OK)
+                try:
+                    fan_status: dict[int, int] = {}
+                    for oid, val in await self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.6.1.3.1"):
+                        try:
+                            idx = int(str(oid).split(".")[-1])
+                        except Exception:
+                            continue
+                        n = _parse_numeric(val)
+                        if n is None:
+                            continue
+                        fan_status[idx] = int(n)
+                    self.cache["env_fans_status"] = fan_status or None
+                except Exception:
+                    self.cache["env_fans_status"] = None
+
+                # PSU status (observed: 2 = OK)
+                try:
+                    psu_status: dict[int, int] = {}
+                    for oid, val in await self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.7.1.2.1"):
+                        try:
+                            idx = int(str(oid).split(".")[-1])
+                        except Exception:
+                            continue
+                        n = _parse_numeric(val)
+                        if n is None:
+                            continue
+                        psu_status[idx] = int(n)
+                    self.cache["env_psu_status"] = psu_status or None
+                except Exception:
+                    self.cache["env_psu_status"] = None
+
+                # Temperatures (C) - includes "System Temperature" at index 0 on Dell OS6
+                try:
+                    temps_c: dict[int, int] = {}
+                    for oid, val in await self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.8.1.5.1"):
+                        try:
+                            idx = int(str(oid).split(".")[-1])
+                        except Exception:
+                            continue
+                        n = _parse_numeric(val)
+                        if n is None:
+                            continue
+                        temps_c[idx] = int(n)
+                    self.cache["env_temps_c"] = temps_c or None
+                except Exception:
+                    self.cache["env_temps_c"] = None
+
+                # Unit/System temperature + state (Dell OS6)
+                try:
+                    raw = await self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.15.1.3.1")
+                    n = _parse_numeric(raw)
+                    self.cache["env_unit_temp_c"] = int(n) if n is not None else None
+                except Exception:
+                    self.cache["env_unit_temp_c"] = None
+                try:
+                    raw = await self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.15.1.2.1")
+                    n = _parse_numeric(raw)
+                    self.cache["env_unit_temp_state"] = int(n) if n is not None else None
+                except Exception:
+                    self.cache["env_unit_temp_state"] = None
+
+                # ---- Cross-vendor fallbacks (only fill missing values) ----
+                # 1) ENTITY-SENSOR-MIB (1.3.6.1.2.1.99) for temps/fans/power when available.
+                # 2) HOST-RESOURCES-MIB (1.3.6.1.2.1.25) for CPU/memory when available.
+
+                # ENTITY-SENSOR-MIB: entPhySensorType (temperature/fan/power)
+                # Only run if we are missing key environmental dicts.
+                need_entity_sensor = (
+                    self.cache.get("env_temps_c") in (None, {})
+                    or self.cache.get("env_fans_rpm") in (None, {})
+                    or (float(self.cache.get("env_power_mw_total") or 0.0) == 0.0)
+                )
+
+                if need_entity_sensor:
+                    ent_type_oid = "1.3.6.1.2.1.99.1.1.1.1"  # entPhySensorType
+                    ent_value_oid = "1.3.6.1.2.1.99.1.1.1.4"  # entPhySensorValue
+                    ent_scale_oid = "1.3.6.1.2.1.99.1.1.1.3"  # entPhySensorScale
+                    ent_prec_oid = "1.3.6.1.2.1.99.1.1.1.2"  # entPhySensorPrecision
+                    ent_oper_oid = "1.3.6.1.2.1.99.1.1.1.5"  # entPhySensorOperStatus
+
+                    try:
+                        types: dict[int, int] = {}
+                        for oid, val in await self._async_walk(ent_type_oid):
+                            try:
+                                idx = int(str(oid).split(".")[-1])
+                            except Exception:
+                                continue
+                            n = _parse_numeric(val)
+                            if n is None:
+                                continue
+                            types[idx] = int(n)
+
+                        if types:
+                            values: dict[int, Any] = {}
+                            scales: dict[int, int] = {}
+                            precs: dict[int, int] = {}
+                            opers: dict[int, int] = {}
+
+                            for oid, val in await self._async_walk(ent_value_oid):
+                                try:
+                                    idx = int(str(oid).split(".")[-1])
+                                except Exception:
+                                    continue
+                                values[idx] = val
+
+                            for oid, val in await self._async_walk(ent_scale_oid):
+                                try:
+                                    idx = int(str(oid).split(".")[-1])
+                                except Exception:
+                                    continue
+                                n = _parse_numeric(val)
+                                if n is None:
+                                    continue
+                                scales[idx] = int(n)
+
+                            for oid, val in await self._async_walk(ent_prec_oid):
+                                try:
+                                    idx = int(str(oid).split(".")[-1])
+                                except Exception:
+                                    continue
+                                n = _parse_numeric(val)
+                                if n is None:
+                                    continue
+                                precs[idx] = int(n)
+
+                            for oid, val in await self._async_walk(ent_oper_oid):
+                                try:
+                                    idx = int(str(oid).split(".")[-1])
+                                except Exception:
+                                    continue
+                                n = _parse_numeric(val)
+                                if n is None:
+                                    continue
+                                opers[idx] = int(n)
+
+                            # entPhySensorType enums:
+                            # celsius(8), rpm(10), watts(6)
+                            temps_c: dict[int, int] = {} if self.cache.get("env_temps_c") in (None, {}) else dict(self.cache.get("env_temps_c") or {})
+                            fans_rpm: dict[int, int] = {} if self.cache.get("env_fans_rpm") in (None, {}) else dict(self.cache.get("env_fans_rpm") or {})
+                            fans_status: dict[int, int] = {} if self.cache.get("env_fans_status") in (None, {}) else dict(self.cache.get("env_fans_status") or {})
+
+                            watts_mw_total = 0.0
+                            watts_found = False
+
+                            for idx, t in types.items():
+                                v = _entity_sensor_value_to_float(values.get(idx), scales.get(idx), precs.get(idx))
+                                if v is None:
+                                    continue
+
+                                if t == 8:  # celsius
+                                    # Keep sane range to avoid bogus sensors
+                                    if -50.0 <= v <= 150.0:
+                                        temps_c.setdefault(idx, int(round(v)))
+                                elif t == 10:  # rpm
+                                    if 0.0 <= v <= 50000.0:
+                                        fans_rpm.setdefault(idx, int(round(v)))
+                                        # Map entPhySensorOperStatus ok(1)/unavailable(2)/nonoperational(3)
+                                        # to our existing fan status convention: 2=OK, 3=FAILED, 1=NOT PRESENT
+                                        oper = int(opers.get(idx, 2))
+                                        fans_status.setdefault(idx, {1: 2, 2: 1, 3: 3}.get(oper, 3))
+                                elif t == 6:  # watts
+                                    if 0.0 <= v <= 100000.0:
+                                        watts_found = True
+                                        watts_mw_total += float(v) * 1000.0
+
+                            if temps_c:
+                                self.cache["env_temps_c"] = temps_c
+                            if fans_rpm:
+                                self.cache["env_fans_rpm"] = fans_rpm
+                            if fans_status:
+                                self.cache["env_fans_status"] = fans_status
+
+                            # Only populate env_power_mw_total if Dell private table is absent.
+                            if watts_found and float(self.cache.get("env_power_mw_total") or 0.0) == 0.0:
+                                self.cache["env_power_mw_total"] = float(watts_mw_total)
+                    except Exception:
+                        pass
+
+                # HOST-RESOURCES-MIB fallback: CPU + memory (only fill missing).
+                # CPU: hrProcessorLoad values 0..100 across processors.
+                if self.cache.get("env_cpu_5s") is None and self.cache.get("env_cpu_60s") is None and self.cache.get("env_cpu_300s") is None:
+                    try:
+                        cpu_vals: list[float] = []
+                        for oid, val in await self._async_walk("1.3.6.1.2.1.25.3.3.1.2"):
+                            n = _parse_numeric(val)
+                            if n is None:
+                                continue
+                            f = float(n)
+                            if 0.0 <= f <= 100.0:
+                                cpu_vals.append(f)
+                        if cpu_vals:
+                            avg = sum(cpu_vals) / float(len(cpu_vals))
+                            self.cache["env_cpu_5s"] = avg
+                            self.cache["env_cpu_60s"] = avg
+                            self.cache["env_cpu_300s"] = avg
+                    except Exception:
+                        pass
+
+                # Memory: hrStorageTable, selecting hrStorageRam.
+                if self.cache.get("env_mem_total_kb") is None or self.cache.get("env_mem_free_kb") is None:
+                    try:
+                        hr_type_oid = "1.3.6.1.2.1.25.2.3.1.2"
+                        hr_alloc_oid = "1.3.6.1.2.1.25.2.3.1.4"
+                        hr_size_oid = "1.3.6.1.2.1.25.2.3.1.5"
+                        hr_used_oid = "1.3.6.1.2.1.25.2.3.1.6"
+                        ram_type = "1.3.6.1.2.1.25.2.1.2"  # hrStorageRam
+
+                        ram_idxs: set[int] = set()
+                        for oid, val in await self._async_walk(hr_type_oid):
+                            try:
+                                idx = int(str(oid).split(".")[-1])
+                            except Exception:
+                                continue
+                            s = str(val)
+                            if ram_type in s:
+                                ram_idxs.add(idx)
+
+                        if ram_idxs:
+                            alloc_units: dict[int, int] = {}
+                            sizes: dict[int, int] = {}
+                            useds: dict[int, int] = {}
+
+                            for oid, val in await self._async_walk(hr_alloc_oid):
+                                try:
+                                    idx = int(str(oid).split(".")[-1])
+                                except Exception:
+                                    continue
+                                if idx not in ram_idxs:
+                                    continue
+                                n = _parse_numeric(val)
+                                if n is None:
+                                    continue
+                                alloc_units[idx] = int(n)
+
+                            for oid, val in await self._async_walk(hr_size_oid):
+                                try:
+                                    idx = int(str(oid).split(".")[-1])
+                                except Exception:
+                                    continue
+                                if idx not in ram_idxs:
+                                    continue
+                                n = _parse_numeric(val)
+                                if n is None:
+                                    continue
+                                sizes[idx] = int(n)
+
+                            for oid, val in await self._async_walk(hr_used_oid):
+                                try:
+                                    idx = int(str(oid).split(".")[-1])
+                                except Exception:
+                                    continue
+                                if idx not in ram_idxs:
+                                    continue
+                                n = _parse_numeric(val)
+                                if n is None:
+                                    continue
+                                useds[idx] = int(n)
+
+                            total_bytes = 0
+                            used_bytes = 0
+                            for idx in ram_idxs:
+                                au = alloc_units.get(idx)
+                                sz = sizes.get(idx)
+                                us = useds.get(idx)
+                                if au is None or sz is None or us is None:
+                                    continue
+                                total_bytes += int(au) * int(sz)
+                                used_bytes += int(au) * int(us)
+
+                            if total_bytes > 0:
+                                free_bytes = max(0, total_bytes - used_bytes)
+                                if self.cache.get("env_mem_total_kb") is None:
+                                    self.cache["env_mem_total_kb"] = int(total_bytes / 1024)
+                                if self.cache.get("env_mem_free_kb") is None:
+                                    self.cache["env_mem_free_kb"] = int(free_bytes / 1024)
+                    except Exception:
+                        pass
+
 
         return self.cache
 
