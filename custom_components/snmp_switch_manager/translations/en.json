@@ -4,6 +4,70 @@
       "cannot_connect": "Cannot connect or SNMP timed out"
     },
     "step": {
+      "bandwidth_enable_disable": {
+        "data": {
+          "bw_mode": "Bandwidth data as",
+          "enable_bandwidth_sensors": "Enable bandwidth sensors"
+        },
+        "description": "Enable bandwidth collection for this device.\n\nIf you choose Attributes, bandwidth values are added to port entities (no history).\nIf you choose Sensors, separate bandwidth sensors are created (history).",
+        "title": "Bandwidth Sensors"
+      },
+      "bandwidth_poll_interval": {
+        "data": {
+          "bandwidth_poll_interval": "Poll interval (seconds)"
+        },
+        "description": "Set the polling interval used to calculate bandwidth/traffic.",
+        "title": "Bandwidth Sensors"
+      },
+      "bandwidth_sensors": {
+        "description": "Enable optional RX/TX throughput and total traffic sensors for selected interfaces.",
+        "menu_options": {
+          "back": "Back",
+          "bandwidth_enable_disable": "Enable / Disable",
+          "bandwidth_exclude_rules": "Exclude Rules",
+          "bandwidth_include_rules": "Include Rules",
+          "bandwidth_poll_interval": "Poll interval"
+        },
+        "title": "Bandwidth Sensors"
+      },
+      "environmental_enable_disable": {
+        "data": {
+          "env_enabled": "Enable environmental sensors",
+          "env_mode": "Environmental data as",
+          "poe_enabled": "Enable PoE sensors",
+          "poe_mode": "PoE data as"
+        },
+        "description": "Enable environmental/PoE monitoring for this device.\n\nIf you choose Attributes, values are added to port entities (no history).\nIf you choose Sensors, separate sensor entities are created (history).",
+        "title": "Environmental Sensors"
+      },
+      "environmental_sensors": {
+        "description": "Enable optional environmental and PoE monitoring for this device.",
+        "menu_options": {
+          "back": "Back",
+          "environmental_enable_disable": "Enable / Disable"
+        },
+        "title": "Environmental Sensors"
+      },
+      "init": {
+        "description": "Manage per-device overrides and advanced settings.",
+        "menu_options": {
+          "bandwidth_sensors": "Bandwidth Sensors",
+          "connection_overrides": "Connection & Naming Overrides",
+          "environmental_sensors": "Environmental Sensors",
+          "manage_interfaces": "Manage Interfaces"
+        },
+        "title": "Device Options"
+      },
+      "manage_interfaces": {
+        "menu_options": {
+          "back": "Back",
+          "builtin_filters": "Built-in Vendor Filters",
+          "interface_exclude_rules": "Excluded Interfaces",
+          "interface_include_rules": "Included Interfaces",
+          "port_name_rules": "Interface Name Rules"
+        },
+        "title": "Manage Interfaces"
+      },
       "user": {
         "data": {
           "community": "SNMP community (RW for alias writes)",
@@ -33,25 +97,39 @@
       },
       "bandwidth_enable_disable": {
         "data": {
-          "bw_enabled": "Enable bandwidth sensors",
-          "enable_bandwidth_sensors": "Enable bandwidth sensors"
+          "bw_mode": "Bandwidth data as",
+          "enable_bandwidth_sensors": "Enable bandwidth collection"
         },
-        "description": "Enable or disable bandwidth sensors for this device.",
+        "description": "Enable bandwidth collection for this device.\n\nIf you choose **Attributes**, bandwidth values are added to port entities (no history).\nIf you choose **Sensors**, separate bandwidth sensors are created (history).",
         "title": "Bandwidth Sensors"
       },
       "bandwidth_exclude_rules": {
         "data": {
           "rule_action": "Action",
+          "rule_existing": "Existing rule",
           "rule_match": "Match",
+          "rule_new_value": "New value",
           "rule_value": "Value"
         },
         "description": "Add or remove exclude rules. Exclude rules always take precedence.\n\nCurrent rules: {current_rules}",
         "title": "Bandwidth Sensor Exclude Rules"
       },
+      "bandwidth_icons": {
+        "data": {
+          "bw_rx_throughput_icon": "RX Throughput icon",
+          "bw_rx_total_icon": "RX Total icon",
+          "bw_tx_throughput_icon": "TX Throughput icon",
+          "bw_tx_total_icon": "TX Total icon"
+        },
+        "description": "Optional icon overrides for bandwidth sensors. Leave blank to use defaults.",
+        "title": "Bandwidth Sensor Icons"
+      },
       "bandwidth_include_rules": {
         "data": {
           "rule_action": "Action",
+          "rule_existing": "Existing rule",
           "rule_match": "Match",
+          "rule_new_value": "New value",
           "rule_value": "Value"
         },
         "description": "Add or remove include rules. If any include rules are set, only matching interfaces will get bandwidth sensors.\n\nCurrent rules: {current_rules}",
@@ -67,11 +145,12 @@
       "bandwidth_sensors": {
         "description": "Enable optional RX/TX throughput and total traffic sensors for selected interfaces.",
         "menu_options": {
+          "back": "Back",
           "bandwidth_enable_disable": "Enable / Disable",
           "bandwidth_exclude_rules": "Exclude Rules",
+          "bandwidth_icons": "Bandwidth Sensor Icons",
           "bandwidth_include_rules": "Include Rules",
-          "bandwidth_poll_interval": "Poll Interval",
-          "init": "Back"
+          "bandwidth_poll_interval": "Poll Interval"
         },
         "title": "Bandwidth Sensors"
       },
@@ -81,6 +160,15 @@
         },
         "description": "Enable or disable built-in vendor interface filter rules for this device.\n\nDisabled rules will not be applied during interface discovery.",
         "title": "Built-in Vendor Filters"
+      },
+      "connection_and_naming_overrides": {
+        "data": {
+          "override_community": "SNMP community override (optional)",
+          "override_port": "SNMP port override (optional)",
+          "uptime_poll_interval": "Uptime refresh interval (seconds)"
+        },
+        "description": "Optional per-device overrides. Leave blank to use values from initial setup.",
+        "title": "Connection & Name"
       },
       "custom_oids": {
         "data": {
@@ -95,61 +183,112 @@
         "description": "Override diagnostic sensor OIDs for this device only. Leave blank to use automatic detection.",
         "title": "Custom Diagnostic OIDs"
       },
-      "device": {
-        "data": {
-          "override_community": "SNMP community override (optional)",
-          "override_port": "SNMP port override (optional)",
-          "uptime_poll_interval": "Uptime refresh interval (seconds)"
+      "device_options": {
+        "description": "Manage per-device overrides and advanced settings.",
+        "menu_options": {
+          "bandwidth_sensors": "Bandwidth Sensors",
+          "connection_and_naming_overrides": "Connection & Name",
+          "custom_oids": "Custom Diagnostic OIDs",
+          "environmental_sensors": "Environmental Sensors",
+          "manage_interfaces": "Manage Interfaces"
         },
-        "description": "Optional per-device overrides. Leave blank to use values from initial setup.",
-        "title": "Connection & Name"
+        "title": "Device Options"
+      },
+      "entity_icon_rules": {
+        "data": {
+          "icon_action": "Action",
+          "icon_existing": "Existing rule",
+          "icon_icon": "Icon (e.g., mdi:ethernet)",
+          "icon_match": "Match type",
+          "icon_value": "Match value"
+        },
+        "description": "Override interface entity icons based on interface name matching.\n\nCurrent rules:\n{current}",
+        "title": "Entity Icon Rules"
+      },
+      "environmental_enable_disable": {
+        "data": {
+          "env_enabled": "Enable environmental sensors",
+          "env_mode": "Environmental data as",
+          "poe_enabled": "Enable PoE statistics",
+          "poe_mode": "PoE data as"
+        },
+        "description": "Choose whether environmental/PoE data is stored as attributes (no history) or separate sensors (history).",
+        "title": "Environmental Sensors"
+      },
+      "environmental_poll_interval": {
+        "data": {
+          "env_poll_interval": "Polling interval"
+        },
+        "description": "How often to poll environmental values (in seconds).",
+        "title": "Environmental polling interval"
+      },
+      "environmental_sensors": {
+        "description": "Enable optional environmental and PoE monitoring for this device.",
+        "menu_options": {
+          "back": "Back",
+          "environmental_enable_disable": "Enable / Disable",
+          "environmental_poll_interval": "Environmental polling interval",
+          "poe_poll_interval": "PoE polling interval"
+        },
+        "title": "Environmental Sensors"
       },
       "exclude_rules": {
         "data": {
           "rule_action": "Action",
+          "rule_existing": "Existing rule",
           "rule_match": "Match type",
+          "rule_new_value": "New value",
           "rule_value": "Match value"
         },
-        "description": "Current exclude rules:\n{current_rules}\n\nAdd or remove rules below. Excluded interfaces will not have entities created.",
-        "title": "Manage Excluded Interfaces"
+        "description": "Add, edit, or remove interface exclude rules.\n\nCurrent rules:\n{current}",
+        "title": "Exclude Rules"
       },
       "include_rules": {
         "data": {
           "rule_action": "Action",
+          "rule_existing": "Existing rule",
           "rule_match": "Match type",
+          "rule_new_value": "New value",
           "rule_value": "Match value"
         },
-        "description": "Current include rules:\n{current_rules}\n\nAdd or remove rules below. Exclude rules (if any) always win.",
-        "title": "Manage Included Interfaces"
+        "description": "Add, edit, or remove interface include rules.\n\nCurrent rules:\n{current}",
+        "title": "Include Rules"
       },
-      "init": {
-        "description": "Manage per-device overrides and advanced settings.",
+      "manage_interfaces": {
+        "description": "Manage which interfaces are created as Home Assistant entities.",
         "menu_options": {
-          "bandwidth_sensors": "Bandwidth Sensors",
-          "builtin_filters": "Built-in Vendor Filters",
-          "custom_oids": "Custom Diagnostic OIDs",
-          "device": "Connection & Name",
-          "exclude_rules": "Manage Excluded Interfaces",
-          "include_rules": "Manage Included Interfaces",
-          "port_name_rules": "Port Name Rules"
+          "back": "Back",
+          "builtin_vendor_filters": "Built-in Vendor Filters",
+          "entity_icon_rules": "Entity Icon Rules",
+          "excluded_interfaces": "Excluded Interfaces",
+          "included_interfaces": "Included Interfaces",
+          "interface_name_rules": "Interface Name Rules"
         },
-        "title": "Device Options"
+        "title": "Manage Interfaces"
+      },
+      "poe_poll_interval": {
+        "data": {
+          "poe_poll_interval": "Polling interval"
+        },
+        "description": "How often to poll PoE power values (in seconds).",
+        "title": "PoE polling interval"
       },
       "port_name_rules": {
         "description": "Customize how interface names are displayed in the UI and card.\n\nBuilt-in rules are provided as examples and can be disabled per device.",
         "menu_options": {
-          "init": "Back",
+          "manage_interfaces": "Back",
           "port_rename_custom": "Custom Rename Rules",
           "port_rename_defaults": "Built-in Rename Rules",
           "port_rename_restore_defaults": "Restore Built-in Rules"
         },
-        "title": "Port Name Rules"
+        "title": "Interface Name Rules"
       },
       "port_rename_custom": {
         "description": "Add or remove your own regex-based display name rules. Custom rules take priority over built-in rules.",
         "menu_options": {
           "port_name_rules": "Back",
           "port_rename_custom_add": "Add Rule",
+          "port_rename_custom_edit": "Edit Rule",
           "port_rename_custom_remove": "Remove Rule"
         },
         "title": "Custom Rename Rules"
@@ -163,6 +302,13 @@
         "description": "Create a regex rule that transforms the displayed interface name.\n\nExample pattern: ^Gi(\\\\d+)/0/(\\\\d+)$\nExample replace: Uplink-\\\\1-\\\\2",
         "title": "Add Rename Rule"
       },
+      "port_rename_custom_edit": {
+        "data": {
+          "selected": "Selected rule"
+        },
+        "description": "Select an existing rule to edit.",
+        "title": "Edit Custom Name Rule"
+      },
       "port_rename_custom_remove": {
         "data": {
           "remove_index": "Rule"
@@ -172,18 +318,39 @@
       },
       "port_rename_defaults": {
         "data": {
-          "builtin_link_aggregate_to_po": "Normalize link aggregate → Po",
-          "builtin_loopback_to_lo0": "Normalize loopback → Lo0",
-          "builtin_port_channel_to_po": "Normalize port-channel → Po",
-          "builtin_portchannel_to_po": "Normalize PortChannel → Po",
-          "builtin_unit_slot_port_100m_to_fa": "Normalize Unit/Slot/Port 100M → Fa",
-          "builtin_unit_slot_port_10g_to_te": "Normalize Unit/Slot/Port 10G → Te",
-          "builtin_unit_slot_port_1g_to_gi": "Normalize Unit/Slot/Port 1G → Gi",
-          "builtin_unit_slot_port_20g_to_tw": "Normalize Unit/Slot/Port 20G → Tw",
-          "defaults_action": "Action"
+          "builtin_link_aggregate_to_po": "Normalize link aggregate \u2192 Po",
+          "builtin_loopback_to_lo0": "Normalize loopback \u2192 Lo0",
+          "builtin_port_channel_to_po": "Normalize port-channel \u2192 Po",
+          "builtin_portchannel_to_po": "Normalize PortChannel \u2192 Po",
+          "builtin_unit_slot_port_100m_to_fa": "Normalize Unit/Slot/Port 100M \u2192 Fa",
+          "builtin_unit_slot_port_10g_to_te": "Normalize Unit/Slot/Port 10G \u2192 Te",
+          "builtin_unit_slot_port_1g_to_gi": "Normalize Unit/Slot/Port 1G \u2192 Gi",
+          "builtin_unit_slot_port_20g_to_tw": "Normalize Unit/Slot/Port 20G \u2192 Tw",
+          "defaults_action": "Action",
+          "port_rename_disabled_default_ids": "Built-in Rename Rules (disable)"
         },
         "description": "Enable or disable built-in display name rules for this device.\n\nCurrent built-ins:\n{rules}",
         "title": "Built-in Rename Rules"
+      }
+    }
+  },
+  "selector": {
+    "bandwidth_data_as": {
+      "options": {
+        "attributes": "Attributes (no history)",
+        "sensors": "Sensors (history)"
+      }
+    },
+    "env_data_as": {
+      "options": {
+        "attributes": "Attributes (no history)",
+        "sensors": "Sensors (history)"
+      }
+    },
+    "poe_data_as": {
+      "options": {
+        "attributes": "Attributes (no history)",
+        "sensors": "Sensors (history)"
       }
     }
   },
