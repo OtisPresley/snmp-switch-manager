@@ -446,11 +446,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
         if (coord_data.get("env_cpu_300s") is not None):
             entities.append(EnvironmentCpuUtilSensor(coordinator, entry, device_info, host_label, "300s"))
 
-        if (coord_data.get("env_mem_available_kb") is not None):
+        if (coord_data.get("env_mem_available_kb") is not None) or (coord_data.get("env_mem_free_kb") is not None):
             entities.append(EnvironmentMemoryValueSensor(coordinator, entry, device_info, host_label, "available"))
         if (coord_data.get("env_mem_total_kb") is not None):
             entities.append(EnvironmentMemoryValueSensor(coordinator, entry, device_info, host_label, "total"))
-        if (coord_data.get("env_mem_total_kb") is not None) and (coord_data.get("env_mem_available_kb") is not None):
+        if (coord_data.get("env_mem_total_kb") is not None) and ((coord_data.get("env_mem_available_kb") is not None) or (coord_data.get("env_mem_free_kb") is not None)):
             entities.append(EnvironmentMemoryUsedPercentSensor(coordinator, entry, device_info, host_label))
 
         # Fans
@@ -482,7 +482,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         # Unit/System temperature + status (Dell OS6). Create only if backing values exist.
         if coord_data.get("env_unit_temp_c") is not None:
             entities.append(EnvironmentUnitTemperatureSensor(coordinator, entry, device_info, host_label))
-        if coord_data.get("env_unit_temp_status") is not None:
+        if coord_data.get("env_unit_temp_state") is not None:
             entities.append(EnvironmentUnitTempStateSensor(coordinator, entry, device_info, host_label))
     # PoE sensors (optional)
     # Implemented below
@@ -821,7 +821,9 @@ class EnvironmentPowerSensor(CoordinatorEntity, SensorEntity):
 
         # Memory (kB) + computed usage %
         total_kb = data.get("env_mem_total_kb")
-        free_kb = data.get("env_mem_free_kb")
+        free_kb = data.get("env_mem_available_kb")
+        if free_kb is None:
+            free_kb = data.get("env_mem_free_kb")
         if total_kb is not None:
             attrs["Memory Total (kB)"] = total_kb
         if free_kb is not None:
@@ -1020,7 +1022,10 @@ class EnvironmentMemorySensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        val = (self.coordinator.data or {}).get(self._key)
+        data = (self.coordinator.data or {})
+        val = data.get(self._key)
+        if val is None and self._key == "env_mem_available_kb":
+            val = data.get("env_mem_free_kb")
         try:
             return round(float(val), 1) if val is not None else None
         except Exception:
@@ -1196,7 +1201,7 @@ class EnvironmentMemoryValueSensor(CoordinatorEntity, SensorEntity):
             self._label = "Memory Total"
             suffix = "total"
         else:
-            self._key = "env_mem_free_kb"
+            self._key = "env_mem_available_kb"
             self._label = "Memory Available"
             suffix = "available"
 
@@ -1212,7 +1217,11 @@ class EnvironmentMemoryValueSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        val = (self.coordinator.data or {}).get(self._key)
+        data = (self.coordinator.data or {})
+        val = data.get(self._key)
+        # Backward compatibility: older builds used env_mem_free_kb for available memory.
+        if val is None and self._key == "env_mem_available_kb":
+            val = data.get("env_mem_free_kb")
         try:
             return int(val) if val is not None else None
         except Exception:
@@ -1247,6 +1256,8 @@ class EnvironmentMemoryUsedPercentSensor(CoordinatorEntity, SensorEntity):
         total = data.get("env_mem_total_kb")
         # Stored as available/free kB in coordinator.data
         avail = data.get("env_mem_available_kb")
+        if avail is None:
+            avail = data.get("env_mem_free_kb")
         try:
             total_i = float(total) if total is not None else None
             avail_i = float(avail) if avail is not None else None
