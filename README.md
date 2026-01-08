@@ -92,7 +92,7 @@ After installation, restart Home Assistant and add the integration:
 
 ---
 
-## 📘 Documentation
+## Documentation
 
 Comprehensive documentation for **SNMP Switch Manager** is available
 in the GitHub Wiki.
