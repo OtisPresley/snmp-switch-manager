@@ -262,6 +262,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🌐 Improved **per-port IP address detection** to avoid displaying invalid or non-routable addresses (e.g. loopback addresses on physical ports)
 - 🚧 Fixed IP misalignment for some switches, including ZyXEL
 
+---
+
+## [0.4.1-beta.1] - 2026-01-08
+### Fixed
+- 🏷️ **Port Name Rules regression introduced in v0.4.0**
+  - Restored correct application of **Port Name Rules** across all integration consumers:
+    - Switch entities
+    - Sensors
+    - Bandwidth attributes
+    - Lovelace card data
+  - Rules are now applied consistently to interface data at the coordinator level
+- 🧩 **Multiple rename rules**
+  - All matching Port Name Rules are now applied **in order**, rather than stopping after the first match
+- ␣ **Trailing space handling in rename rules**
+  - Preserve intentional trailing spaces in replacement values (e.g. `"10G "` → `"10G 12"`)
+- 🔁 **Switch interface entity creation**
+  - Fixed an issue where interface switch entities could fail to be created under certain conditions
+
+### Notes
+- This is a **beta hotfix** intended to address regressions affecting interface naming and visibility introduced in **v0.4.0**
+- No schema changes; existing Port Name Rules and Device Options are preserved
+
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-simple-mode"></a>
