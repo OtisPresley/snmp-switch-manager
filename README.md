@@ -19,6 +19,7 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
 - [Installation](#installation)
   - [HACS (recommended)](#hacs-recommended)
   - [Manual install](#manual-install)
+- [Documentation](#documentation)
 - [Configuration](#configuration)
   - [Device Options](#device-options)
     - [Connection & Naming Overrides](#connection--naming-overrides)
@@ -88,6 +89,24 @@ After installation, restart Home Assistant and add the integration:
 1. Copy the folder `custom_components/snmp_switch_manager` into your HA `config/custom_components` directory.
 2. Restart Home Assistant.
 3. Go to **Settings → Devices & Services → Add Integration → SNMP Switch Manager**.
+
+---
+
+## 📘 Documentation
+
+Comprehensive documentation for **SNMP Switch Manager** is available
+in the GitHub Wiki.
+
+The Wiki includes:
+- Installation and configuration guidance
+- Attributes vs Sensors explained
+- Diagnostics and PoE behavior
+- Lovelace card usage and customization
+- Supported switches and limitations
+- Troubleshooting and FAQ
+
+👉 **Read the full documentation:**  
+https://github.com/OtisPresley/snmp-switch-manager/wiki
 
 ---
 
