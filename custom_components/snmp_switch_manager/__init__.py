@@ -26,6 +26,9 @@ from .const import (
     CONF_BW_EXCLUDE_STARTS_WITH,
     CONF_BW_EXCLUDE_CONTAINS,
     CONF_BW_EXCLUDE_ENDS_WITH,
+    CONF_PORT_RENAME_USER_RULES,
+    CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
+    DEFAULT_PORT_RENAME_RULES,
     CONF_POE_ENABLE,
     CONF_POE_MODE,
     CONF_POE_POLL_INTERVAL,
@@ -46,6 +49,80 @@ SwitchManagerConfigEntry = ConfigEntry
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     return True
+
+
+import re as _re
+
+
+def _build_port_rename_rules(options: dict) -> list[tuple[str, _re.Pattern[str], str]]:
+    """Build ordered (id, compiled_regex, replace) rules from config entry options.
+
+    User rules come first (highest priority), followed by enabled built-in defaults.
+    """
+    rules: list[tuple[str, _re.Pattern[str], str]] = []
+    disabled = set(options.get(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS) or [])
+
+    for i, r in enumerate(options.get(CONF_PORT_RENAME_USER_RULES) or []):
+        try:
+            pattern = str((r or {}).get("pattern") or "").strip()
+            replace = str((r or {}).get("replace") or "")
+            if not pattern:
+                continue
+            rules.append((f"user_{i}", _re.compile(pattern, _re.IGNORECASE), replace))
+        except Exception:
+            continue
+
+    for r in DEFAULT_PORT_RENAME_RULES:
+        rid = (r or {}).get("id") or ""
+        if not rid or rid in disabled:
+            continue
+        try:
+            pattern = str((r or {}).get("pattern") or "").strip()
+            replace = str((r or {}).get("replace") or "")
+            if not pattern:
+                continue
+            rules.append((rid, _re.compile(pattern, _re.IGNORECASE), replace))
+        except Exception:
+            continue
+
+    return rules
+
+
+def _apply_port_rename_all(name: str, rules: list[tuple[str, _re.Pattern[str], str]]) -> str:
+    """Apply *all* matching rename rules in order (each at most once)."""
+    if not name or not rules:
+        return name
+    out = name
+    for _rid, rx, rep in rules:
+        if rx.search(out):
+            try:
+                out = rx.sub(rep, out, count=1)
+            except Exception:
+                continue
+    return out
+
+
+def _postprocess_if_names(data: dict, options: dict) -> dict:
+    """Apply port rename rules to ifTable names in coordinator data."""
+    rules = _build_port_rename_rules(options)
+    if not rules:
+        return data
+    if_table = (data or {}).get("ifTable")
+    if not isinstance(if_table, dict):
+        return data
+    for idx, row in if_table.items():
+        if not isinstance(row, dict):
+            continue
+        raw = str(row.get("name") or row.get("descr") or "")
+        if not raw:
+            continue
+        renamed = _apply_port_rename_all(raw, rules)
+        # Preserve original for debugging / power users
+        if renamed != raw and "name_raw" not in row:
+            row["name_raw"] = raw
+        row["name"] = renamed
+    return data
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry) -> bool:
     host = entry.data.get("host")
@@ -94,6 +171,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
     # Apply per-device option for sysUpTime throttling
     client.set_uptime_poll_interval(entry.options.get(CONF_UPTIME_POLL_INTERVAL, DEFAULT_UPTIME_POLL_INTERVAL))
 
+    async def _update_method():
+        data = await client.async_poll()
+        return _postprocess_if_names(data, entry.options)
+
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
@@ -102,7 +183,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
         # IMPORTANT: use the client's poll method directly. The client is
         # responsible for handling/guarding poll errors so we don't mark all
         # coordinator-backed entities unavailable.
-        update_method=client.async_poll,
+        update_method=_update_method,
     )
     await coordinator.async_config_entry_first_refresh()
 
