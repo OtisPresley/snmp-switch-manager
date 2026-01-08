@@ -511,10 +511,63 @@ Once complete, everything will be fully managed by HACS and you will continue to
   - `hide_virtual_interfaces` — Hide virtual interfaces panel.
   - `hide_ports` — Hide specific ports (list or YAML array of port names).
   
-  ##### Diagnostics
+  #### Diagnostics
   - `diagnostics_order` — Order of discovered diagnostics (e.g., hostname, manufacturer…).
   - `diagnostics_enabled` — Enable/disable individual diagnostics by key.
-  - `diagnostics` — **Legacy** manual sensor list (compatibility; discovery is preferred).
+
+  #### 📊 Diagnostics: Attributes vs Sensors
+  
+  The SNMP Switch Manager card supports displaying diagnostics sourced from either:
+  
+  - Individual **sensor entities** (Sensors mode)
+  - **Attributes** on aggregate sensors (Attributes mode)
+  
+  The card automatically adapts to either mode.
+  
+  ##### Automatic Defaults
+  When supported data exists, the card automatically adds a small set of **high-signal diagnostics**:
+  
+  **Environment**
+  - System Temperature
+  - System Temperature Status
+  
+  **Power over Ethernet (PoE)**
+  - PoE Power Used (W)
+  - PoE Power Available (W)
+  
+  These defaults:
+  - Appear automatically
+  - Can be reordered
+  - Can be disabled
+  - Can be removed permanently
+  
+  Once removed, they are **never re-added automatically**.
+  
+  ---
+  
+  ##### 🔎 Selecting a Specific Attribute (Advanced)
+  
+  When operating in **Attributes mode**, Environment and PoE metrics are exposed as
+  attributes on a single parent sensor.
+  
+  To display a specific attribute in the Diagnostics panel, use the following syntax:
+  
+  ```text
+  sensor.entity_id#attribute_name
+  ```
+
+  ##### Examples
+  **Environment attributes via Add diagnostic sensor in the card editor UI**
+  ```text
+  sensor.switch_study_environment#System Temperature (°C)
+  sensor.switch_study_environment#System Temperature Status
+  ```
+
+  **Power over Ethernet attributes via Add diagnostic sensor in the card editor UI**
+  ```text
+  sensor.switch_study_power_over_ethernet#PoE Power Used (W)
+  sensor.switch_study_power_over_ethernet#PoE Power Available (W)
+  ```
   
   ##### Physical vs virtual classification
   - `physical_prefixes` — Comma-separated prefixes treated as Physical.
