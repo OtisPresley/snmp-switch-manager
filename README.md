@@ -96,14 +96,27 @@ https://github.com/OtisPresley/snmp-switch-manager/wiki
 
 ## Services
 
-### Update a port description
+SNMP Switch Manager provides Home Assistant services for advanced
+use cases, such as interacting with or refreshing switch-related data.
+
+These services are optional and are typically used by:
+- Advanced users
+- Automations
+- Scripts
+
+Most users will not need to use services directly.
+
+👉 See the GitHub Wiki for full usage guidance and examples:
+https://github.com/OtisPresley/snmp-switch-manager/wiki
+
+### Example: Update a port description
 
 Use the `snmp_switch_manager.set_port_description` service to change an interface alias:
 
 ```yaml
 service: snmp_switch_manager.set_port_description
 data:
-  entity_id: switch.gi1_0_5
+  entity_id: switch_switch_study_gi1_0_5
   description: Uplink to router
 ```
 
