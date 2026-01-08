@@ -160,16 +160,17 @@ async def async_setup_entry(hass, entry, async_add_entities):
         )
 
     def _apply_port_rename(display_name: str) -> str:
-        """Apply the first matching rename rule to the base display name."""
+        """Apply all port rename rules in order (each rule substituted at most once)."""
         if not display_name or not port_rename_rules:
             return display_name
+        out = display_name
         for _rid, rx, rep in port_rename_rules:
-            if rx.search(display_name):
+            if rx.search(out):
                 try:
-                    return rx.sub(rep, display_name, count=1)
+                    out = rx.sub(rep, out, count=1)
                 except Exception:
-                    return display_name
-        return display_name
+                    continue
+        return out
 
     # Vendor detection
     manufacturer = (client.cache.get("manufacturer") or "").lower()
