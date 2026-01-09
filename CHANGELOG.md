@@ -284,6 +284,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - This is a **beta hotfix** intended to address regressions affecting interface naming and visibility introduced in **v0.4.0**
 - No schema changes; existing Port Name Rules and Device Options are preserved
 
+---
+
+## [0.4.1-beta.2] - 2026-01-09
+### Added
+- 🧭 **Interface Port Type classification**
+  - Interfaces are now classified as:
+    - `physical`
+    - `virtual`
+    - `unknown`
+  - Port Type is always exposed as an interface attribute
+  - Classification is derived from SNMP data (ifType, bridge participation, and vendor-safe heuristics)
+- 🎛️ **Hide IP field on Physical Interfaces**
+  - New per-device option under:
+    **Device Options → Interface Management → Interface IP Display**
+  - When enabled:
+    - IP addresses are hidden on interfaces classified as **physical**
+    - IPs remain visible on **virtual / logical** interfaces (e.g. VLAN, management, SVI)
+  - Prevents management or SVI IPs from appearing on physical port tiles for switches that expose them this way (e.g. Zyxel)
+- 🌍 **Additional UI translations**
+  - Added commonly used language translations for the new options and labels:
+    - German (`de`)
+    - French (`fr`)
+    - Spanish (`es`)
+    - Italian (`it`)
+    - Dutch (`nl`)
+
+### Fixed
+- 🚧 Various code updates
+
+### Notes
+- This beta introduces **display-only behavior changes**; no existing entities are renamed or removed
+- The new IP visibility toggle is **disabled by default** to preserve existing behavior
+- Port Type classification is designed to be conservative and vendor-safe
+
+
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-simple-mode"></a>
