@@ -30,6 +30,7 @@ from .const import (
     OID_sysUpTime,
     OID_ifIndex,
     OID_ifDescr,
+    OID_ifType,
     OID_ifAdminStatus,
     OID_ifOperStatus,
     OID_ifName,
@@ -539,6 +540,14 @@ class SwitchSnmpClient:
                 idx = int(oid.split(".")[-1])
                 self.cache["ifTable"].setdefault(idx, {})["name"] = str(val)
 
+            # Types
+            for oid, val in await self._async_walk(OID_ifType):
+                idx = int(oid.split(".")[-1])
+                try:
+                    self.cache["ifTable"].setdefault(idx, {})["if_type"] = int(val)
+                except Exception:
+                    continue
+
             # Aliases
             for oid, val in await self._async_walk(OID_ifAlias):
                 idx = int(oid.split(".")[-1])
@@ -657,6 +666,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     if pvid_by_baseport:
                         for if_index, base_port in baseport_by_ifindex.items():
                             rec = self.cache["ifTable"].setdefault(if_index, {})
+                            rec["bridge_port"] = base_port
                             pvid = pvid_by_baseport.get(base_port)
 
                             # Backwards-compatible: keep vlan_id as the PVID
