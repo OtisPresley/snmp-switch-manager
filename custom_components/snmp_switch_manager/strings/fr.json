@@ -263,7 +263,7 @@
           "excluded_interfaces": "Excluded Interfaces",
           "included_interfaces": "Included Interfaces",
           "interface_name_rules": "Interface Name Rules",
-          "interface_ip_display": "Interface IP Display"
+          "interface_ip_display": "Affichage IP des interfaces"
         },
         "title": "Manage Interfaces"
       },
@@ -335,10 +335,10 @@
       },
       "interface_ip_display": {
         "data": {
-          "hide_ip_on_physical_interfaces": "Hide IP field on Physical Interfaces"
+          "hide_ip_on_physical_interfaces": "Masquer le champ IP sur les interfaces physiques"
         },
-        "description": "Hide the IP address field on interfaces classified as Physical (bridge ports). Virtual interfaces (VLAN/SVI, loopback, LAG, etc.) will still show IPs when configured.",
-        "title": "Interface IP Display"
+        "description": "Masque le champ d’adresse IP sur les interfaces classées comme physiques (ports du pont). Les interfaces virtuelles (VLAN/SVI, loopback, LAG, etc.) afficheront toujours les IP lorsqu’elles sont configurées.",
+        "title": "Affichage IP des interfaces"
       }
     }
   },
