@@ -157,6 +157,9 @@ BUILTIN_VENDOR_FILTER_RULES: list[dict[str, str]] = [
 CONF_PORT_RENAME_USER_RULES = "port_rename_user_rules"
 CONF_PORT_RENAME_DISABLED_DEFAULT_IDS = "port_rename_disabled_default_ids"
 
+# Interface display options
+CONF_HIDE_IP_ON_PHYSICAL = "hide_ip_on_physical_interfaces"
+
 # ---------------------------
 # Built-in port rename rules
 # (Applied to display name only)
