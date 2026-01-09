@@ -11,10 +11,8 @@ from homeassistant.helpers import entity_registry as er
 
 from .const import (
     DOMAIN,
-    CONF_PORT_RENAME_USER_RULES,
-    CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
     CONF_ICON_RULES,
-    DEFAULT_PORT_RENAME_RULES,
+    CONF_HIDE_IP_ON_PHYSICAL,
     CONF_INCLUDE_STARTS_WITH,
     CONF_INCLUDE_CONTAINS,
     CONF_INCLUDE_ENDS_WITH,
@@ -90,7 +88,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     entities: list[IfAdminSwitch] = []
     desired_if_indexes: set[int] = set()
-    iftable = client.cache.get("ifTable", {})
+    iftable = coordinator.data.get("ifTable", {}) or {}
     hostname = client.cache.get("sysName") or entry.data.get("name") or client.host
 
     device_info = DeviceInfo(
@@ -98,44 +96,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         name=hostname,
     )
 
-    ip_index = client.cache.get("ipIndex", {})
-    ip_mask = client.cache.get("ipMask", {})
-
-    def _build_port_rename_rules() -> list[tuple[str, re.Pattern[str], str]]:
-        """Return ordered (id, compiled_regex, replace) rules for this entry."""
-        rules: list[tuple[str, re.Pattern[str], str]] = []
-
-        disabled = set(entry.options.get(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS) or [])
-
-        # User rules first (highest priority)
-        for i, r in enumerate(entry.options.get(CONF_PORT_RENAME_USER_RULES) or []):
-            try:
-                pattern = str(r.get("pattern") or "").strip()
-                replace = str(r.get("replace") or "")
-                if not pattern:
-                    continue
-                rules.append((f"user_{i}", re.compile(pattern, re.IGNORECASE), replace))
-            except Exception:
-                # Ignore invalid user rules (they should be validated in the UI)
-                continue
-
-        # Built-in defaults next
-        for r in DEFAULT_PORT_RENAME_RULES:
-            rid = r.get("id") or ""
-            if not rid or rid in disabled:
-                continue
-            try:
-                pattern = str(r.get("pattern") or "").strip()
-                replace = str(r.get("replace") or "")
-                if not pattern:
-                    continue
-                rules.append((rid, re.compile(pattern, re.IGNORECASE), replace))
-            except Exception:
-                continue
-
-        return rules
-
-    port_rename_rules = _build_port_rename_rules()
+    ip_by_ifindex = coordinator.data.get("ip_by_ifindex", {}) or {}
+    ip_mask_by_ifindex = coordinator.data.get("ip_mask_by_ifindex", {}) or {}
 
     # Include/Exclude interface rules (simple string match; include wins over exclude)
     include_starts = [str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_STARTS_WITH, []) or []) if str(s).strip()]
@@ -158,20 +120,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
             or any(x in name_l for x in contains)
             or any(name_l.endswith(x) for x in ends)
         )
-
-    def _apply_port_rename(display_name: str) -> str:
-        """Apply all port rename rules in order (each rule substituted at most once)."""
-        if not display_name or not port_rename_rules:
-            return display_name
-        out = display_name
-        for _rid, rx, rep in port_rename_rules:
-            if rx.search(out):
-                try:
-                    out = rx.sub(rep, out, count=1)
-                except Exception:
-                    continue
-        return out
-
     # Vendor detection
     manufacturer = (client.cache.get("manufacturer") or "").lower()
     sys_descr = (client.cache.get("sysDescr") or "").lower()
@@ -185,7 +133,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     is_junos = "juniper" in manufacturer or "junos" in sys_descr or "ex2200" in sys_descr
 
     for idx, row in sorted(iftable.items()):
-        raw_name = row.get("name") or row.get("descr") or f"if{idx}"
+        raw_name = row.get("name_raw") or row.get("name") or row.get("descr") or f"if{idx}"
         alias = row.get("alias") or ""
 
         # Skip internal CPU pseudo-interface
@@ -193,7 +141,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             continue
 
         lower = (raw_name or "").lower()
-        ip_str = _ip_for_index(idx, ip_index, ip_mask)
+        ip_str = _ip_for_index(idx, ip_by_ifindex, ip_mask_by_ifindex)
 
         name_l = (raw_name or "").strip().lower()
         include_hit = _matches_any(name_l, include_starts, include_contains, include_ends)
@@ -308,20 +256,18 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 if not include and not include_hit:
                     continue
 
-
-                # Apply per-device port rename rules to the *raw* interface name first.
-        # This allows rules to match vendor-specific raw strings (e.g. "Unit: ...") before any normalization.
-        # _apply_port_rename() closes over port_rename_rules
-        raw_for_display = _apply_port_rename((raw_name or "").strip())
+        # Build a stable display name from coordinator-processed data.
+        # Port Name Rules are already applied at the coordinator level.
+        display_base = row.get("display_name") or row.get("name") or row.get("descr") or str(raw_name)
 
         # Try to parse Gi1/0/1 style to preserve unit/slot/port in display name
         unit = 1
         slot = 0
         port = None
         try:
-            # e.g., "Gi1/0/1" -> parts after the first two letters
-            if "/" in raw_for_display and raw_for_display[2:3].isdigit():
-                parts = raw_for_display[2:].split("/")
+            s = str(display_base)
+            if "/" in s and len(s) >= 3 and s[2:3].isdigit():
+                parts = s[2:].split("/")
                 if len(parts) >= 3:
                     unit = int(parts[0])
                     slot = int(parts[1])
@@ -329,18 +275,17 @@ async def async_setup_entry(hass, entry, async_add_entities):
         except Exception:
             pass
 
-        display = format_interface_name(raw_for_display, unit=unit, slot=slot, port=port)
-        display = _apply_port_rename(display)
+        display = format_interface_name(str(display_base), unit=unit, slot=slot, port=port)
 
         entities.append(
             IfAdminSwitch(
                 coordinator=coordinator,
                 entry_id=entry.entry_id,
                 if_index=idx,
-                raw_name=raw_name,
-                display_name=display,
-                alias=alias,
-                hostname=hostname,
+                raw_name=str(raw_name),
+                display_name=str(display),
+                alias=str(alias),
+                hostname=str(hostname),
                 device_info=device_info,
                 client=client,
                 icon_rules=icon_rules,
@@ -464,6 +409,7 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
             "Admin": ADMIN_STATE.get(row.get("admin", 0), "Unknown"),
             "Oper": OPER_STATE.get(row.get("oper", 0), "Unknown"),
             "Speed": _speed_display(row),
+            "Port Type": row.get("port_type") or "unknown",
         }
 
         vlan_id = row.get("vlan_id")
@@ -504,7 +450,10 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
 
         ip = _ip_for_index(self._if_index, self.coordinator.data.get("ip_by_ifindex", {}), self.coordinator.data.get("ip_mask_by_ifindex", {}))
         if ip:
-            attrs["IP"] = ip
+            hide = bool(self.coordinator.data.get("hide_ip_on_physical", False))
+            port_type = str(row.get("port_type") or "unknown")
+            if not (hide and port_type == "physical"):
+                attrs["IP"] = ip
 
         # PoE per-port power (optional)
         if (
