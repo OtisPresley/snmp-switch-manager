@@ -37,9 +37,9 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
 - 🎚️ One `switch` entity per interface for toggling administrative state (up/down)
 - 🏷️ Service for updating the interface alias (`ifAlias`) directly from Home Assistant
 - 🖼️ Lovelace card that mirrors the physical switch layout with colour-coded port status and quick actions
-- 📶 Optional per-port bandwidth monitoring (RX / TX throughput & totals)
-- 🌡️ **Environment monitoring** (CPU, memory, system/chassis temperature, and status), available as either attributes or dedicated sensors
-- ⚡ **Power over Ethernet (PoE) monitoring**, including used and remaining power budget, with support for both sensor and attribute modes
+- 📶 Optional per-port bandwidth monitoring (RX / TX throughput & totals) with support for attributes or dedicated sensors
+- 🌡️ **Environment monitoring** (CPU, memory, system/chassis temperature) with support for attributes or dedicated sensors
+- ⚡ **Power over Ethernet (PoE) monitoring** (used and remaining power budget) with support for attributes or dedicated sensors
 
 ---
 
