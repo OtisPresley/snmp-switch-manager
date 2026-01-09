@@ -28,6 +28,7 @@ from .const import (
     CONF_BW_EXCLUDE_ENDS_WITH,
     CONF_PORT_RENAME_USER_RULES,
     CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
+    CONF_HIDE_IP_ON_PHYSICAL,
     DEFAULT_PORT_RENAME_RULES,
     CONF_POE_ENABLE,
     CONF_POE_MODE,
@@ -102,25 +103,76 @@ def _apply_port_rename_all(name: str, rules: list[tuple[str, _re.Pattern[str], s
     return out
 
 
+
+
+def _classify_port_type(row: dict, display_name: str) -> str:
+    """Classify interface row as physical/virtual/unknown.
+
+    Heuristics (in priority order):
+    - ifType indicates virtual (loopback, vlan, LAG, tunnels, propVirtual, etc.)
+    - Presence of BRIDGE-MIB base port mapping -> physical
+    - Name/descr patterns for virtual interfaces
+    """
+    try:
+        if_type = int(row.get("if_type") or 0)
+    except Exception:
+        if_type = 0
+
+    VIRTUAL_IFTYPES = {24, 53, 131, 135, 161}  # loopback, propVirtual, tunnel, l2vlan, ieee8023adLag
+    if if_type in VIRTUAL_IFTYPES:
+        return "virtual"
+
+    # If the interface is present as a bridge port -> likely physical switch port
+    if row.get("bridge_port") is not None:
+        return "physical"
+
+    nm = (display_name or "").lower()
+    # Very conservative name-based virtual detection (fallback only)
+    for token in ("vlan", "loopback", "lo", "mgmt", "management", "bridge", "br", "irb", "bdi", "svi", "port-channel", "portchannel", "lag", "bond", "po"):
+        if token in nm:
+            return "virtual"
+
+    return "unknown"
+
+
 def _postprocess_if_names(data: dict, options: dict) -> dict:
-    """Apply port rename rules to ifTable names in coordinator data."""
+    """Apply port rename rules and derived fields to ifTable names in coordinator data.
+
+    This is the single source of truth for:
+    - Port Name Rules (applied in order; all matches)
+    - Preserving trailing spaces in replacements
+    - display_name used by entities, sensors, bandwidth attributes, and card data
+    - port_type classification (physical/virtual/unknown)
+    """
     rules = _build_port_rename_rules(options)
-    if not rules:
-        return data
     if_table = (data or {}).get("ifTable")
     if not isinstance(if_table, dict):
         return data
+
     for idx, row in if_table.items():
         if not isinstance(row, dict):
             continue
+
         raw = str(row.get("name") or row.get("descr") or "")
-        if not raw:
-            continue
-        renamed = _apply_port_rename_all(raw, rules)
+        renamed = raw
+        if raw and rules:
+            renamed = _apply_port_rename_all(raw, rules)
+
         # Preserve original for debugging / power users
-        if renamed != raw and "name_raw" not in row:
+        if raw and renamed != raw and "name_raw" not in row:
             row["name_raw"] = raw
-        row["name"] = renamed
+
+        # Always set name to the renamed value when available
+        if renamed:
+            row["name"] = renamed
+
+        # Single display field for all consumers (do not strip)
+        display = row.get("name") or row.get("descr") or f"ifIndex {idx}"
+        row["display_name"] = str(display)
+
+        # Derived port type used by UI/card
+        row["port_type"] = _classify_port_type(row, row["display_name"])
+
     return data
 
 
@@ -173,7 +225,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
 
     async def _update_method():
         data = await client.async_poll()
-        return _postprocess_if_names(data, entry.options)
+        data = _postprocess_if_names(data, entry.options)
+        # UI display option: hide IP on physical interfaces
+        try:
+            data["hide_ip_on_physical"] = bool(entry.options.get(CONF_HIDE_IP_ON_PHYSICAL, False))
+        except Exception:
+            data["hide_ip_on_physical"] = False
+        return data
 
     coordinator = DataUpdateCoordinator(
         hass,
