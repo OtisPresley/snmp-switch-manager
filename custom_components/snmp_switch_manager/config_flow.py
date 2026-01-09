@@ -66,6 +66,7 @@ from .const import (
     CONF_BW_TX_THROUGHPUT_ICON,
     CONF_BW_RX_TOTAL_ICON,
     CONF_BW_TX_TOTAL_ICON,
+    CONF_HIDE_IP_ON_PHYSICAL,
 )
 from .snmp import test_connection, get_sysname
 
@@ -216,6 +217,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 "excluded_interfaces",
                 "builtin_vendor_filters",
                 "interface_name_rules",
+                "interface_ip_display",
                 "entity_icon_rules",
                 "back",
             ],
@@ -237,6 +239,26 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         """Alias for interface name rules (Manage Interfaces submenu)."""
         return await self.async_step_port_name_rules(user_input)
 
+
+
+    async def async_step_interface_ip_display(self, user_input=None) -> FlowResult:
+        """Interface IP display options (Manage Interfaces submenu)."""
+        if user_input is not None:
+            self._options[CONF_HIDE_IP_ON_PHYSICAL] = bool(user_input.get(CONF_HIDE_IP_ON_PHYSICAL, False))
+            self._apply_options()
+            return await self.async_step_manage_interfaces()
+
+        return self.async_show_form(
+            step_id="interface_ip_display",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_HIDE_IP_ON_PHYSICAL,
+                        default=bool(self._options.get(CONF_HIDE_IP_ON_PHYSICAL, False)),
+                    ): cv.boolean,
+                }
+            ),
+        )
 
     async def async_step_entity_icon_rules(self, user_input=None) -> FlowResult:
         """Manage per-interface entity icon override rules."""
