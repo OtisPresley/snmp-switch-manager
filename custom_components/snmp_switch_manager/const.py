@@ -121,6 +121,11 @@ CONF_EXCLUDE_ENDS_WITH = "exclude_ends_with"
 
 CONF_ICON_RULES = "icon_rules"
 
+# Interface IP display
+CONF_HIDE_IP_ON_PHYSICAL = "hide_ip_on_physical"
+# Compatibility alias (older/newer code may use this)
+CONF_HIDE_IP_ON_PHYSICAL_INTERFACES = CONF_HIDE_IP_ON_PHYSICAL
+
 # Bandwidth sensor options (per-device)
 CONF_BW_ENABLE = "enable_bandwidth_sensors"
 CONF_BW_INCLUDE_STARTS_WITH = "bw_include_starts_with"
@@ -156,9 +161,6 @@ BUILTIN_VENDOR_FILTER_RULES: list[dict[str, str]] = [
 # Port rename rules (regex)
 CONF_PORT_RENAME_USER_RULES = "port_rename_user_rules"
 CONF_PORT_RENAME_DISABLED_DEFAULT_IDS = "port_rename_disabled_default_ids"
-
-# Interface display options
-CONF_HIDE_IP_ON_PHYSICAL = "hide_ip_on_physical_interfaces"
 
 # ---------------------------
 # Built-in port rename rules
