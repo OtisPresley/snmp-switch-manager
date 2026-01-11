@@ -334,11 +334,14 @@
         "title": "Built-in Rename Rules"
       },
       "interface_ip_display": {
+        "title": "IP-weergave van interfaces",
+        "description": "Bepaalt hoe IP-adressen op interfaces worden weergegeven.",
         "data": {
-          "hide_ip_on_physical_interfaces": "IP-veld verbergen op fysieke interfaces"
+          "hide_ip_on_physical": "IP-veld verbergen op fysieke interfaces"
         },
-        "description": "Verbergt het IP-adresveld op interfaces die als fysiek zijn geclassificeerd (bridge-poorten). Virtuele interfaces (VLAN/SVI, loopback, LAG, enz.) blijven IP’s tonen wanneer geconfigureerd.",
-        "title": "IP-weergave van interfaces"
+        "data_description": {
+          "hide_ip_on_physical": "Indien ingeschakeld worden IP-adressen alleen weergegeven op virtuele of logische interfaces (zoals VLAN- of beheerinterfaces)."
+        }
       }
     }
   },

@@ -334,11 +334,14 @@
         "title": "Built-in Rename Rules"
       },
       "interface_ip_display": {
+        "title": "Interface IP Display",
+        "description": "Control how IP addresses are shown on interfaces.",
         "data": {
-          "hide_ip_on_physical_interfaces": "Hide IP field on Physical Interfaces"
+          "hide_ip_on_physical": "Hide IP field on Physical Interfaces"
         },
-        "description": "Hide the IP address field on interfaces classified as Physical (bridge ports). Virtual interfaces (VLAN/SVI, loopback, LAG, etc.) will still show IPs when configured.",
-        "title": "Interface IP Display"
+        "data_description": {
+          "hide_ip_on_physical": "When enabled, IP addresses will only be shown on virtual or logical interfaces (such as VLAN or management interfaces)."
+        }
       }
     }
   },
