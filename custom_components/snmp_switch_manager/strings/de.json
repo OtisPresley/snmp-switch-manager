@@ -334,11 +334,14 @@
         "title": "Built-in Rename Rules"
       },
       "interface_ip_display": {
+        "title": "IP-Anzeige der Schnittstellen",
+        "description": "Steuert, wie IP-Adressen auf Schnittstellen angezeigt werden.",
         "data": {
-          "hide_ip_on_physical_interfaces": "IP-Feld auf physischen Schnittstellen ausblenden"
+          "hide_ip_on_physical": "IP-Feld auf physischen Schnittstellen ausblenden"
         },
-        "description": "Blendet das IP-Adressfeld auf als „Physisch“ klassifizierten Schnittstellen (Bridge-Ports) aus. Virtuelle Schnittstellen (VLAN/SVI, Loopback, LAG usw.) zeigen IPs weiterhin an, sofern konfiguriert.",
-        "title": "IP-Anzeige der Schnittstellen"
+        "data_description": {
+          "hide_ip_on_physical": "Wenn aktiviert, werden IP-Adressen nur auf virtuellen oder logischen Schnittstellen angezeigt (z. B. VLAN- oder Management-Schnittstellen)."
+        }
       }
     }
   },
