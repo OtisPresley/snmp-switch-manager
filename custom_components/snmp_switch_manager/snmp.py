@@ -30,7 +30,6 @@ from .const import (
     OID_sysUpTime,
     OID_ifIndex,
     OID_ifDescr,
-    OID_ifType,
     OID_ifAdminStatus,
     OID_ifOperStatus,
     OID_ifName,
@@ -76,6 +75,7 @@ from .const import (
     ENV_MODE_ATTRIBUTES,
     ENV_MODE_SENSORS,
     DEFAULT_ENV_POLL_INTERVAL,
+    OID_ifType,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -540,14 +540,6 @@ class SwitchSnmpClient:
                 idx = int(oid.split(".")[-1])
                 self.cache["ifTable"].setdefault(idx, {})["name"] = str(val)
 
-            # Types
-            for oid, val in await self._async_walk(OID_ifType):
-                idx = int(oid.split(".")[-1])
-                try:
-                    self.cache["ifTable"].setdefault(idx, {})["if_type"] = int(val)
-                except Exception:
-                    continue
-
             # Aliases
             for oid, val in await self._async_walk(OID_ifAlias):
                 idx = int(oid.split(".")[-1])
@@ -666,7 +658,6 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     if pvid_by_baseport:
                         for if_index, base_port in baseport_by_ifindex.items():
                             rec = self.cache["ifTable"].setdefault(if_index, {})
-                            rec["bridge_port"] = base_port
                             pvid = pvid_by_baseport.get(base_port)
 
                             # Backwards-compatible: keep vlan_id as the PVID
@@ -713,6 +704,50 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 rec["display_name"] = nm or ds or f"ifIndex {idx}"
 
         # Dynamic state only
+            # Interface types (IF-MIB ifType)
+            for oid, val in await self._async_walk(OID_ifType):
+                idx = int(oid.split(".")[-1])
+                rec = self.cache["ifTable"].get(idx)
+                if rec is not None:
+                    try:
+                        rec["if_type"] = int(val)
+                    except Exception:
+                        rec["if_type"] = None
+
+            # Bridge membership (BRIDGE-MIB dot1dBasePortIfIndex)
+            bridge_ifindexes: set[int] = set()
+            try:
+                for oid, val in await self._async_walk(OID_dot1dBasePortIfIndex):
+                    try:
+                        bridge_ifindexes.add(int(val))
+                    except Exception:
+                        continue
+            except Exception:
+                bridge_ifindexes = set()
+
+            # Port type classification: physical / virtual / unknown
+            virtual_iftypes = {24, 53, 135, 161, 131}  # loopback, propVirtual, l2vlan, lag, tunnel
+            for idx, rec in self.cache["ifTable"].items():
+                if not isinstance(rec, dict):
+                    continue
+                if_type = rec.get("if_type")
+                name = str(rec.get("name") or rec.get("descr") or "").lower()
+                port_type = "unknown"
+                # Strong virtual indicators
+                if isinstance(if_type, int) and if_type in virtual_iftypes:
+                    port_type = "virtual"
+                elif any(tok in name for tok in ("vlan", "loopback", "mgmt", "management", "irb", "bdi", "svi", "bridge", "port-channel", "bond", "lag")) or name.startswith(("br", "lo")):
+                    port_type = "virtual"
+                # Physical if bridge membership says so
+                if port_type == "unknown" and idx in bridge_ifindexes:
+                    port_type = "physical"
+                # Physical fallback: ethernetCsmacd(6) and looks like an ethernet port
+                if port_type == "unknown" and if_type == 6:
+                    if any(tok in name for tok in ("gigabit", "gige", "gi", "fastethernet", "fa", "ethernet", "eth", "tengig", "ten", "te", "ge", "xe")):
+                        port_type = "physical"
+                rec["port_type"] = port_type
+                rec["is_bridge_port"] = idx in bridge_ifindexes
+
         for oid, val in await self._async_walk(OID_ifAdminStatus):
             idx = int(oid.split(".")[-1])
             self.cache["ifTable"].setdefault(idx, {})["admin"] = int(val)
