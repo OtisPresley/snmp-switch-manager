@@ -318,6 +318,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The new IP visibility toggle is **disabled by default** to preserve existing behavior
 - Port Type classification is designed to be conservative and vendor-safe
 
+---
+
+## [0.4.1-beta.2] - 2026-01-09
+### Fixed
+- 🚧 Interface naming regression
 
 <!-- ROADMAP ANCHOR LINKS -->
 
