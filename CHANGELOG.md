@@ -330,6 +330,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - 🚧 Bandwidth sensor naming
 
+---
+
+## [0.4.1-beta.5] - 2026-01-12
+### Fixed
+- 🚫 **Eliminated Home Assistant event loop blocking warnings**
+  - Prevented synchronous filesystem access (`open`, `listdir`) triggered by pysnmp MIB loading
+  - Core SNMP MIBs are now preloaded off the event loop to avoid stability warnings
+- 🎛️ **Restored “Hide IP field on Physical Interfaces”**
+  - Option returned to **Device Options → Interface Management → Interface IP Display**
+  - Corrected option handling to persist and apply reliably
+  - Maintains backward compatibility with existing installations
+- 🏷️ **Custom Interface Name Rules – Edit dialog parity**
+  - Edit Rule dialog now fully matches Add Rule behavior
+  - Replacement values correctly preserve spaces
+  - Rule descriptions are retained when editing
+- 🌍 **Translation reliability improvements**
+  - Verified config flow and options flow translations across supported languages
+  - Ensured consistency and fallback safety for non-English users
+
+### Notes
+- No existing entities are renamed or removed
+- No switch-specific logic or vendor support was altered
+
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-simple-mode"></a>
