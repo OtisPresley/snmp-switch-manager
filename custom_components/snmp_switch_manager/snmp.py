@@ -368,14 +368,23 @@ class SwitchSnmpClient:
             eng = SnmpEngine()
             try:
                 mib_builder = eng.getMibBuilder()
-                try:
-                    mib_builder.setMibSources()  # clear FS sources
-                except TypeError:
-                    pass
-                try:
-                    mib_builder.loadModules("SNMPv2-SMI", "SNMPv2-MIB", "__SNMPv2-MIB", "PYSNMP-SOURCE-MIB")
-                except Exception:
-                    pass
+                # Pre-load core pysnmp modules off the event loop.
+                # Home Assistant flags synchronous FS access (os.listdir/open) from pysnmp's MIB loader
+                # when it occurs on the asyncio loop thread. Preloading here ensures pysnmp will not
+                # hit the filesystem later during async polling/walks.
+                mib_builder.loadModules(
+                    "SNMPv2-SMI",
+                    "SNMPv2-TC",
+                    "SNMPv2-CONF",
+                    "SNMPv2-MIB",
+                    "__SNMPv2-MIB",
+                    "SNMP-FRAMEWORK-MIB",
+                    "SNMP-COMMUNITY-MIB",
+                    "SNMP-TARGET-MIB",
+                    "SNMP-NOTIFICATION-MIB",
+                    "SNMPv2-TM",
+                    "PYSNMP-SOURCE-MIB",
+                )
             except Exception:
                 pass
             return eng
