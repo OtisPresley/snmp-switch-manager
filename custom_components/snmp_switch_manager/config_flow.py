@@ -67,6 +67,7 @@ from .const import (
     CONF_BW_RX_TOTAL_ICON,
     CONF_BW_TX_TOTAL_ICON,
     CONF_HIDE_IP_ON_PHYSICAL,
+    CONF_HIDE_IP_ON_PHYSICAL_INTERFACES,
 )
 from .snmp import test_connection, get_sysname
 
@@ -217,6 +218,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 "excluded_interfaces",
                 "builtin_vendor_filters",
                 "interface_name_rules",
+                "interface_ip_display",
                 "entity_icon_rules",
                 "back",
             ],
@@ -226,15 +228,29 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_interface_ip_display(self, user_input=None) -> FlowResult:
         """Interface IP Display options (Manage Interfaces submenu)."""
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            # Store under the primary (beta.2) option key, but accept either key from the form
+            enabled = bool(
+                user_input.get(CONF_HIDE_IP_ON_PHYSICAL_INTERFACES,
+                               user_input.get(CONF_HIDE_IP_ON_PHYSICAL, False))
+            )
+            self._options[CONF_HIDE_IP_ON_PHYSICAL_INTERFACES] = enabled
+            # Clean up legacy key if present
+            self._options.pop(CONF_HIDE_IP_ON_PHYSICAL, None)
+            self._apply_options()
+            return await self.async_step_manage_interfaces()
 
         return self.async_show_form(
             step_id="interface_ip_display",
             data_schema=vol.Schema(
                 {
                     vol.Optional(
-                        CONF_HIDE_IP_ON_PHYSICAL,
-                        default=bool(self._options.get(CONF_HIDE_IP_ON_PHYSICAL, False)),
+                        CONF_HIDE_IP_ON_PHYSICAL_INTERFACES,
+                        default=bool(
+                            self._options.get(
+                                CONF_HIDE_IP_ON_PHYSICAL_INTERFACES,
+                                self._options.get(CONF_HIDE_IP_ON_PHYSICAL, False),
+                            )
+                        ),
                     ): cv.boolean,
                 }
             ),
@@ -1040,7 +1056,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             if sel in labels:
                 idx = labels[sel]
                 pattern = (user_input.get("pattern") or "").strip()
-                replace = (user_input.get("replace") or "").strip()
+                # IMPORTANT: preserve spaces in replacement values (no .strip())
+                replace = user_input.get("replace") or ""
+                description = (user_input.get("description") or "").strip()
                 errors = {}
                 try:
                     re.compile(pattern)
@@ -1052,7 +1070,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         data_schema=self._port_rename_edit_schema(labels, rules, sel),
                         errors=errors,
                     )
-                rules[idx] = {"pattern": pattern, "replace": replace}
+                rules[idx] = {"pattern": pattern, "replace": replace, "description": description}
                 self._options[CONF_PORT_RENAME_USER_RULES] = rules
                 self._apply_options()
                 return await self.async_step_port_rename_custom()
@@ -1069,12 +1087,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         if selected is None:
             selected = list(labels.keys())[0]
         idx = labels.get(selected, 0)
-        cur = rules[idx] if rules else {"pattern": "", "replace": ""}
+        cur = rules[idx] if rules else {"pattern": "", "replace": "", "description": ""}
         return vol.Schema(
             {
                 vol.Required("selected", default=selected): vol.In(list(labels.keys())),
                 vol.Required("pattern", default=str(cur.get("pattern") or "")): str,
                 vol.Required("replace", default=str(cur.get("replace") or "")): str,
+                vol.Optional("description", default=str(cur.get("description") or "")): str,
             }
         )
     async def async_step_port_rename_custom_remove(self, user_input=None) -> FlowResult:
