@@ -337,10 +337,10 @@
         "title": "IP-weergave van interfaces",
         "description": "Bepaalt hoe IP-adressen op interfaces worden weergegeven.",
         "data": {
-          "hide_ip_on_physical": "IP-veld verbergen op fysieke interfaces"
+          "hide_ip_on_physical_interfaces": "IP-veld verbergen op fysieke interfaces"
         },
         "data_description": {
-          "hide_ip_on_physical": "Indien ingeschakeld worden IP-adressen alleen weergegeven op virtuele of logische interfaces (zoals VLAN- of beheerinterfaces)."
+          "hide_ip_on_physical_interfaces": "Indien ingeschakeld worden IP-adressen alleen weergegeven op virtuele of logische interfaces (zoals VLAN- of beheerinterfaces)."
         }
       }
     }

@@ -337,10 +337,10 @@
         "title": "Interface IP Display",
         "description": "Control how IP addresses are shown on interfaces.",
         "data": {
-          "hide_ip_on_physical": "Hide IP field on Physical Interfaces"
+          "hide_ip_on_physical_interfaces": "Hide IP field on Physical Interfaces"
         },
         "data_description": {
-          "hide_ip_on_physical": "When enabled, IP addresses will only be shown on virtual or logical interfaces (such as VLAN or management interfaces)."
+          "hide_ip_on_physical_interfaces": "When enabled, IP addresses will only be shown on virtual or logical interfaces (such as VLAN or management interfaces)."
         }
       }
     }

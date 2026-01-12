@@ -337,10 +337,10 @@
         "title": "IP-Anzeige der Schnittstellen",
         "description": "Steuert, wie IP-Adressen auf Schnittstellen angezeigt werden.",
         "data": {
-          "hide_ip_on_physical": "IP-Feld auf physischen Schnittstellen ausblenden"
+          "hide_ip_on_physical_interfaces": "IP-Feld auf physischen Schnittstellen ausblenden"
         },
         "data_description": {
-          "hide_ip_on_physical": "Wenn aktiviert, werden IP-Adressen nur auf virtuellen oder logischen Schnittstellen angezeigt (z. B. VLAN- oder Management-Schnittstellen)."
+          "hide_ip_on_physical_interfaces": "Wenn aktiviert, werden IP-Adressen nur auf virtuellen oder logischen Schnittstellen angezeigt (z. B. VLAN- oder Management-Schnittstellen)."
         }
       }
     }
