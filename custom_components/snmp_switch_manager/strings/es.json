@@ -337,10 +337,10 @@
         "title": "Visualización de IP de interfaces",
         "description": "Controla cómo se muestran las direcciones IP en las interfaces.",
         "data": {
-          "hide_ip_on_physical": "Ocultar el campo IP en interfaces físicas"
+          "hide_ip_on_physical_interfaces": "Ocultar el campo IP en interfaces físicas"
         },
         "data_description": {
-          "hide_ip_on_physical": "Cuando está habilitado, las direcciones IP solo se mostrarán en interfaces virtuales o lógicas (como interfaces VLAN o de administración)."
+          "hide_ip_on_physical_interfaces": "Cuando está habilitado, las direcciones IP solo se mostrarán en interfaces virtuales o lógicas (como interfaces VLAN o de administración)."
         }
       }
     }

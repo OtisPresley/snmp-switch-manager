@@ -337,10 +337,10 @@
         "title": "Affichage IP des interfaces",
         "description": "Contrôle la manière dont les adresses IP sont affichées sur les interfaces.",
         "data": {
-          "hide_ip_on_physical": "Masquer le champ IP sur les interfaces physiques"
+          "hide_ip_on_physical_interfaces": "Masquer le champ IP sur les interfaces physiques"
         },
         "data_description": {
-          "hide_ip_on_physical": "Lorsqu’activé, les adresses IP ne sont affichées que sur les interfaces virtuelles ou logiques (comme les interfaces VLAN ou de gestion)."
+          "hide_ip_on_physical_interfaces": "Lorsqu’activé, les adresses IP ne sont affichées que sur les interfaces virtuelles ou logiques (comme les interfaces VLAN ou de gestion)."
         }
       }
     }
