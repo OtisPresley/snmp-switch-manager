@@ -678,9 +678,14 @@ class BandwidthRateSensor(_BandwidthBase):
     @property
     def name(self) -> str:
         label = "RX" if self._direction == "rx" else "TX"
-        # Include the device label to ensure entity_id uniqueness matches other entities
-        # (e.g. sensor.switch_study_gi1_0_1_rx_throughput)
-        return f"{self._host_label} {self._if_name()} {label} Throughput"
+        # IMPORTANT: _BandwidthBase uses _attr_has_entity_name = True.
+        # Home Assistant will automatically prefix the entity name (and suggested entity_id)
+        # with the device name. Therefore, the per-entity name MUST NOT include host/device
+        # labels, otherwise the hostname appears twice in the suggested entity_id.
+        #
+        # Example desired entity_id:
+        #   sensor.gs1900_24ep_01_gigabitethernet1_rx_throughput
+        return f"{self._if_name()} {label} Throughput"
 
     @property
     def native_value(self):
@@ -736,7 +741,8 @@ class BandwidthTotalSensor(_BandwidthBase):
     @property
     def name(self) -> str:
         label = "RX" if self._direction == "rx" else "TX"
-        return f"{self._host_label} {self._if_name()} {label} Total"
+        # See BandwidthRateSensor.name() for why we do not include the host label here.
+        return f"{self._if_name()} {label} Total"
 
     @property
     def native_value(self):
