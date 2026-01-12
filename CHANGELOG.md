@@ -334,9 +334,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.1-beta.5] - 2026-01-12
 ### Fixed
-- 🚫 **Eliminated Home Assistant event loop blocking warnings**
-  - Prevented synchronous filesystem access (`open`, `listdir`) triggered by pysnmp MIB loading
-  - Core SNMP MIBs are now preloaded off the event loop to avoid stability warnings
 - 🎛️ **Restored “Hide IP field on Physical Interfaces”**
   - Option returned to **Device Options → Interface Management → Interface IP Display**
   - Corrected option handling to persist and apply reliably
