@@ -122,9 +122,11 @@ CONF_EXCLUDE_ENDS_WITH = "exclude_ends_with"
 CONF_ICON_RULES = "icon_rules"
 
 # Interface IP display
+# Primary option key (v0.4.1-beta.2)
+CONF_HIDE_IP_ON_PHYSICAL_INTERFACES = "hide_ip_on_physical_interfaces"
+
+# Compatibility alias (used by some dev builds)
 CONF_HIDE_IP_ON_PHYSICAL = "hide_ip_on_physical"
-# Compatibility alias (older/newer code may use this)
-CONF_HIDE_IP_ON_PHYSICAL_INTERFACES = CONF_HIDE_IP_ON_PHYSICAL
 
 # Bandwidth sensor options (per-device)
 CONF_BW_ENABLE = "enable_bandwidth_sensors"
