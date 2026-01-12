@@ -40,6 +40,7 @@ from .const import (
     ENV_MODE_ATTRIBUTES,
     DEFAULT_ENV_POLL_INTERVAL,
     CONF_HIDE_IP_ON_PHYSICAL,
+    CONF_HIDE_IP_ON_PHYSICAL_INTERFACES,
 )
 from .snmp import SwitchSnmpClient
 
@@ -106,7 +107,12 @@ def _apply_port_rename_all(name: str, rules: list[tuple[str, _re.Pattern[str], s
 def _postprocess_if_names(data: dict, options: dict) -> dict:
     """Apply port rename rules to ifTable names in coordinator data."""
     # Persist option flags for downstream consumers
-    data["hide_ip_on_physical"] = bool(options.get(CONF_HIDE_IP_ON_PHYSICAL, False))
+    data["hide_ip_on_physical"] = bool(
+        options.get(
+            CONF_HIDE_IP_ON_PHYSICAL_INTERFACES,
+            options.get(CONF_HIDE_IP_ON_PHYSICAL, False),
+        )
+    )
 
     rules = _build_port_rename_rules(options)
     if not rules:
