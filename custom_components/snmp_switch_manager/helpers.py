@@ -1,7 +1,8 @@
 
 from __future__ import annotations
+
 import ipaddress
-from typing import Optional, Dict, Any
+from typing import Optional
 
 def _abbr_from_speed_or_name(name: str) -> str:
     n = (name or "").lower()
@@ -46,3 +47,76 @@ def ip_to_cidr(ip: str, mask: str) -> Optional[str]:
         return f"{ip}/{net.prefixlen}"
     except Exception:
         return None
+
+
+# ----------------------------
+# Port type classification
+# ----------------------------
+
+# Strong virtual indicators by IF-MIB ifType
+# (loopback, propVirtual, l2vlan, lag, tunnel)
+VIRTUAL_IFTYPES: set[int] = {24, 53, 135, 161, 131}
+
+
+def classify_port_type(
+    *,
+    if_type: int | None,
+    name: str,
+    is_bridge_port: bool,
+) -> str:
+    """Classify an interface as physical, virtual, or unknown.
+
+    This is intentionally heuristic-based and centralized here to make it easier
+    to update as new switch families are added.
+    """
+
+    nm = (name or "").strip().lower()
+    port_type = "unknown"
+
+    # Strong virtual indicators
+    if isinstance(if_type, int) and if_type in VIRTUAL_IFTYPES:
+        port_type = "virtual"
+    elif any(
+        tok in nm
+        for tok in (
+            "vlan",
+            "loopback",
+            "mgmt",
+            "management",
+            "irb",
+            "bdi",
+            "svi",
+            "bridge",
+            "port-channel",
+            "bond",
+            "lag",
+        )
+    ) or nm.startswith(("br", "lo")):
+        port_type = "virtual"
+
+    # Bridge membership is a strong physical indicator
+    if port_type == "unknown" and is_bridge_port:
+        port_type = "physical"
+
+    # Fallback: ethernetCsmacd(6) and looks like an ethernet port
+    if port_type == "unknown" and if_type == 6:
+        if nm.startswith("port") or any(
+            tok in nm
+            for tok in (
+                "gigabit",
+                "gige",
+                "gi",
+                "fastethernet",
+                "fa",
+                "ethernet",
+                "eth",
+                "tengig",
+                "ten",
+                "te",
+                "ge",
+                "xe",
+            )
+        ):
+            port_type = "physical"
+
+    return port_type
