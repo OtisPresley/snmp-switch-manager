@@ -9,6 +9,8 @@ from typing import Any, Dict, Optional, Iterable, Tuple, List
 
 from homeassistant.core import HomeAssistant
 
+from .helpers import classify_port_type
+
 from .snmp_compat import (
     CommunityData,
     SnmpEngine,
@@ -616,9 +618,18 @@ class SwitchSnmpClient:
                     untagged_by_baseport: Dict[int, set[int]] = {}
 
                     async def _collect_vlan_portlists(oid_base: str, out: Dict[int, set[int]]) -> int:
-                        """Walk a Q-BRIDGE PortList table and invert it into port -> {vlans}."""
+                        """Walk a Q-BRIDGE PortList table and invert it into port -> {vlans}.
+
+                        Some devices have very large VLAN tables (or respond slowly), which can cause
+                        Home Assistant to cancel config entry setup. To keep setup responsive, we cap
+                        how long each VLAN PortList walk can run.
+                        """
                         count = 0
-                        for oid, val in await self._async_walk(oid_base):
+                        try:
+                            rows = await asyncio.wait_for(self._async_walk(oid_base), timeout=30.0)
+                        except asyncio.TimeoutError:
+                            return count
+                        for oid, val in rows:
                             try:
                                 vlan_id = int(oid.split(".")[-1])
                             except Exception:
@@ -707,7 +718,12 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 pass
 
             # Display name preference from original repo
+            # If a display_name is already populated, do not overwrite it.
             for idx, rec in list(self.cache["ifTable"].items()):
+                existing = (rec.get("display_name") or "").strip()
+                if existing:
+                    rec["display_name"] = existing
+                    continue
                 nm = (rec.get("name") or "").strip()
                 ds = (rec.get("descr") or "").strip()
                 rec["display_name"] = nm or ds or f"ifIndex {idx}"
@@ -734,28 +750,18 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
             except Exception:
                 bridge_ifindexes = set()
 
-            # Port type classification: physical / virtual / unknown
-            virtual_iftypes = {24, 53, 135, 161, 131}  # loopback, propVirtual, l2vlan, lag, tunnel
             for idx, rec in self.cache["ifTable"].items():
                 if not isinstance(rec, dict):
                     continue
                 if_type = rec.get("if_type")
-                name = str(rec.get("name") or rec.get("descr") or "").lower()
-                port_type = "unknown"
-                # Strong virtual indicators
-                if isinstance(if_type, int) and if_type in virtual_iftypes:
-                    port_type = "virtual"
-                elif any(tok in name for tok in ("vlan", "loopback", "mgmt", "management", "irb", "bdi", "svi", "bridge", "port-channel", "bond", "lag")) or name.startswith(("br", "lo")):
-                    port_type = "virtual"
-                # Physical if bridge membership says so
-                if port_type == "unknown" and idx in bridge_ifindexes:
-                    port_type = "physical"
-                # Physical fallback: ethernetCsmacd(6) and looks like an ethernet port
-                if port_type == "unknown" and if_type == 6:
-                    if any(tok in name for tok in ("gigabit", "gige", "gi", "fastethernet", "fa", "ethernet", "eth", "tengig", "ten", "te", "ge", "xe")):
-                        port_type = "physical"
-                rec["port_type"] = port_type
-                rec["is_bridge_port"] = idx in bridge_ifindexes
+                name = str(rec.get("display_name") or rec.get("name") or rec.get("descr") or "")
+                is_bridge_port = idx in bridge_ifindexes
+                rec["port_type"] = classify_port_type(
+                    if_type=if_type,
+                    name=name,
+                    is_bridge_port=is_bridge_port,
+                )
+                rec["is_bridge_port"] = is_bridge_port
 
         for oid, val in await self._async_walk(OID_ifAdminStatus):
             idx = int(oid.split(".")[-1])
