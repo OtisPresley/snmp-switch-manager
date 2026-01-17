@@ -186,7 +186,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
     is_junos = "juniper" in manufacturer or "junos" in sys_descr or "ex2200" in sys_descr
 
     for idx, row in sorted(iftable.items()):
-        raw_name = row.get("name") or row.get("descr") or f"if{idx}"
+        # Prefer display_name (when provided) over ifName. Some platforms populate a
+        # human-friendly name in display_name while still exposing a raw ifName.
+        raw_name = row.get("display_name") or row.get("name") or row.get("descr") or f"if{idx}"
         alias = row.get("alias") or ""
 
         # Skip internal CPU pseudo-interface
@@ -461,7 +463,9 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
         attrs: Dict[str, Any] = {
             "Index": self._if_index,
             "Name": self._display,
-            "Alias": row.get("alias") or "",
+            # Many switches leave ifAlias blank and place the user-visible port
+            # description in ifDescr instead.
+            "Alias": row.get("alias") or row.get("descr") or "",
             "Admin": ADMIN_STATE.get(row.get("admin", 0), "Unknown"),
             "Oper": OPER_STATE.get(row.get("oper", 0), "Unknown"),
             "Speed": _speed_display(row),
