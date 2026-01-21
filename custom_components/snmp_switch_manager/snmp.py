@@ -45,6 +45,7 @@ from .const import (
     OID_ipAdEntNetMask,
     OID_entPhysicalModelName,
     OID_entPhysicalSoftwareRev_CBS350,
+    OID_hwEntityTemperature,
     OID_mikrotik_software_version,
     OID_mikrotik_model,
     OID_entPhysicalMfgName_Zyxel,
@@ -1124,6 +1125,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                         self.target,
                         self.context,
                         OID_entPhysicalSoftwareRev_CBS350,
+    OID_hwEntityTemperature,
                     )
                 except Exception:
                     sw_rev = None
@@ -1814,7 +1816,32 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     except Exception:
                         pass
 
-                # HOST-RESOURCES-MIB fallback: CPU + memory (only fill missing).
+                                # Huawei/Quidway fallback: HUAWEI-ENTITY-EXTENT-MIB hwEntityTemperature
+                # Only run if temperatures are still missing after ENTITY-SENSOR-MIB.
+                if self.cache.get("env_temps_c") in (None, {}):
+                    try:
+                        temps_c: dict[int, int] = {}
+                        for oid, val in await self._async_walk(OID_hwEntityTemperature):
+                            try:
+                                idx = int(str(oid).split(".")[-1])
+                            except Exception:
+                                continue
+                            n = _parse_numeric(val)
+                            if n is None:
+                                continue
+                            try:
+                                v = float(n)
+                            except Exception:
+                                continue
+                            # hwEntityTemperature is typically in degrees Celsius.
+                            if -50.0 <= v <= 200.0:
+                                temps_c[idx] = int(round(v))
+                        if temps_c:
+                            self.cache["env_temps_c"] = temps_c
+                    except Exception:
+                        pass
+
+# HOST-RESOURCES-MIB fallback: CPU + memory (only fill missing).
                 # CPU: hrProcessorLoad values 0..100 across processors.
                 if self.cache.get("env_cpu_5s") is None and self.cache.get("env_cpu_60s") is None and self.cache.get("env_cpu_300s") is None:
                     try:
