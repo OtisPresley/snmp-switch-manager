@@ -367,6 +367,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - 🚧 Fixed issue causing interfaces starting with Port to be skipped
 
+---
+
+## [0.4.1-beta.8] - 2026-01-21
+### Fixed
+- 🚧 Skip creating temperature sensors that have a value of 0 or an invalid value
+- 🚧 Try to determine which temperature sensor it is and name it accordingly
+
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-simple-mode"></a>
