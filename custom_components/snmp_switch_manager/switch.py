@@ -211,7 +211,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             continue
 
         is_port_channel = (
-            lower.startswith("po")
+            (lower.startswith("po") and not lower.startswith("port"))
             or lower.startswith("port-channel")
             or lower.startswith("link aggregate")
         )
