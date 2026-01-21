@@ -1297,7 +1297,8 @@ class EnvironmentTemperatureSensor(CoordinatorEntity, SensorEntity):
     @property
     def name(self) -> str:
         # Expose as numbered sensors; devices label these differently.
-        label = env_temp_label(self._idx)
+        labels = (self.coordinator.data or {}).get("env_temp_labels") or {}
+        label = labels.get(self._idx) or env_temp_label(self._idx)
         return f"{self._host_label} {label} Temperature"
 
     @property
