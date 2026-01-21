@@ -45,6 +45,8 @@ from .const import (
     OID_ipAdEntNetMask,
     OID_entPhysicalModelName,
     OID_entPhysicalSoftwareRev_CBS350,
+    OID_entPhysicalDescr,
+    OID_entPhysicalName,
     OID_hwEntityTemperature,
     OID_mikrotik_software_version,
     OID_mikrotik_model,
@@ -1816,11 +1818,12 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     except Exception:
                         pass
 
-                                # Huawei/Quidway fallback: HUAWEI-ENTITY-EXTENT-MIB hwEntityTemperature
+                # Huawei/Quidway fallback: HUAWEI-ENTITY-EXTENT-MIB hwEntityTemperature
                 # Only run if temperatures are still missing after ENTITY-SENSOR-MIB.
                 if self.cache.get("env_temps_c") in (None, {}):
                     try:
                         temps_c: dict[int, int] = {}
+                        temp_labels: dict[int, str] = {}
                         for oid, val in await self._async_walk(OID_hwEntityTemperature):
                             try:
                                 idx = int(str(oid).split(".")[-1])
@@ -1834,14 +1837,33 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                             except Exception:
                                 continue
                             # hwEntityTemperature is typically in degrees Celsius.
+                            # Many Huawei/Quidway devices report 0 (or negative) for unused/invalid probes.
+                            # Do not create sensors for these placeholders.
+                            if v <= 0.0:
+                                continue
                             if -50.0 <= v <= 200.0:
                                 temps_c[idx] = int(round(v))
+
+                        # Best-effort labeling via ENTITY-MIB for the same entPhysicalIndex.
+                        # This avoids hardcoding lookups and stays reliable across firmware.
+                        if temps_c:
+                            for idx in temps_c.keys():
+                                try:
+                                    nm = await self._async_get_one(f"{OID_entPhysicalName}.{idx}")
+                                    ds = await self._async_get_one(f"{OID_entPhysicalDescr}.{idx}")
+                                    label = (nm or "").strip() or (ds or "").strip()
+                                    if label:
+                                        temp_labels[idx] = label
+                                except Exception:
+                                    continue
                         if temps_c:
                             self.cache["env_temps_c"] = temps_c
+                            if temp_labels:
+                                self.cache["env_temp_labels"] = temp_labels
                     except Exception:
                         pass
 
-# HOST-RESOURCES-MIB fallback: CPU + memory (only fill missing).
+                # HOST-RESOURCES-MIB fallback: CPU + memory (only fill missing).
                 # CPU: hrProcessorLoad values 0..100 across processors.
                 if self.cache.get("env_cpu_5s") is None and self.cache.get("env_cpu_60s") is None and self.cache.get("env_cpu_300s") is None:
                     try:
