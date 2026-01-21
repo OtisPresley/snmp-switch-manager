@@ -349,6 +349,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Notes
 - No existing entities are renamed or removed
 - No switch-specific logic or vendor support was altered
+
 ---
 
 ## [0.4.1-beta.6] - 2026-01-17
@@ -356,6 +357,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 Bug causing discovery of certain platforms to fail
 - 🚧 Fixed precendence of fields used for Description and Name
 - 🚧 Switches with interfaces starting with "Port" are now classified as `physical` for **Port Type**
+
+---
+
+## [0.4.1-beta.7] - 2026-01-20
+### Added
+- 🌡️ Support for Quidway temperature
+  
+### Fixed
+- 🚧 Fixed issue causing interfaces starting with Port to be skipped
 
 <!-- ROADMAP ANCHOR LINKS -->
 
