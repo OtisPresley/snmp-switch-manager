@@ -22,6 +22,8 @@ OID_entPhysicalMfgName = "1.3.6.1.2.1.47.1.1.1.1.12"
 OID_entPhysicalModelName = "1.3.6.1.2.1.47.1.1.1.1.13"
 OID_entPhysicalSoftwareRev = "1.3.6.1.2.1.47.1.1.1.1.10"
 OID_entPhysicalSerialNum = "1.3.6.1.2.1.47.1.1.1.1.11"
+OID_entPhysicalDescr = "1.3.6.1.2.1.47.1.1.1.1.2"
+OID_entPhysicalName = "1.3.6.1.2.1.47.1.1.1.1.7"
 
 # Zyxel specific
 OID_entPhysicalMfgName_Zyxel = "1.3.6.1.2.1.47.1.1.1.1.12.67108992"
