@@ -33,6 +33,7 @@ OID_mikrotik_model = "1.3.6.1.4.1.14988.1.1.7.8.0"
 
 # This is entPhysicalSoftwareRev with entPhysicalIndex 67109120
 OID_entPhysicalSoftwareRev_CBS350 = "1.3.6.1.2.1.47.1.1.1.1.10.67109120"
+OID_hwEntityTemperature = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.11"
 
 # --- IF-MIB base OIDs ---
 OID_ifIndex = "1.3.6.1.2.1.2.2.1.1"
