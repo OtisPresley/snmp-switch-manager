@@ -35,7 +35,8 @@
           "env_enabled": "Enable environmental sensors",
           "env_mode": "Environmental data as",
           "poe_enabled": "Enable PoE sensors",
-          "poe_mode": "PoE data as"
+          "poe_mode": "PoE data as",
+          "poe_per_port_power": "Crear sensores PoE de potencia por puerto"
         },
         "description": "Enable environmental/PoE monitoring for this device.\n\nIf you choose Attributes, values are added to port entities (no history).\nIf you choose Sensors, separate sensor entities are created (history).",
         "title": "Environmental Sensors"
@@ -210,7 +211,8 @@
           "env_enabled": "Enable environmental sensors",
           "env_mode": "Environmental data as",
           "poe_enabled": "Enable PoE statistics",
-          "poe_mode": "PoE data as"
+          "poe_mode": "PoE data as",
+          "poe_per_port_power": "Crear sensores PoE de potencia por puerto"
         },
         "description": "Choose whether environmental/PoE data is stored as attributes (no history) or separate sensors (history).",
         "title": "Environmental Sensors"
