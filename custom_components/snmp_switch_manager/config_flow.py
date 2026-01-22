@@ -61,6 +61,7 @@ from .const import (
     CONF_POE_ENABLE,
     CONF_POE_MODE,
     POE_MODE_SENSORS,
+    CONF_POE_PER_PORT_POWER,
     POE_MODE_ATTRIBUTES,
     CONF_BW_RX_THROUGHPUT_ICON,
     CONF_BW_TX_THROUGHPUT_ICON,
@@ -1215,6 +1216,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             self._options[CONF_ENV_MODE] = user_input.get(CONF_ENV_MODE, ENV_MODE_ATTRIBUTES)
             self._options[CONF_POE_ENABLE] = user_input.get(CONF_POE_ENABLE, False)
             self._options[CONF_POE_MODE] = user_input.get(CONF_POE_MODE, POE_MODE_ATTRIBUTES)
+            self._options[CONF_POE_PER_PORT_POWER] = user_input.get(CONF_POE_PER_PORT_POWER, False)
             self._apply_options()
             return await self.async_step_environmental_sensors()
 
@@ -1248,6 +1250,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         translation_key="poe_data_as",
                     )
                 ),
+                vol.Optional(
+                    CONF_POE_PER_PORT_POWER,
+                    default=self._options.get(CONF_POE_PER_PORT_POWER, False),
+                ): selector.BooleanSelector(),
             }
         )
 
