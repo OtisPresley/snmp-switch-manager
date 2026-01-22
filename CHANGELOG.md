@@ -374,6 +374,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 Skip creating temperature sensors that have a value of 0 or an invalid value
 - 🚧 Try to determine which temperature sensor it is and name it accordingly
 
+---
+
+## [0.4.1] - 2026-01-22
+### Added
+- 🧭 **Interface Port Type Classification**
+  - Interfaces are classified as:
+    - `physical`
+    - `virtual`
+    - `unknown`
+  - Port Type is always exposed as an interface attribute
+  - Classification is derived from SNMP data (`ifType`, bridge membership, and vendor-safe heuristics)
+- 🎛️ **Interface IP Display Control**
+  - New per-device option:
+    **Device Options → Interface Management → Interface IP Display**
+  - Allows hiding IP addresses on **physical** interfaces while preserving them on
+    logical interfaces (VLANs, SVIs, management)
+  - Disabled by default to preserve existing behavior
+- 🌡️ **Expanded Environmental Sensor Support**
+  - Added support for **Quidway temperature sensors**
+  - Automatic filtering of invalid or zero-value temperature sensors
+  - Improved temperature sensor naming to better reflect sensor purpose
+- ⚡ **Per-Port PoE Power Sensors (Sensors Mode)**
+  - New optional toggle under **Environmental & PoE Options**
+  - When enabled and PoE is set to **Sensors** mode:
+    - Creates a PoE Power (W) sensor per PoE-capable physical port
+    - Sensors exist even when draw is 0 W, enabling seamless activation later
+    - Non-PoE-capable ports (e.g. Te interfaces) are excluded
+  - Disabled by default to avoid unexpected entity creation
+- 🌍 **Expanded UI Translations**
+  - Added and verified translations for:
+    - German (`de`)
+    - French (`fr`)
+    - Spanish (`es`)
+    - Italian (`it`)
+    - Dutch (`nl`)
+
+### Improved
+- 🧩 **Port Name Rules Engine**
+  - All matching rename rules now apply **in order**
+  - Trailing spaces in replacement values are preserved
+  - Rules are applied consistently at the coordinator level across:
+    - Interface entities
+    - Bandwidth sensors
+    - Environmental sensors
+    - Lovelace card data
+- 🔄 **Options Flow Reliability**
+  - Improved persistence and reload behavior across all Device Options dialogs
+  - Reduced need for repeated reloads after option changes
+- 🌡️ **Environmental & PoE Data Validation**
+  - Sensors and attributes are no longer created when SNMP data is missing, invalid, or unsupported
+  - Status strings normalized for consistency
+
+### Fixed
+- 🚧 Multiple regressions introduced in **v0.4.0**, including:
+  - Interface and bandwidth sensor naming duplication
+  - Port Name Rules not applying uniformly
+  - Interfaces starting with `"Port"` being incorrectly skipped
+- 🚧 Bandwidth sensor naming inconsistencies
+- 🚧 IP address misalignment on physical ports for certain platforms (e.g. Zyxel)
+- 🚧 Discovery failures on specific platforms
+- 🚧 Interface description/name precedence issues
+- 🚧 Temperature sensors incorrectly created with invalid values
+
+### Notes
+- This release **does not rename or remove any existing entities**
+- All changes are backward-compatible
+- New features are **opt-in** via Device Options
+
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-simple-mode"></a>
