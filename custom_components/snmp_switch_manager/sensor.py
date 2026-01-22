@@ -29,6 +29,7 @@ from .const import (
     CONF_BW_EXCLUDE_ENDS_WITH,
     CONF_POE_ENABLE,
     CONF_POE_MODE,
+    CONF_POE_PER_PORT_POWER,
     POE_MODE_ATTRIBUTES,
     POE_MODE_SENSORS,
     CONF_ENV_ENABLE,
@@ -508,6 +509,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     # --- PoE sensors (optional) ---
     poe_enabled_opt = entry.options.get(CONF_POE_ENABLE, False)
     poe_mode_opt = entry.options.get(CONF_POE_MODE, POE_MODE_ATTRIBUTES)
+    poe_per_port_opt = entry.options.get(CONF_POE_PER_PORT_POWER, False)
 
     poe_uid_prefixes = (
         f"{entry.entry_id}-poe-",
@@ -519,7 +521,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
     poe_used_w = (coord_data.get('poe_power_used_w'))
     poe_avail_w = (coord_data.get('poe_power_available_w'))
     poe_health = (coord_data.get('poe_health_status'))
-    poe_supported = any(v is not None for v in (poe_budget_w, poe_used_w, poe_avail_w, poe_health))
+    poe_power_mw = (coord_data.get('poe_power_mw') or {})
+    poe_supported = any(v is not None for v in (poe_budget_w, poe_used_w, poe_avail_w, poe_health)) or bool(poe_power_mw)
 
     # Remove PoE entities when disabled or unsupported
     if (not poe_enabled_opt) or (not poe_supported):
@@ -542,6 +545,19 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 entities.append(PoEPowerAvailableSensor(coordinator, entry, device_info, host_label))
             if poe_health is not None:
                 entities.append(PoEHealthStatusSensor(coordinator, entry, device_info, host_label))
+            if poe_per_port_opt:
+                if_table = (coordinator.data.get('ifTable') or {})
+                for if_idx, row in (if_table or {}).items():
+                    try:
+                        if_idx_i = int(if_idx)
+                    except Exception:
+                        continue
+                    port_type = str((row or {}).get('port_type') or '').lower()
+                    if port_type != 'physical':
+                        continue
+                    if if_idx_i not in poe_power_mw:
+                        continue
+                    entities.append(PoEPowerSensor(coordinator, entry, if_idx_i, device_info, host_label))
 
         # Cleanup any PoE entities not desired for the current mode
         try:
@@ -1383,6 +1399,7 @@ class PoEPowerSensor(CoordinatorEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.POWER
     _attr_native_unit_of_measurement = "W"
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_has_entity_name = True
 
     def __init__(self, coordinator, entry, if_index: int, device_info: DeviceInfo, host_label: str):
         super().__init__(coordinator)
@@ -1403,7 +1420,7 @@ class PoEPowerSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def name(self) -> str:
-        return f"{self._host_label} {self._if_name()} PoE Power"
+        return f"{self._if_name()} PoE Power"
 
     @property
     def native_value(self):
@@ -1411,7 +1428,7 @@ class PoEPowerSensor(CoordinatorEntity, SensorEntity):
         poe_power_mw = data.get("poe_power_mw", {}) or {}
         mw = poe_power_mw.get(self._if_index)
         if mw is None:
-            return None
+            return 0.0
         try:
             return float(mw) / 1000.0
         except Exception:
