@@ -242,6 +242,7 @@ ENV_MODE_ATTRIBUTES = "attributes"
 # PoE per-port statistics enable/mode
 CONF_POE_ENABLE = "poe_enabled"
 CONF_POE_MODE = "poe_mode"
+CONF_POE_PER_PORT_POWER = "poe_per_port_power"  # create per-port PoE Power (W) sensors in sensors mode
 POE_MODE_SENSORS = "sensors"
 POE_MODE_ATTRIBUTES = "attributes"
 # Bandwidth sensor icon overrides (optional, per type)
