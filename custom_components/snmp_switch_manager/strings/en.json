@@ -1,7 +1,9 @@
 {
   "config": {
     "error": {
-      "cannot_connect": "Cannot connect or SNMP timed out"
+      "cannot_connect": "Cannot connect or SNMP timed out",
+      "required": "Required",
+      "invalid_password_length": "Password must be 8–31 characters"
     },
     "step": {
       "bandwidth_enable_disable": {
@@ -71,12 +73,30 @@
       },
       "user": {
         "data": {
-          "community": "SNMP community (RW for alias writes)",
           "host": "Host/IP",
-          "port": "Port"
+          "port": "Port",
+          "snmp_version": "SNMP version"
         },
-        "description": "Provide SNMP access details. Uses SNMP v2c.",
+        "description": "Choose SNMP version and provide connection details.",
         "title": "Connect to your switch"
+      },
+      "snmpv2c": {
+        "data": {
+          "community": "SNMP community (RW for alias writes)"
+        },
+        "description": "Provide SNMP v2c community.\n\nIf you see an authentication error, confirm the community string on the device.",
+        "title": "SNMP v2c"
+      },
+      "snmpv3": {
+        "data": {
+          "snmpv3_username": "SNMPv3 username",
+          "snmpv3_auth_protocol": "Authentication protocol",
+          "snmpv3_auth_password": "Authentication password",
+          "snmpv3_priv_protocol": "Privacy protocol",
+          "snmpv3_priv_password": "Privacy password"
+        },
+        "description": "Provide SNMP v3 credentials.\n\n- **Authentication protocol:** HMAC-SHA or HMAC-MD5\n- **Privacy protocol:** None or CBC-DES (device dependent)\n\nMany devices require passwords between 8 and 31 characters and may reject special characters.",
+        "title": "SNMP v3"
       }
     }
   },
@@ -86,7 +106,9 @@
       "invalid_poll_interval": "Invalid poll interval",
       "invalid_port": "Invalid port",
       "invalid_regex": "Invalid regex pattern",
-      "invalid_uptime_interval": "Invalid uptime refresh interval"
+      "invalid_uptime_interval": "Invalid uptime refresh interval",
+      "required": "Required",
+      "invalid_password_length": "Password must be 8–31 characters"
     },
     "step": {
       "bandwidth_enable": {
@@ -112,7 +134,7 @@
           "rule_new_value": "New value",
           "rule_value": "Value"
         },
-        "description": "Add or remove exclude rules. Exclude rules always take precedence.\n\nCurrent rules: {current_rules}",
+        "description": "Add or remove exclude rules. Exclude rules always take precedence.",
         "title": "Bandwidth Sensor Exclude Rules"
       },
       "bandwidth_icons": {
@@ -133,7 +155,7 @@
           "rule_new_value": "New value",
           "rule_value": "Value"
         },
-        "description": "Add or remove include rules. If any include rules are set, only matching interfaces will get bandwidth sensors.\n\nCurrent rules: {current_rules}",
+        "description": "Add or remove include rules. If any include rules are set, only matching interfaces will get bandwidth sensors.",
         "title": "Bandwidth Sensor Include Rules"
       },
       "bandwidth_poll_interval": {
@@ -164,11 +186,17 @@
       },
       "connection_and_naming_overrides": {
         "data": {
-          "override_community": "SNMP community override (optional)",
-          "override_port": "SNMP port override (optional)",
-          "uptime_poll_interval": "Uptime refresh interval (seconds)"
+          "snmp_version": "SNMP version",
+          "override_community": "SNMP v2c — Community override (optional)",
+          "override_port": "SNMP v2c — Port override (optional)",
+          "uptime_poll_interval": "Uptime refresh interval (seconds)",
+          "snmpv3_username": "SNMP v3 — Username (optional)",
+          "snmpv3_auth_protocol": "SNMP v3 — Authentication protocol (optional)",
+          "snmpv3_auth_password": "SNMP v3 — Authentication password (optional)",
+          "snmpv3_priv_protocol": "SNMP v3 — Privacy protocol (optional)",
+          "snmpv3_priv_password": "SNMP v3 — Privacy password (optional)"
         },
-        "description": "Optional per-device overrides. Leave blank to use values from initial setup.",
+        "description": "Optional per-device overrides. Leave blank to use values from initial setup.\n\n### SNMP Version\nAll fields are always visible due to Home Assistant limitations. Only the selected **SNMP version** determines which fields are used.\n\n### SNMP v2c\nUse **SNMP community override** and **SNMP port override** only if you need to override initial setup values.\n\n### SNMP v3\nFill in **SNMPv3 username** and authentication/privacy settings when SNMP v3 is selected. Many devices require passwords between 8 and 31 characters and may reject special characters.",
         "title": "Connection & Name"
       },
       "custom_oids": {
@@ -203,7 +231,7 @@
           "icon_match": "Match type",
           "icon_value": "Match value"
         },
-        "description": "Override interface entity icons based on interface name matching.\n\nCurrent rules:\n{current}",
+        "description": "Override interface entity icons based on interface name matching.",
         "title": "Entity Icon Rules"
       },
       "environmental_enable_disable": {
@@ -242,7 +270,7 @@
           "rule_new_value": "New value",
           "rule_value": "Match value"
         },
-        "description": "Add, edit, or remove interface exclude rules.\n\nCurrent rules:\n{current}",
+        "description": "Add, edit, or remove interface exclude rules.",
         "title": "Exclude Rules"
       },
       "include_rules": {
@@ -253,7 +281,7 @@
           "rule_new_value": "New value",
           "rule_value": "Match value"
         },
-        "description": "Add, edit, or remove interface include rules.\n\nCurrent rules:\n{current}",
+        "description": "Add, edit, or remove interface include rules.",
         "title": "Include Rules"
       },
       "manage_interfaces": {
@@ -287,14 +315,15 @@
         "title": "Interface Name Rules"
       },
       "port_rename_custom": {
-        "description": "Add or remove your own regex-based display name rules. Custom rules take priority over built-in rules.",
-        "menu_options": {
-          "port_name_rules": "Back",
-          "port_rename_custom_add": "Add Rule",
-          "port_rename_custom_edit": "Edit Rule",
-          "port_rename_custom_remove": "Remove Rule"
-        },
-        "title": "Custom Rename Rules"
+        "title": "Custom Rename Rules",
+        "description": "Add, edit, or remove custom rename rules.\n\nRules are applied in order and take priority over built-in rename rules.\n\nTip: When editing, leave Replacement blank to keep the existing replacement (use Remove + Add to set an empty replacement).",
+        "data": {
+          "rule_action": "Action",
+          "rule_existing": "Existing rule",
+          "rule_match": "Match type",
+          "rule_value": "Match value",
+          "rule_replace": "Replacement"
+        }
       },
       "port_rename_custom_add": {
         "data": {
@@ -316,7 +345,7 @@
         "data": {
           "remove_index": "Rule"
         },
-        "description": "Select a custom rule to remove.\n\nCurrent custom rules:\n{current_rules}",
+        "description": "Select a custom rule to remove.",
         "title": "Remove Rename Rule"
       },
       "port_rename_defaults": {

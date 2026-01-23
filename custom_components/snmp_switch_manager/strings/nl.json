@@ -1,348 +1,377 @@
 {
   "config": {
     "error": {
-      "cannot_connect": "Cannot connect or SNMP timed out"
+      "cannot_connect": "Kan geen verbinding maken of SNMP-time-out",
+      "required": "Vereist",
+      "invalid_password_length": "Wachtwoord moet 8–31 tekens zijn"
     },
     "step": {
       "bandwidth_enable_disable": {
         "data": {
-          "bw_mode": "Bandwidth data as",
-          "enable_bandwidth_sensors": "Enable bandwidth sensors"
+          "bw_mode": "Bandbreedtegegevens als",
+          "enable_bandwidth_sensors": "Bandbreedtesensoren inschakelen"
         },
-        "description": "Enable bandwidth collection for this device.\n\nIf you choose Attributes, bandwidth values are added to port entities (no history).\nIf you choose Sensors, separate bandwidth sensors are created (history).",
-        "title": "Bandwidth Sensors"
+        "description": "Schakel bandbreedtemeting in voor dit apparaat.\n\nAls je Attributen kiest, worden bandbreedtewaarden toegevoegd aan poortentiteiten (geen geschiedenis).\nAls je Sensoren kiest, worden aparte bandbreedtesensoren gemaakt (geschiedenis).",
+        "title": "Bandbreedtesensoren"
       },
       "bandwidth_poll_interval": {
         "data": {
-          "bandwidth_poll_interval": "Poll interval (seconds)"
+          "bandwidth_poll_interval": "Poll-interval (seconden)"
         },
-        "description": "Set the polling interval used to calculate bandwidth/traffic.",
-        "title": "Bandwidth Sensors"
+        "description": "Stel het poll-interval in dat wordt gebruikt om bandbreedte/verkeer te berekenen.",
+        "title": "Bandbreedtesensoren"
       },
       "bandwidth_sensors": {
-        "description": "Enable optional RX/TX throughput and total traffic sensors for selected interfaces.",
+        "description": "Schakel optionele RX/TX-doorvoersensoren en totaalverkeerssensoren in voor geselecteerde interfaces.",
         "menu_options": {
-          "back": "Back",
-          "bandwidth_enable_disable": "Enable / Disable",
-          "bandwidth_exclude_rules": "Exclude Rules",
-          "bandwidth_include_rules": "Include Rules",
-          "bandwidth_poll_interval": "Poll interval"
+          "back": "Terug",
+          "bandwidth_enable_disable": "Inschakelen / Uitschakelen",
+          "bandwidth_exclude_rules": "Uitsluitregels",
+          "bandwidth_include_rules": "Insluitregels",
+          "bandwidth_poll_interval": "Poll-interval"
         },
-        "title": "Bandwidth Sensors"
+        "title": "Bandbreedtesensoren"
       },
       "environmental_enable_disable": {
         "data": {
-          "env_enabled": "Enable environmental sensors",
-          "env_mode": "Environmental data as",
-          "poe_enabled": "Enable PoE sensors",
-          "poe_mode": "PoE data as",
-          "poe_per_port_power": "PoE-vermogenssensoren per poort maken"
+          "env_enabled": "Omgevingssensoren inschakelen",
+          "env_mode": "Omgevingsgegevens als",
+          "poe_enabled": "PoE-sensoren inschakelen",
+          "poe_mode": "PoE-gegevens als",
+          "poe_per_port_power": "PoE-vermogen sensoren per poort maken"
         },
-        "description": "Enable environmental/PoE monitoring for this device.\n\nIf you choose Attributes, values are added to port entities (no history).\nIf you choose Sensors, separate sensor entities are created (history).",
-        "title": "Environmental Sensors"
+        "description": "Schakel omgevings-/PoE-monitoring in voor dit apparaat.\n\nAls je Attributen kiest, worden waarden toegevoegd aan poortentiteiten (geen geschiedenis).\nAls je Sensoren kiest, worden aparte sensorentiteiten gemaakt (geschiedenis).",
+        "title": "Omgevingssensoren"
       },
       "environmental_sensors": {
-        "description": "Enable optional environmental and PoE monitoring for this device.",
+        "description": "Schakel optionele omgevings- en PoE-monitoring in voor dit apparaat.",
         "menu_options": {
-          "back": "Back",
-          "environmental_enable_disable": "Enable / Disable"
+          "back": "Terug",
+          "environmental_enable_disable": "Inschakelen / Uitschakelen"
         },
-        "title": "Environmental Sensors"
+        "title": "Omgevingssensoren"
       },
       "init": {
-        "description": "Manage per-device overrides and advanced settings.",
+        "description": "Beheer apparaat-specifieke overschrijvingen en geavanceerde instellingen.",
         "menu_options": {
-          "bandwidth_sensors": "Bandwidth Sensors",
-          "connection_overrides": "Connection & Naming Overrides",
-          "environmental_sensors": "Environmental Sensors",
-          "manage_interfaces": "Manage Interfaces"
+          "bandwidth_sensors": "Bandbreedtesensoren",
+          "connection_overrides": "Verbinding en naam-overschrijvingen",
+          "environmental_sensors": "Omgevingssensoren",
+          "manage_interfaces": "Interfaces beheren"
         },
-        "title": "Device Options"
+        "title": "Apparaatopties"
       },
       "manage_interfaces": {
         "menu_options": {
-          "back": "Back",
-          "builtin_filters": "Built-in Vendor Filters",
-          "interface_exclude_rules": "Excluded Interfaces",
-          "interface_include_rules": "Included Interfaces",
-          "port_name_rules": "Interface Name Rules"
+          "back": "Terug",
+          "builtin_filters": "Ingebouwde leveranciersfilters",
+          "interface_exclude_rules": "Uitgesloten interfaces",
+          "interface_include_rules": "Ingesloten interfaces",
+          "port_name_rules": "Interfacenaamregels"
         },
-        "title": "Manage Interfaces"
+        "title": "Interfaces beheren"
       },
       "user": {
         "data": {
-          "community": "SNMP community (RW for alias writes)",
           "host": "Host/IP",
-          "port": "Port"
+          "port": "Poort",
+          "snmp_version": "SNMP-versie"
         },
-        "description": "Provide SNMP access details. Uses SNMP v2c.",
-        "title": "Connect to your switch"
+        "description": "Kies de SNMP-versie en geef verbindingsgegevens op.",
+        "title": "Verbind met je switch"
+      },
+      "snmpv2c": {
+        "data": {
+          "community": "SNMP-community (RW voor alias-schrijven)"
+        },
+        "description": "Geef de SNMP v2c-community op.\n\nAls je een authenticatiefout ziet, controleer dan de community-string op het apparaat.",
+        "title": "SNMP v2c"
+      },
+      "snmpv3": {
+        "data": {
+          "snmpv3_username": "SNMPv3 gebruikersnaam",
+          "snmpv3_auth_protocol": "Authenticatieprotocol",
+          "snmpv3_auth_password": "Authenticatiewachtwoord",
+          "snmpv3_priv_protocol": "Privacyprotocol",
+          "snmpv3_priv_password": "Privacywachtwoord"
+        },
+        "description": "Geef SNMP v3-inloggegevens op.\n\n- **Authenticatieprotocol:** HMAC-SHA of HMAC-MD5\n- **Privacyprotocol:** Geen of CBC-DES (apparaat-afhankelijk)\n\nVeel apparaten vereisen wachtwoorden tussen 8 en 31 tekens en kunnen speciale tekens weigeren.",
+        "title": "SNMP v3"
       }
     }
   },
   "options": {
     "error": {
-      "invalid_oid": "Invalid OID format (must be numeric dotted OID)",
-      "invalid_poll_interval": "Invalid poll interval",
-      "invalid_port": "Invalid port",
-      "invalid_regex": "Invalid regex pattern",
-      "invalid_uptime_interval": "Invalid uptime refresh interval"
+      "invalid_oid": "Ongeldig OID-formaat (moet een numerieke punt-OID zijn)",
+      "invalid_poll_interval": "Ongeldig poll-interval",
+      "invalid_port": "Ongeldige poort",
+      "invalid_regex": "Ongeldig regex-patroon",
+      "invalid_uptime_interval": "Ongeldig uptime-verversinterval",
+      "required": "Vereist",
+      "invalid_password_length": "Wachtwoord moet 8–31 tekens zijn"
     },
     "step": {
       "bandwidth_enable": {
         "data": {
-          "enable_bandwidth_sensors": "Enable bandwidth sensors"
+          "enable_bandwidth_sensors": "Bandbreedtesensoren inschakelen"
         },
-        "description": "Turn bandwidth sensor entities on or off for this device.",
-        "title": "Bandwidth Sensors"
+        "description": "Schakel bandbreedtesensor-entiteiten voor dit apparaat in of uit.",
+        "title": "Bandbreedtesensoren"
       },
       "bandwidth_enable_disable": {
         "data": {
-          "bw_mode": "Bandwidth data as",
-          "enable_bandwidth_sensors": "Enable bandwidth collection"
+          "bw_mode": "Bandbreedtegegevens als",
+          "enable_bandwidth_sensors": "Bandbreedtemeting inschakelen"
         },
-        "description": "Enable bandwidth collection for this device.\n\nIf you choose **Attributes**, bandwidth values are added to port entities (no history).\nIf you choose **Sensors**, separate bandwidth sensors are created (history).",
-        "title": "Bandwidth Sensors"
+        "description": "Schakel bandbreedtemeting in voor dit apparaat.\n\nAls je **Attributen** kiest, worden bandbreedtewaarden toegevoegd aan poortentiteiten (geen geschiedenis).\nAls je **Sensoren** kiest, worden aparte bandbreedtesensoren gemaakt (geschiedenis).",
+        "title": "Bandbreedtesensoren"
       },
       "bandwidth_exclude_rules": {
         "data": {
-          "rule_action": "Action",
-          "rule_existing": "Existing rule",
+          "rule_action": "Actie",
+          "rule_existing": "Bestaande regel",
           "rule_match": "Match",
-          "rule_new_value": "New value",
-          "rule_value": "Value"
+          "rule_new_value": "Nieuwe waarde",
+          "rule_value": "Waarde"
         },
-        "description": "Add or remove exclude rules. Exclude rules always take precedence.\n\nCurrent rules: {current_rules}",
-        "title": "Bandwidth Sensor Exclude Rules"
+        "description": "Voeg uitsluitregels toe of verwijder ze. Uitsluitregels hebben altijd voorrang.",
+        "title": "Uitsluitregels voor bandbreedtesensoren"
       },
       "bandwidth_icons": {
         "data": {
-          "bw_rx_throughput_icon": "RX Throughput icon",
-          "bw_rx_total_icon": "RX Total icon",
-          "bw_tx_throughput_icon": "TX Throughput icon",
-          "bw_tx_total_icon": "TX Total icon"
+          "bw_rx_throughput_icon": "RX-doorvoer pictogram",
+          "bw_rx_total_icon": "RX-totaal pictogram",
+          "bw_tx_throughput_icon": "TX-doorvoer pictogram",
+          "bw_tx_total_icon": "TX-totaal pictogram"
         },
-        "description": "Optional icon overrides for bandwidth sensors. Leave blank to use defaults.",
-        "title": "Bandwidth Sensor Icons"
+        "description": "Optionele pictogram-overschrijvingen voor bandbreedtesensoren. Laat leeg om de standaardwaarden te gebruiken.",
+        "title": "Pictogrammen voor bandbreedtesensoren"
       },
       "bandwidth_include_rules": {
         "data": {
-          "rule_action": "Action",
-          "rule_existing": "Existing rule",
+          "rule_action": "Actie",
+          "rule_existing": "Bestaande regel",
           "rule_match": "Match",
-          "rule_new_value": "New value",
-          "rule_value": "Value"
+          "rule_new_value": "Nieuwe waarde",
+          "rule_value": "Waarde"
         },
-        "description": "Add or remove include rules. If any include rules are set, only matching interfaces will get bandwidth sensors.\n\nCurrent rules: {current_rules}",
-        "title": "Bandwidth Sensor Include Rules"
+        "description": "Voeg insluitregels toe of verwijder ze. Als er insluitregels zijn ingesteld, krijgen alleen overeenkomende interfaces bandbreedtesensoren.",
+        "title": "Insluitregels voor bandbreedtesensoren"
       },
       "bandwidth_poll_interval": {
         "data": {
-          "bandwidth_poll_interval": "Poll interval (seconds)"
+          "bandwidth_poll_interval": "Poll-interval (seconden)"
         },
-        "description": "Set the poll interval for bandwidth sensors. Lower intervals update more often but increase SNMP load.",
-        "title": "Bandwidth Sensors"
+        "description": "Stel het poll-interval voor bandbreedtesensoren in. Lagere intervallen werken vaker bij, maar verhogen de SNMP-belasting.",
+        "title": "Bandbreedtesensoren"
       },
       "bandwidth_sensors": {
-        "description": "Enable optional RX/TX throughput and total traffic sensors for selected interfaces.",
+        "description": "Schakel optionele RX/TX-doorvoersensoren en totaalverkeerssensoren in voor geselecteerde interfaces.",
         "menu_options": {
-          "back": "Back",
-          "bandwidth_enable_disable": "Enable / Disable",
-          "bandwidth_exclude_rules": "Exclude Rules",
-          "bandwidth_icons": "Bandwidth Sensor Icons",
-          "bandwidth_include_rules": "Include Rules",
-          "bandwidth_poll_interval": "Poll Interval"
+          "back": "Terug",
+          "bandwidth_enable_disable": "Inschakelen / Uitschakelen",
+          "bandwidth_exclude_rules": "Uitsluitregels",
+          "bandwidth_icons": "Pictogrammen voor bandbreedtesensoren",
+          "bandwidth_include_rules": "Insluitregels",
+          "bandwidth_poll_interval": "Poll-interval"
         },
-        "title": "Bandwidth Sensors"
+        "title": "Bandbreedtesensoren"
       },
       "builtin_filters": {
         "data": {
-          "disabled_vendor_filter_rule_ids": "Disabled built-in filter rules"
+          "disabled_vendor_filter_rule_ids": "Uitgeschakelde ingebouwde filterregels"
         },
-        "description": "Enable or disable built-in vendor interface filter rules for this device.\n\nDisabled rules will not be applied during interface discovery.",
-        "title": "Built-in Vendor Filters"
+        "description": "Schakel ingebouwde leveranciers-interfacefilterregels voor dit apparaat in of uit.\n\nUitgeschakelde regels worden niet toegepast tijdens interface-detectie.",
+        "title": "Ingebouwde leveranciersfilters"
       },
       "connection_and_naming_overrides": {
         "data": {
-          "override_community": "SNMP community override (optional)",
-          "override_port": "SNMP port override (optional)",
-          "uptime_poll_interval": "Uptime refresh interval (seconds)"
+          "snmp_version": "SNMP-versie",
+          "override_community": "SNMP v2c — Community-overschrijving (optioneel)",
+          "override_port": "SNMP v2c — Poort-overschrijving (optioneel)",
+          "uptime_poll_interval": "Uptime-verversinterval (seconden)",
+          "snmpv3_username": "SNMP v3 — Gebruikersnaam (optioneel)",
+          "snmpv3_auth_protocol": "SNMP v3 — Authenticatieprotocol (optioneel)",
+          "snmpv3_auth_password": "SNMP v3 — Authenticatiewachtwoord (optioneel)",
+          "snmpv3_priv_protocol": "SNMP v3 — Privacyprotocol (optioneel)",
+          "snmpv3_priv_password": "SNMP v3 — Privacywachtwoord (optioneel)"
         },
-        "description": "Optional per-device overrides. Leave blank to use values from initial setup.",
-        "title": "Connection & Name"
+        "description": "Optionele overschrijvingen per apparaat. Laat leeg om waarden uit de initiële setup te gebruiken.\n\n### SNMP-versie\nAlle velden zijn altijd zichtbaar door beperkingen van Home Assistant. Alleen de geselecteerde **SNMP-versie** bepaalt welke velden worden gebruikt.\n\n### SNMP v2c\nGebruik **SNMP community-overschrijving** en **SNMP poort-overschrijving** alleen als je waarden uit de initiële setup moet overschrijven.\n\n### SNMP v3\nVul **SNMPv3 gebruikersnaam** en authenticatie-/privacy-instellingen in wanneer SNMP v3 is geselecteerd. Veel apparaten vereisen wachtwoorden tussen 8 en 31 tekens en kunnen speciale tekens weigeren.",
+        "title": "Verbinding en naam"
       },
       "custom_oids": {
         "data": {
-          "enable_custom_oids": "Enable custom diagnostic OIDs",
-          "firmware_oid": "Firmware OID (optional)",
-          "hostname_oid": "Hostname OID (optional)",
-          "manufacturer_oid": "Manufacturer OID (optional)",
-          "model_oid": "Model OID (optional)",
-          "reset_custom_oids": "Reset custom OIDs to defaults",
-          "uptime_oid": "Uptime OID (optional)"
+          "enable_custom_oids": "Aangepaste diagnostische OID’s inschakelen",
+          "firmware_oid": "Firmware-OID (optioneel)",
+          "hostname_oid": "Hostname-OID (optioneel)",
+          "manufacturer_oid": "Fabrikant-OID (optioneel)",
+          "model_oid": "Model-OID (optioneel)",
+          "reset_custom_oids": "Aangepaste OID’s terugzetten naar standaard",
+          "uptime_oid": "Uptime-OID (optioneel)"
         },
-        "description": "Override diagnostic sensor OIDs for this device only. Leave blank to use automatic detection.",
-        "title": "Custom Diagnostic OIDs"
+        "description": "Diagnostische sensor-OID’s alleen voor dit apparaat overschrijven. Laat leeg om automatische detectie te gebruiken.",
+        "title": "Aangepaste diagnostische OID’s"
       },
       "device_options": {
-        "description": "Manage per-device overrides and advanced settings.",
+        "description": "Beheer apparaat-specifieke overschrijvingen en geavanceerde instellingen.",
         "menu_options": {
-          "bandwidth_sensors": "Bandwidth Sensors",
-          "connection_and_naming_overrides": "Connection & Name",
-          "custom_oids": "Custom Diagnostic OIDs",
-          "environmental_sensors": "Environmental Sensors",
-          "manage_interfaces": "Manage Interfaces"
+          "bandwidth_sensors": "Bandbreedtesensoren",
+          "connection_and_naming_overrides": "Verbinding en naam",
+          "custom_oids": "Aangepaste diagnostische OID’s",
+          "environmental_sensors": "Omgevingssensoren",
+          "manage_interfaces": "Interfaces beheren"
         },
-        "title": "Device Options"
+        "title": "Apparaatopties"
       },
       "entity_icon_rules": {
         "data": {
-          "icon_action": "Action",
-          "icon_existing": "Existing rule",
-          "icon_icon": "Icon (e.g., mdi:ethernet)",
-          "icon_match": "Match type",
-          "icon_value": "Match value"
+          "icon_action": "Actie",
+          "icon_existing": "Bestaande regel",
+          "icon_icon": "Pictogram (bijv. mdi:ethernet)",
+          "icon_match": "Matchtype",
+          "icon_value": "Matchwaarde"
         },
-        "description": "Override interface entity icons based on interface name matching.\n\nCurrent rules:\n{current}",
-        "title": "Entity Icon Rules"
+        "description": "Interface-entiteitspictogrammen overschrijven op basis van interfacenaam-matching.",
+        "title": "Entiteitspictogramregels"
       },
       "environmental_enable_disable": {
         "data": {
-          "env_enabled": "Enable environmental sensors",
-          "env_mode": "Environmental data as",
-          "poe_enabled": "Enable PoE statistics",
-          "poe_mode": "PoE data as",
-          "poe_per_port_power": "PoE-vermogenssensoren per poort maken"
+          "env_enabled": "Omgevingssensoren inschakelen",
+          "env_mode": "Omgevingsgegevens als",
+          "poe_enabled": "PoE-statistieken inschakelen",
+          "poe_mode": "PoE-gegevens als",
+          "poe_per_port_power": "PoE-vermogen sensoren per poort maken"
         },
-        "description": "Choose whether environmental/PoE data is stored as attributes (no history) or separate sensors (history).",
-        "title": "Environmental Sensors"
+        "description": "Kies of omgevings-/PoE-gegevens worden opgeslagen als attributen (geen geschiedenis) of als aparte sensoren (geschiedenis).",
+        "title": "Omgevingssensoren"
       },
       "environmental_poll_interval": {
         "data": {
-          "env_poll_interval": "Polling interval"
+          "env_poll_interval": "Poll-interval"
         },
-        "description": "How often to poll environmental values (in seconds).",
-        "title": "Environmental polling interval"
+        "description": "Hoe vaak omgevingswaarden pollen (in seconden).",
+        "title": "Poll-interval voor omgevingswaarden"
       },
       "environmental_sensors": {
-        "description": "Enable optional environmental and PoE monitoring for this device.",
+        "description": "Schakel optionele omgevings- en PoE-monitoring in voor dit apparaat.",
         "menu_options": {
-          "back": "Back",
-          "environmental_enable_disable": "Enable / Disable",
-          "environmental_poll_interval": "Environmental polling interval",
-          "poe_poll_interval": "PoE polling interval"
+          "back": "Terug",
+          "environmental_enable_disable": "Inschakelen / Uitschakelen",
+          "environmental_poll_interval": "Poll-interval voor omgevingswaarden",
+          "poe_poll_interval": "PoE poll-interval"
         },
-        "title": "Environmental Sensors"
+        "title": "Omgevingssensoren"
       },
       "exclude_rules": {
         "data": {
-          "rule_action": "Action",
-          "rule_existing": "Existing rule",
-          "rule_match": "Match type",
-          "rule_new_value": "New value",
-          "rule_value": "Match value"
+          "rule_action": "Actie",
+          "rule_existing": "Bestaande regel",
+          "rule_match": "Matchtype",
+          "rule_new_value": "Nieuwe waarde",
+          "rule_value": "Matchwaarde"
         },
-        "description": "Add, edit, or remove interface exclude rules.\n\nCurrent rules:\n{current}",
-        "title": "Exclude Rules"
+        "description": "Voeg interface-uitsluitregels toe, bewerk of verwijder ze.",
+        "title": "Uitsluitregels"
       },
       "include_rules": {
         "data": {
-          "rule_action": "Action",
-          "rule_existing": "Existing rule",
-          "rule_match": "Match type",
-          "rule_new_value": "New value",
-          "rule_value": "Match value"
+          "rule_action": "Actie",
+          "rule_existing": "Bestaande regel",
+          "rule_match": "Matchtype",
+          "rule_new_value": "Nieuwe waarde",
+          "rule_value": "Matchwaarde"
         },
-        "description": "Add, edit, or remove interface include rules.\n\nCurrent rules:\n{current}",
-        "title": "Include Rules"
+        "description": "Voeg interface-insluitregels toe, bewerk of verwijder ze.",
+        "title": "Insluitregels"
       },
       "manage_interfaces": {
-        "description": "Manage which interfaces are created as Home Assistant entities.",
+        "description": "Beheer welke interfaces als Home Assistant-entiteiten worden aangemaakt.",
         "menu_options": {
-          "back": "Back",
-          "builtin_vendor_filters": "Built-in Vendor Filters",
-          "entity_icon_rules": "Entity Icon Rules",
-          "excluded_interfaces": "Excluded Interfaces",
-          "included_interfaces": "Included Interfaces",
-          "interface_name_rules": "Interface Name Rules",
-          "interface_ip_display": "IP-weergave van interfaces"
+          "back": "Terug",
+          "builtin_vendor_filters": "Ingebouwde leveranciersfilters",
+          "entity_icon_rules": "Entiteitspictogramregels",
+          "excluded_interfaces": "Uitgesloten interfaces",
+          "included_interfaces": "Ingesloten interfaces",
+          "interface_name_rules": "Interfacenaamregels",
+          "interface_ip_display": "Interface IP-weergave"
         },
-        "title": "Manage Interfaces"
+        "title": "Interfaces beheren"
       },
       "poe_poll_interval": {
         "data": {
-          "poe_poll_interval": "Polling interval"
+          "poe_poll_interval": "Poll-interval"
         },
-        "description": "How often to poll PoE power values (in seconds).",
-        "title": "PoE polling interval"
+        "description": "Hoe vaak PoE-vermogenwaarden pollen (in seconden).",
+        "title": "PoE poll-interval"
       },
       "port_name_rules": {
-        "description": "Customize how interface names are displayed in the UI and card.\n\nBuilt-in rules are provided as examples and can be disabled per device.",
+        "description": "Pas aan hoe interfacenamen in de UI en kaart worden weergegeven.\n\nIngebouwde regels worden als voorbeelden geleverd en kunnen per apparaat worden uitgeschakeld.",
         "menu_options": {
-          "manage_interfaces": "Back",
-          "port_rename_custom": "Custom Rename Rules",
-          "port_rename_defaults": "Built-in Rename Rules",
-          "port_rename_restore_defaults": "Restore Built-in Rules"
+          "manage_interfaces": "Terug",
+          "port_rename_custom": "Aangepaste hernoemregels",
+          "port_rename_defaults": "Ingebouwde hernoemregels",
+          "port_rename_restore_defaults": "Ingebouwde regels herstellen"
         },
-        "title": "Interface Name Rules"
+        "title": "Interfacenaamregels"
       },
       "port_rename_custom": {
-        "description": "Add or remove your own regex-based display name rules. Custom rules take priority over built-in rules.",
-        "menu_options": {
-          "port_name_rules": "Back",
-          "port_rename_custom_add": "Add Rule",
-          "port_rename_custom_edit": "Edit Rule",
-          "port_rename_custom_remove": "Remove Rule"
-        },
-        "title": "Custom Rename Rules"
+        "title": "Aangepaste hernoemregels",
+        "description": "Voeg aangepaste hernoemregels toe, bewerk of verwijder ze.\n\nRegels worden in volgorde toegepast en hebben prioriteit boven ingebouwde hernoemregels.\n\nTip: laat bij bewerken “Vervanging” leeg om de bestaande vervanging te behouden (gebruik Verwijderen + Toevoegen om een lege vervanging in te stellen).",
+        "data": {
+          "rule_action": "Actie",
+          "rule_existing": "Bestaande regel",
+          "rule_match": "Matchtype",
+          "rule_value": "Matchwaarde",
+          "rule_replace": "Vervanging"
+        }
       },
       "port_rename_custom_add": {
         "data": {
-          "description": "Description (optional)",
-          "pattern": "Regex pattern",
-          "replace": "Replacement"
+          "description": "Beschrijving (optioneel)",
+          "pattern": "Regex-patroon",
+          "replace": "Vervanging"
         },
-        "description": "Create a regex rule that transforms the displayed interface name.\n\nExample pattern: ^Gi(\\\\d+)/0/(\\\\d+)$\nExample replace: Uplink-\\\\1-\\\\2",
-        "title": "Add Rename Rule"
+        "description": "Maak een regex-regel die de weergegeven interfacenaam omzet.\n\nVoorbeeldpatroon: ^Gi(\\\\d+)/0/(\\\\d+)$\nVoorbeeldvervanging: Uplink-\\\\1-\\\\2",
+        "title": "Hernoemregel toevoegen"
       },
       "port_rename_custom_edit": {
         "data": {
-          "selected": "Selected rule"
+          "selected": "Geselecteerde regel"
         },
-        "description": "Select an existing rule to edit.",
-        "title": "Edit Custom Name Rule"
+        "description": "Selecteer een bestaande regel om te bewerken.",
+        "title": "Aangepaste naamregel bewerken"
       },
       "port_rename_custom_remove": {
         "data": {
-          "remove_index": "Rule"
+          "remove_index": "Regel"
         },
-        "description": "Select a custom rule to remove.\n\nCurrent custom rules:\n{current_rules}",
-        "title": "Remove Rename Rule"
+        "description": "Selecteer een aangepaste regel om te verwijderen.",
+        "title": "Hernoemregel verwijderen"
       },
       "port_rename_defaults": {
         "data": {
-          "builtin_link_aggregate_to_po": "Normalize link aggregate → Po",
-          "builtin_loopback_to_lo0": "Normalize loopback → Lo0",
-          "builtin_port_channel_to_po": "Normalize port-channel → Po",
-          "builtin_portchannel_to_po": "Normalize PortChannel → Po",
-          "builtin_unit_slot_port_100m_to_fa": "Normalize Unit/Slot/Port 100M → Fa",
-          "builtin_unit_slot_port_10g_to_te": "Normalize Unit/Slot/Port 10G → Te",
-          "builtin_unit_slot_port_1g_to_gi": "Normalize Unit/Slot/Port 1G → Gi",
-          "builtin_unit_slot_port_20g_to_tw": "Normalize Unit/Slot/Port 20G → Tw",
-          "defaults_action": "Action",
-          "port_rename_disabled_default_ids": "Built-in Rename Rules (disable)"
+          "builtin_link_aggregate_to_po": "Link-aggregaat normaliseren → Po",
+          "builtin_loopback_to_lo0": "Loopback normaliseren → Lo0",
+          "builtin_port_channel_to_po": "Port-channel normaliseren → Po",
+          "builtin_portchannel_to_po": "PortChannel normaliseren → Po",
+          "builtin_unit_slot_port_100m_to_fa": "Unit/Slot/Port 100M normaliseren → Fa",
+          "builtin_unit_slot_port_10g_to_te": "Unit/Slot/Port 10G normaliseren → Te",
+          "builtin_unit_slot_port_1g_to_gi": "Unit/Slot/Port 1G normaliseren → Gi",
+          "builtin_unit_slot_port_20g_to_tw": "Unit/Slot/Port 20G normaliseren → Tw",
+          "defaults_action": "Actie",
+          "port_rename_disabled_default_ids": "Ingebouwde hernoemregels (uitschakelen)"
         },
-        "description": "Enable or disable built-in display name rules for this device.\n\nCurrent built-ins:\n{rules}",
-        "title": "Built-in Rename Rules"
+        "description": "Schakel ingebouwde weergavenaamregels voor dit apparaat in of uit.\n\nHuidige ingebouwde regels:\n{rules}",
+        "title": "Ingebouwde hernoemregels"
       },
       "interface_ip_display": {
-        "title": "IP-weergave van interfaces",
-        "description": "Bepaalt hoe IP-adressen op interfaces worden weergegeven.",
+        "title": "Interface IP-weergave",
+        "description": "Bepaal hoe IP-adressen op interfaces worden weergegeven.",
         "data": {
-          "hide_ip_on_physical_interfaces": "IP-veld verbergen op fysieke interfaces"
+          "hide_ip_on_physical_interfaces": "IP-veld op fysieke interfaces verbergen"
         },
         "data_description": {
-          "hide_ip_on_physical_interfaces": "Indien ingeschakeld worden IP-adressen alleen weergegeven op virtuele of logische interfaces (zoals VLAN- of beheerinterfaces)."
+          "hide_ip_on_physical_interfaces": "Wanneer ingeschakeld, worden IP-adressen alleen weergegeven op virtuele of logische interfaces (zoals VLAN- of beheerinterfaces)."
         }
       }
     }
@@ -350,20 +379,20 @@
   "selector": {
     "bandwidth_data_as": {
       "options": {
-        "attributes": "Attributes (no history)",
-        "sensors": "Sensors (history)"
+        "attributes": "Attributen (geen geschiedenis)",
+        "sensors": "Sensoren (geschiedenis)"
       }
     },
     "env_data_as": {
       "options": {
-        "attributes": "Attributes (no history)",
-        "sensors": "Sensors (history)"
+        "attributes": "Attributen (geen geschiedenis)",
+        "sensors": "Sensoren (geschiedenis)"
       }
     },
     "poe_data_as": {
       "options": {
-        "attributes": "Attributes (no history)",
-        "sensors": "Sensors (history)"
+        "attributes": "Attributen (geen geschiedenis)",
+        "sensors": "Sensoren (geschiedenis)"
       }
     }
   },
