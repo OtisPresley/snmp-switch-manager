@@ -12,10 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🛣️ Roadmap Tracking
 
-- 🎛️ **Simple Mode (Rule Helpers)**
-  Planned for **v0.5.0**  
-  🔗 See roadmap: [`#roadmap-switch-environmentals`](./ROADMAP.md#roadmap-simple-mode)
-
 - 🔐 **SNMPv3 Support (Secure SNMP)**
   Planned for **v0.5.0**  
   🔗 See roadmap: [`#roadmap-poe-statistics`](./ROADMAP.md#roadmap-snmpv3-support)
