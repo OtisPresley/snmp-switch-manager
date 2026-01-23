@@ -69,14 +69,37 @@ from .const import (
     CONF_BW_TX_TOTAL_ICON,
     CONF_HIDE_IP_ON_PHYSICAL,
     CONF_HIDE_IP_ON_PHYSICAL_INTERFACES,
+    CONF_SNMP_VERSION,
+    SNMP_VERSION_V2C,
+    SNMP_VERSION_V3,
+    CONF_SNMPV3_USERNAME,
+    CONF_SNMPV3_AUTH_PROTOCOL,
+    CONF_SNMPV3_AUTH_PASSWORD,
+    CONF_SNMPV3_PRIV_PROTOCOL,
+    CONF_SNMPV3_PRIV_PASSWORD,
+    SNMPV3_AUTH_NONE,
+    SNMPV3_AUTH_SHA,
+    SNMPV3_AUTH_MD5,
+    SNMPV3_PRIV_NONE,
+    SNMPV3_PRIV_DES,
+    SNMPV3_PRIV_AES,
+    CONF_LEGACY_DEVICE_ID,
 )
 from .snmp import test_connection, get_sysname
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_HOST): str,
-        vol.Required(CONF_COMMUNITY): str,
         vol.Optional(CONF_PORT, default=DEFAULT_PORT): int,
+        vol.Required(CONF_SNMP_VERSION, default=SNMP_VERSION_V2C): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    selector.SelectOptionDict(value=SNMP_VERSION_V2C, label="SNMP v2c"),
+                    selector.SelectOptionDict(value=SNMP_VERSION_V3, label="SNMP v3"),
+                ],
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        ),
     }
 )
 
@@ -91,31 +114,159 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return OptionsFlowHandler(config_entry)
 
     async def async_step_user(self, user_input=None) -> FlowResult:
-        errors = {}
+        errors: dict[str, str] = {}
+
         if user_input is not None:
-            host = user_input[CONF_HOST]
-            port = user_input.get(CONF_PORT, DEFAULT_PORT)
-            community = user_input[CONF_COMMUNITY]
+            host = str(user_input[CONF_HOST]).strip()
+            port = int(user_input.get(CONF_PORT, DEFAULT_PORT))
+            version = str(user_input.get(CONF_SNMP_VERSION, SNMP_VERSION_V2C))
 
-            ok = await test_connection(self.hass, host, community, port)
-            if not ok:
-                errors["base"] = "cannot_connect"
+            # Stash for subsequent credential steps
+            self._setup_host = host
+            self._setup_port = port
+            self._setup_version = version
+
+            if version == SNMP_VERSION_V3:
+                return await self.async_step_snmpv3()
+            return await self.async_step_snmpv2c()
+
+        return self.async_show_form(step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors)
+
+    async def async_step_snmpv2c(self, user_input=None) -> FlowResult:
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            community = str(user_input.get(CONF_COMMUNITY) or "").strip()
+            if not community:
+                errors[CONF_COMMUNITY] = "required"
             else:
-                # Use sysName for device naming if available
-                sysname = await get_sysname(self.hass, host, community, port)
-                title = sysname or host
+                host = getattr(self, "_setup_host", "")
+                port = int(getattr(self, "_setup_port", DEFAULT_PORT))
 
-                await self.async_set_unique_id(f"{host}:{port}:{community}")
-                self._abort_if_unique_id_configured()
+                try:
+                    ok = await test_connection(self.hass, host, community, port)
+                except Exception:
+                    ok = False
+                    errors["base"] = "unknown"
+                if not ok:
+                    if "base" not in errors:
+                        errors["base"] = "cannot_connect"
+                else:
+                    try:
+                        sysname = await get_sysname(self.hass, host, community, port)
+                    except Exception:
+                        sysname = ""
+                    title = sysname or host
 
-                return self.async_create_entry(
-                    title=title,
-                    data={"host": host, "port": port, "community": community, "name": title},
-                )
+                    legacy_device_id = f"{host}:{port}:{community}"
 
-        return self.async_show_form(
-            step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
+                    await self.async_set_unique_id(f"{host}:{port}:{community}")
+                    self._abort_if_unique_id_configured()
+
+                    return self.async_create_entry(
+                        title=title,
+                        data={
+                            "host": host,
+                            "port": port,
+                            "community": community,
+                            CONF_LEGACY_DEVICE_ID: legacy_device_id,
+                            CONF_SNMP_VERSION: SNMP_VERSION_V2C,
+                            "name": title,
+                        },
+                    )
+
+        schema = vol.Schema({vol.Required(CONF_COMMUNITY): str})
+        return self.async_show_form(step_id="snmpv2c", data_schema=schema, errors=errors)
+
+    async def async_step_snmpv3(self, user_input=None) -> FlowResult:
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            host = getattr(self, "_setup_host", "")
+            port = int(getattr(self, "_setup_port", DEFAULT_PORT))
+
+            username = str(user_input.get(CONF_SNMPV3_USERNAME) or "").strip()
+            auth_protocol = str(user_input.get(CONF_SNMPV3_AUTH_PROTOCOL) or SNMPV3_AUTH_SHA).strip().lower()
+            auth_password = str(user_input.get(CONF_SNMPV3_AUTH_PASSWORD) or "")
+            priv_protocol = str(user_input.get(CONF_SNMPV3_PRIV_PROTOCOL) or SNMPV3_PRIV_NONE).strip().lower()
+            priv_password = str(user_input.get(CONF_SNMPV3_PRIV_PASSWORD) or "")
+
+            if not username:
+                errors[CONF_SNMPV3_USERNAME] = "required"
+
+            # Basic length validation (common device constraints)
+            if auth_protocol != SNMPV3_AUTH_NONE:
+                if len(auth_password) < 8 or len(auth_password) > 31:
+                    errors[CONF_SNMPV3_AUTH_PASSWORD] = "invalid_password_length"
+            if priv_protocol != SNMPV3_PRIV_NONE:
+                if len(priv_password) < 8 or len(priv_password) > 31:
+                    errors[CONF_SNMPV3_PRIV_PASSWORD] = "invalid_password_length"
+
+            if not errors:
+                settings = {
+                    "host": host,
+                    "port": port,
+                    "version": SNMP_VERSION_V3,
+                    "community": "",
+                    CONF_SNMPV3_USERNAME: username,
+                    CONF_SNMPV3_AUTH_PROTOCOL: auth_protocol,
+                    CONF_SNMPV3_AUTH_PASSWORD: auth_password,
+                    CONF_SNMPV3_PRIV_PROTOCOL: priv_protocol,
+                    CONF_SNMPV3_PRIV_PASSWORD: priv_password,
+                }
+                ok = await test_connection(self.hass, host, "", port, snmp_settings=settings)
+                if not ok:
+                    errors["base"] = "cannot_connect"
+                else:
+                    sysname = await get_sysname(self.hass, host, "", port, snmp_settings=settings)
+                    title = sysname or host
+
+                    await self.async_set_unique_id(f"{host}:{port}:v3:{username}")
+                    self._abort_if_unique_id_configured()
+
+                    return self.async_create_entry(
+                        title=title,
+                        data={
+                            "host": host,
+                            "port": port,
+                            CONF_SNMP_VERSION: SNMP_VERSION_V3,
+                            CONF_SNMPV3_USERNAME: username,
+                            CONF_SNMPV3_AUTH_PROTOCOL: auth_protocol,
+                            CONF_SNMPV3_AUTH_PASSWORD: auth_password,
+                            CONF_SNMPV3_PRIV_PROTOCOL: priv_protocol,
+                            CONF_SNMPV3_PRIV_PASSWORD: priv_password,
+                            "name": title,
+                        },
+                    )
+
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_SNMPV3_USERNAME): str,
+                vol.Required(CONF_SNMPV3_AUTH_PROTOCOL, default=SNMPV3_AUTH_SHA): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value=SNMPV3_AUTH_SHA, label="HMAC-SHA"),
+                            selector.SelectOptionDict(value=SNMPV3_AUTH_MD5, label="HMAC-MD5"),
+                            selector.SelectOptionDict(value=SNMPV3_AUTH_NONE, label="None"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(CONF_SNMPV3_AUTH_PASSWORD, default=""): str,
+                vol.Required(CONF_SNMPV3_PRIV_PROTOCOL, default=SNMPV3_PRIV_NONE): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value=SNMPV3_PRIV_DES, label="CBC-DES"),
+                            selector.SelectOptionDict(value=SNMPV3_PRIV_NONE, label="None"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(CONF_SNMPV3_PRIV_PASSWORD, default=""): str,
+            }
         )
+
+        return self.async_show_form(step_id="snmpv3", data_schema=schema, errors=errors)
 
 
 OID_FIELDS = [
@@ -563,12 +714,74 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             def _opt_str(key: str) -> str:
                 return (user_input.get(key) or "").strip()
 
-            # Community override
+            # SNMP version selection (v2c / v3)
+            current_version = str(
+                self._options.get(CONF_SNMP_VERSION)
+                or self._entry.data.get(CONF_SNMP_VERSION)
+                or SNMP_VERSION_V2C
+            )
+            version = str(user_input.get(CONF_SNMP_VERSION) or current_version)
+            if version not in (SNMP_VERSION_V2C, SNMP_VERSION_V3):
+                version = SNMP_VERSION_V2C
+
+            # Only persist if it actually changes; avoids unnecessary reloads
+            if version != current_version:
+                self._options[CONF_SNMP_VERSION] = version
+
+            # Community override (v2c)
             comm = _opt_str(CONF_OVERRIDE_COMMUNITY)
             if comm:
                 self._options[CONF_OVERRIDE_COMMUNITY] = comm
             else:
                 self._options.pop(CONF_OVERRIDE_COMMUNITY, None)
+
+            # SNMPv3 credentials
+            # NOTE: The options form is not dynamic (all fields are always visible).
+            # To prevent "no-op submit" from causing reloads, only mutate SNMPv3 keys
+            # when SNMP v3 is selected.
+            v3_user = _opt_str(CONF_SNMPV3_USERNAME)
+            auth_proto = str(user_input.get(CONF_SNMPV3_AUTH_PROTOCOL) or "").strip().lower()
+            auth_pass = str(user_input.get(CONF_SNMPV3_AUTH_PASSWORD) or "")
+            priv_proto = str(user_input.get(CONF_SNMPV3_PRIV_PROTOCOL) or "").strip().lower()
+            priv_pass = str(user_input.get(CONF_SNMPV3_PRIV_PASSWORD) or "")
+
+            if version == SNMP_VERSION_V3:
+                # Allow explicit clearing when v3 is active
+                if v3_user:
+                    self._options[CONF_SNMPV3_USERNAME] = v3_user
+                else:
+                    self._options.pop(CONF_SNMPV3_USERNAME, None)
+
+                if auth_proto:
+                    self._options[CONF_SNMPV3_AUTH_PROTOCOL] = auth_proto
+                else:
+                    self._options.pop(CONF_SNMPV3_AUTH_PROTOCOL, None)
+
+                if auth_pass:
+                    self._options[CONF_SNMPV3_AUTH_PASSWORD] = auth_pass
+                else:
+                    self._options.pop(CONF_SNMPV3_AUTH_PASSWORD, None)
+
+                if priv_proto:
+                    self._options[CONF_SNMPV3_PRIV_PROTOCOL] = priv_proto
+                else:
+                    self._options.pop(CONF_SNMPV3_PRIV_PROTOCOL, None)
+
+                if priv_pass:
+                    self._options[CONF_SNMPV3_PRIV_PASSWORD] = priv_pass
+                else:
+                    self._options.pop(CONF_SNMPV3_PRIV_PASSWORD, None)
+
+            # Validation when v3 is selected
+            if version == SNMP_VERSION_V3:
+                if not v3_user:
+                    errors[CONF_SNMPV3_USERNAME] = "required"
+                if auth_proto and auth_proto != SNMPV3_AUTH_NONE:
+                    if len(auth_pass) < 8 or len(auth_pass) > 31:
+                        errors[CONF_SNMPV3_AUTH_PASSWORD] = "invalid_password_length"
+                if priv_proto and priv_proto != SNMPV3_PRIV_NONE:
+                    if len(priv_pass) < 8 or len(priv_pass) > 31:
+                        errors[CONF_SNMPV3_PRIV_PASSWORD] = "invalid_password_length"
 
             # Port override
             port_raw = (user_input.get(CONF_OVERRIDE_PORT) or "").strip()
@@ -592,7 +805,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
                     raise ValueError("out_of_range")
 
-                self._options[CONF_UPTIME_POLL_INTERVAL] = uptime_val
+                current_uptime = int(self._options.get(CONF_UPTIME_POLL_INTERVAL, DEFAULT_UPTIME_POLL_INTERVAL))
+                if uptime_val != current_uptime:
+                    self._options[CONF_UPTIME_POLL_INTERVAL] = uptime_val
 
             except Exception:
 
@@ -606,6 +821,18 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         schema = vol.Schema(
             {
                 vol.Optional(
+                    CONF_SNMP_VERSION,
+                    default=str(self._options.get(CONF_SNMP_VERSION, self._entry.data.get(CONF_SNMP_VERSION, SNMP_VERSION_V2C))),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value=SNMP_VERSION_V2C, label="SNMP v2c"),
+                            selector.SelectOptionDict(value=SNMP_VERSION_V3, label="SNMP v3"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(
                     CONF_OVERRIDE_COMMUNITY,
                     default=str(self._options.get(CONF_OVERRIDE_COMMUNITY, "")),
                 ): str,
@@ -616,6 +843,43 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Optional(
                     CONF_UPTIME_POLL_INTERVAL,
                     default=str(self._options.get(CONF_UPTIME_POLL_INTERVAL, DEFAULT_UPTIME_POLL_INTERVAL)),
+                ): str,
+                vol.Optional(
+                    CONF_SNMPV3_USERNAME,
+                    default=str(self._options.get(CONF_SNMPV3_USERNAME, self._entry.data.get(CONF_SNMPV3_USERNAME, ""))),
+                ): str,
+                vol.Optional(
+                    CONF_SNMPV3_AUTH_PROTOCOL,
+                    default=str(self._options.get(CONF_SNMPV3_AUTH_PROTOCOL, self._entry.data.get(CONF_SNMPV3_AUTH_PROTOCOL, SNMPV3_AUTH_SHA))),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value=SNMPV3_AUTH_SHA, label="HMAC-SHA"),
+                            selector.SelectOptionDict(value=SNMPV3_AUTH_MD5, label="HMAC-MD5"),
+                            selector.SelectOptionDict(value=SNMPV3_AUTH_NONE, label="None"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(
+                    CONF_SNMPV3_AUTH_PASSWORD,
+                    default=str(self._options.get(CONF_SNMPV3_AUTH_PASSWORD, self._entry.data.get(CONF_SNMPV3_AUTH_PASSWORD, ""))),
+                ): str,
+                vol.Optional(
+                    CONF_SNMPV3_PRIV_PROTOCOL,
+                    default=str(self._options.get(CONF_SNMPV3_PRIV_PROTOCOL, self._entry.data.get(CONF_SNMPV3_PRIV_PROTOCOL, SNMPV3_PRIV_NONE))),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value=SNMPV3_PRIV_DES, label="CBC-DES"),
+                            selector.SelectOptionDict(value=SNMPV3_PRIV_NONE, label="None"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(
+                    CONF_SNMPV3_PRIV_PASSWORD,
+                    default=str(self._options.get(CONF_SNMPV3_PRIV_PASSWORD, self._entry.data.get(CONF_SNMPV3_PRIV_PASSWORD, ""))),
                 ): str,
             }
         )
@@ -815,7 +1079,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id=STEP_ID,
             data_schema=schema,
-            description_placeholders={"current": current_rules},
+            # Must match the {current_rules} placeholder used in translations/strings.
+            description_placeholders={"current_rules": current_rules},
         )
 
 
@@ -1000,10 +1265,186 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
 
     async def async_step_port_rename_custom(self, user_input=None) -> FlowResult:
-        """Menu for adding/removing custom port rename rules."""
-        return self.async_show_menu(
-            step_id="port_rename_custom",
-            menu_options=["port_rename_custom_add", "port_rename_custom_edit", "port_rename_custom_remove", "port_name_rules"],
+        """Manage Custom Rename Rules using the standard rule dialog.
+
+        This replaces the legacy submenu (Add/Edit/Remove) with the same
+        dialog pattern used by Include/Exclude rules.
+        """
+
+        STEP_ID = "port_rename_custom"
+
+        KEY_ACTION = "rule_action"
+        KEY_EXISTING = "rule_existing"
+        KEY_MATCH = "rule_match"
+        KEY_VALUE = "rule_value"
+        KEY_REPLACE = "rule_replace"
+
+        rules: list[dict] = list(self._options.get(CONF_PORT_RENAME_USER_RULES) or [])
+
+        # Build labels for existing rules
+        existing_labels: list[str] = []
+        label_to_idx: dict[str, int] = {}
+        parts: list[str] = []
+
+        for idx, r in enumerate(rules):
+            pat = str(r.get("pattern") or "")
+            rep = str(r.get("replace") or "")
+            label = f"{idx+1}. {pat} → {rep}"
+            existing_labels.append(label)
+            label_to_idx[label] = idx
+            parts.append(f"{pat} → {rep}")
+
+        current_rules = "\n".join(parts) if parts else "(none)"
+
+        def _build_pattern(match: str, value: str) -> str:
+            """Convert a simple match helper into a regex pattern."""
+            v = (value or "").strip()
+            if match == "starts with":
+                return "^" + re.escape(v)
+            if match == "ends with":
+                return re.escape(v) + "$"
+            if match == "contains":
+                return re.escape(v)
+            # regex
+            return v
+
+        def _is_valid_regex(pat: str) -> bool:
+            try:
+                re.compile(pat)
+                return True
+            except Exception:
+                return False
+
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            action = user_input.get(KEY_ACTION)
+
+            if action == "done":
+                return await self.async_step_port_name_rules()
+
+            if action == "clear":
+                self._options.pop(CONF_PORT_RENAME_USER_RULES, None)
+                self._apply_options()
+                return await self.async_step_port_rename_custom()
+
+            match = (user_input.get(KEY_MATCH) or "starts with").strip()
+            value = (user_input.get(KEY_VALUE) or "").strip()
+            replace = user_input.get(KEY_REPLACE, "")
+
+            if action == "add":
+                if not value:
+                    errors[KEY_VALUE] = "required"
+                else:
+                    pat = _build_pattern(match, value)
+                    if not _is_valid_regex(pat):
+                        errors[KEY_VALUE] = "invalid_regex"
+                    else:
+                        rules.append({"pattern": pat, "replace": replace, "description": ""})
+                        self._options[CONF_PORT_RENAME_USER_RULES] = rules
+                        self._apply_options()
+                        return await self.async_step_port_rename_custom()
+
+            if action in ("remove", "edit"):
+                selected = user_input.get(KEY_EXISTING) or ""
+                if selected not in label_to_idx:
+                    return await self.async_step_port_rename_custom()
+
+                idx = label_to_idx[selected]
+                old = rules[idx]
+                old_pat = str(old.get("pattern") or "")
+                old_rep = str(old.get("replace") or "")
+
+                # Remove the old rule
+                rules = [r for i, r in enumerate(rules) if i != idx]
+
+                if action == "edit":
+                    # If no new value was provided, keep the existing pattern.
+                    if value:
+                        pat = _build_pattern(match, value)
+                        if not _is_valid_regex(pat):
+                            errors[KEY_VALUE] = "invalid_regex"
+                            # Re-add original rule if validation fails
+                            rules.insert(idx, old)
+                            self._options[CONF_PORT_RENAME_USER_RULES] = rules
+                            return self.async_show_form(
+                                step_id=STEP_ID,
+                                data_schema=self._port_rename_custom_schema(existing_labels),
+                                description_placeholders={"current": current_rules},
+                                errors=errors,
+                            )
+                    else:
+                        pat = old_pat
+
+                    # NOTE: For edits, leaving Replacement blank keeps the existing replacement.
+                    rep = replace if (replace is not None and replace != "") else old_rep
+
+                    rules.insert(idx, {"pattern": pat, "replace": rep, "description": str(old.get("description") or "")})
+                    self._options[CONF_PORT_RENAME_USER_RULES] = rules if rules else []
+                    if not rules:
+                        self._options.pop(CONF_PORT_RENAME_USER_RULES, None)
+                    self._apply_options()
+                    return await self.async_step_port_rename_custom()
+
+                # remove
+                if rules:
+                    self._options[CONF_PORT_RENAME_USER_RULES] = rules
+                else:
+                    self._options.pop(CONF_PORT_RENAME_USER_RULES, None)
+                self._apply_options()
+                return await self.async_step_port_rename_custom()
+
+        # Show form
+        return self.async_show_form(
+            step_id=STEP_ID,
+            data_schema=self._port_rename_custom_schema(existing_labels),
+            description_placeholders={"current": current_rules},
+            errors=errors,
+        )
+
+
+    def _port_rename_custom_schema(self, existing_labels: list[str]) -> vol.Schema:
+        """Schema for the Custom Rename Rules dialog."""
+        KEY_ACTION = "rule_action"
+        KEY_EXISTING = "rule_existing"
+        KEY_MATCH = "rule_match"
+        KEY_VALUE = "rule_value"
+        KEY_REPLACE = "rule_replace"
+
+        return vol.Schema(
+            {
+                vol.Required(KEY_ACTION, default="add"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="add", label="Add"),
+                            selector.SelectOptionDict(value="edit", label="Edit"),
+                            selector.SelectOptionDict(value="remove", label="Remove"),
+                            selector.SelectOptionDict(value="clear", label="Clear all"),
+                            selector.SelectOptionDict(value="done", label="Back"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(KEY_EXISTING): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[selector.SelectOptionDict(value=v, label=v) for v in existing_labels],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ) if existing_labels else cv.string,
+                vol.Optional(KEY_MATCH, default="starts with"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="starts with", label="Starts with"),
+                            selector.SelectOptionDict(value="contains", label="Contains"),
+                            selector.SelectOptionDict(value="ends with", label="Ends with"),
+                            selector.SelectOptionDict(value="regex", label="Regex"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(KEY_VALUE, default=""): cv.string,
+                vol.Optional(KEY_REPLACE, default=""): cv.string,
+            }
         )
 
 
