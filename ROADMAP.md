@@ -116,22 +116,19 @@ This roadmap reflects **active development priorities** and **realistic implemen
   - Creates entities **only when PoE OIDs are supported**
   - PoE health status mapping (ALL CAPS): **HEALTHY / DISABLED / FAULTY**
 
+- ✅ 🎛️ Rule Helper Dialogs (Simple Mode)
+  - Standardized rule dialog UI across **Interface Include**, **Interface Exclude**, and **Interface Name (Rename) Rules**
+  - Custom Rename Rules migrated from legacy regex-only editor to the unified rule dialog
+  - User-friendly rule construction using:
+    - Starts with / Contains / Ends with / Regex matching
+    - Explicit replacement values for rename rules
+  - Internally generates and stores backend regex rules (no behavior changes)
+  - Existing rules remain fully compatible (no migration required)
+  - Eliminates need for separate “Advanced” vs “Simple” modes while preserving full flexibility
+
 ---
 
 ## 📝 Planned
-
-### 🎛️ Simple Mode (Rule Helpers)
-**Priority:** 🟡 Medium  
-**Target Release:** v0.5.0
-
-- Optional simplified UI for:
-  - Port Name Rules
-  - Interface Include rules
-  - Interface Exclude rules
-- Converts user-friendly selections into backend regex rules
-- Advanced regex mode remains fully available and unchanged
-
----
 
 ### 🔐 SNMPv3 Support (Secure SNMP)
 **Priority:** 🟡 Medium  
