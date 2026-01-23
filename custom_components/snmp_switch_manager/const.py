@@ -152,6 +152,7 @@ CONF_DISABLED_VENDOR_FILTER_RULE_IDS = "disabled_vendor_filter_rule_ids"
 
 # Rule IDs for built-in vendor interface filtering (used for disable/enable)
 BUILTIN_VENDOR_FILTER_RULES: list[dict[str, str]] = [
+    {"id": "generic_skip_cpu_interface", "label": "Generic: Skip CPU pseudo-interface (IF-MIB name 'CPU')"},
     # Cisco SG
     {"id": "cisco_sg_physical_fa_gi", "label": "Cisco SG: Only create physical Fa*/Gi* interfaces"},
     {"id": "cisco_sg_vlan_admin_or_oper", "label": "Cisco SG: Create VLAN interfaces (oper up or admin down)"},
