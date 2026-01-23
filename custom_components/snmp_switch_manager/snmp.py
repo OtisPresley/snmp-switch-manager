@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional, Iterable, Tuple, List
 
 from homeassistant.core import HomeAssistant
 
-from .helpers import classify_port_type
+from .helpers import classify_port_type, parse_pfsense_sysdescr
 
 from .snmp_compat import (
     CommunityData,
@@ -430,9 +430,22 @@ class SwitchSnmpClient:
 
         # Manufacturer / firmware parsing from sysDescr (unchanged behavior)
         sd = (self.cache.get("sysDescr") or "").strip()
+        pfs = parse_pfsense_sysdescr(sd)
+
         manufacturer = None
         firmware = None
-        if sd:
+
+        # pfSense is a software platform; sysDescr includes hostname + firmware + OS.
+        # Parse it explicitly and avoid applying generic switch parsing.
+        if pfs.get("manufacturer"):
+            manufacturer = pfs.get("manufacturer") or manufacturer
+            firmware = pfs.get("firmware") or firmware
+            if pfs.get("model"):
+                self.cache["model"] = pfs.get("model")
+                model_hint = self.cache.get("model")
+
+        # Manufacturer / firmware parsing from sysDescr (legacy switch behavior)
+        elif sd:
             parts = [p.strip() for p in sd.split(",")]
             if len(parts) >= 2:
                 firmware = parts[1] or None
@@ -443,8 +456,7 @@ class SwitchSnmpClient:
                 toks = head.split()
                 if len(toks) > 1:
                     manufacturer = " ".join(toks[:-1])
-
-        # Cisco CBS350: prefer ENTITY-MIB software revision when available.
+# Cisco CBS350: prefer ENTITY-MIB software revision when available.
         # This uses the documented entPhysicalSoftwareRev OID for the base chassis.
         if (model_hint and "CBS" in model_hint) or ("CBS" in sd):
             try:
@@ -1103,127 +1115,136 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
         # reflect device changes over time.
         sd = (self.cache.get("sysDescr") or "").strip()
         if sd:
-            model_hint = self.cache.get("model")
-
-            manufacturer = None
-            firmware = None
-            parts = [p.strip() for p in sd.split(",")]
-            if len(parts) >= 2:
-                firmware = parts[1] or None
-            head = parts[0]
-            if model_hint and model_hint in head:
-                manufacturer = head.replace(model_hint, "").strip()
+            # pfSense is a software platform; sysDescr includes hostname + firmware + OS.
+            # Parse it explicitly and avoid applying generic switch parsing which would
+            # incorrectly overwrite Manufacturer/Firmware.
+            pfs = parse_pfsense_sysdescr(sd)
+            if pfs.get("manufacturer"):
+                self.cache["manufacturer"] = pfs.get("manufacturer")
+                self.cache["firmware"] = pfs.get("firmware")
+                if pfs.get("model"):
+                    self.cache["model"] = pfs.get("model")
             else:
-                toks = head.split()
-                if len(toks) > 1:
-                    manufacturer = " ".join(toks[:-1])
+                model_hint = self.cache.get("model")
 
-            # Cisco CBS350: prefer ENTITY-MIB software revision when available.
-            if (model_hint and "CBS" in model_hint) or ("CBS" in sd):
+                manufacturer = None
+                firmware = None
+                parts = [p.strip() for p in sd.split(",")]
+                if len(parts) >= 2:
+                    firmware = parts[1] or None
+                head = parts[0]
+                if model_hint and model_hint in head:
+                    manufacturer = head.replace(model_hint, "").strip()
+                else:
+                    toks = head.split()
+                    if len(toks) > 1:
+                        manufacturer = " ".join(toks[:-1])
+
+                # Cisco CBS350: prefer ENTITY-MIB software revision when available.
+                if (model_hint and "CBS" in model_hint) or ("CBS" in sd):
+                    try:
+                        sw_rev = await _do_get_one(
+                            self.engine,
+                            self.community_data,
+                            self.target,
+                            self.context,
+                            OID_entPhysicalSoftwareRev_CBS350,
+                            OID_hwEntityTemperature,
+                        )
+                    except Exception:
+                        sw_rev = None
+                    if sw_rev:
+                        firmware = sw_rev.strip() or firmware
+
+                # Zyxel: prefer vendor-specific manufacturer/firmware OIDs when detected
+                if "zyxel" in sd.lower():
+                    try:
+                        zy_mfg = await _do_get_one(
+                            self.engine,
+                            self.community_data,
+                            self.target,
+                            self.context,
+                            OID_entPhysicalMfgName_Zyxel,
+                        )
+                    except Exception:
+                        zy_mfg = None
+                    if zy_mfg:
+                        manufacturer = zy_mfg.strip() or manufacturer
+
+                    try:
+                        zy_fw = await _do_get_one(
+                            self.engine,
+                            self.community_data,
+                            self.target,
+                            self.context,
+                            OID_zyxel_firmware_version,
+                        )
+                    except Exception:
+                        zy_fw = None
+                    if zy_fw:
+                        firmware = zy_fw.strip() or firmware
+
+                # MikroTik RouterOS: override using MIKROTIK-MIB when detected
+                if "mikrotik" in sd.lower() or "routeros" in sd.lower():
+                    manufacturer = "MikroTik"
+                    try:
+                        mk_ver = await _do_get_one(
+                            self.engine,
+                            self.community_data,
+                            self.target,
+                            self.context,
+                            OID_mikrotik_software_version,
+                        )
+                    except Exception:
+                        mk_ver = None
+                    if mk_ver:
+                        firmware = mk_ver.strip() or firmware
+                    try:
+                        mk_model = await _do_get_one(
+                            self.engine,
+                            self.community_data,
+                            self.target,
+                            self.context,
+                            OID_mikrotik_model,
+                        )
+                    except Exception:
+                        mk_model = None
+                    if mk_model:
+                        self.cache["model"] = mk_model.strip() or self.cache.get("model")
+
+                # Custom OIDs: per-device overrides take precedence over vendor logic and generic parsing
                 try:
-                    sw_rev = await _do_get_one(
-                        self.engine,
-                        self.community_data,
-                        self.target,
-                        self.context,
-                        OID_entPhysicalSoftwareRev_CBS350,
-    OID_hwEntityTemperature,
-                    )
+                    mfg_oid = self._custom_oid("manufacturer")
+                    if mfg_oid:
+                        mfg_val = await _do_get_one(
+                            self.engine,
+                            self.community_data,
+                            self.target,
+                            self.context,
+                            mfg_oid,
+                        )
+                        if mfg_val:
+                            manufacturer = mfg_val.strip() or manufacturer
                 except Exception:
-                    sw_rev = None
-                if sw_rev:
-                    firmware = sw_rev.strip() or firmware
-
-            # Zyxel: prefer vendor-specific manufacturer/firmware OIDs when detected
-            if "zyxel" in sd.lower():
-                try:
-                    zy_mfg = await _do_get_one(
-                        self.engine,
-                        self.community_data,
-                        self.target,
-                        self.context,
-                        OID_entPhysicalMfgName_Zyxel,
-                    )
-                except Exception:
-                    zy_mfg = None
-                if zy_mfg:
-                    manufacturer = zy_mfg.strip() or manufacturer
+                    pass
 
                 try:
-                    zy_fw = await _do_get_one(
-                        self.engine,
-                        self.community_data,
-                        self.target,
-                        self.context,
-                        OID_zyxel_firmware_version,
-                    )
+                    fw_oid = self._custom_oid("firmware")
+                    if fw_oid:
+                        fw_val = await _do_get_one(
+                            self.engine,
+                            self.community_data,
+                            self.target,
+                            self.context,
+                            fw_oid,
+                        )
+                        if fw_val:
+                            firmware = fw_val.strip() or firmware
                 except Exception:
-                    zy_fw = None
-                if zy_fw:
-                    firmware = zy_fw.strip() or firmware
+                    pass
 
-            # MikroTik RouterOS: override using MIKROTIK-MIB when detected
-            if "mikrotik" in sd.lower() or "routeros" in sd.lower():
-                manufacturer = "MikroTik"
-                try:
-                    mk_ver = await _do_get_one(
-                        self.engine,
-                        self.community_data,
-                        self.target,
-                        self.context,
-                        OID_mikrotik_software_version,
-                    )
-                except Exception:
-                    mk_ver = None
-                if mk_ver:
-                    firmware = mk_ver.strip() or firmware
-                try:
-                    mk_model = await _do_get_one(
-                        self.engine,
-                        self.community_data,
-                        self.target,
-                        self.context,
-                        OID_mikrotik_model,
-                    )
-                except Exception:
-                    mk_model = None
-                if mk_model:
-                    self.cache["model"] = mk_model.strip() or self.cache.get("model")
-
-            # Custom OIDs: per-device overrides take precedence over vendor logic and generic parsing
-            try:
-                mfg_oid = self._custom_oid("manufacturer")
-                if mfg_oid:
-                    mfg_val = await _do_get_one(
-                        self.engine,
-                        self.community_data,
-                        self.target,
-                        self.context,
-                        mfg_oid,
-                    )
-                    if mfg_val:
-                        manufacturer = mfg_val.strip() or manufacturer
-            except Exception:
-                pass
-
-            try:
-                fw_oid = self._custom_oid("firmware")
-                if fw_oid:
-                    fw_val = await _do_get_one(
-                        self.engine,
-                        self.community_data,
-                        self.target,
-                        self.context,
-                        fw_oid,
-                    )
-                    if fw_val:
-                        firmware = fw_val.strip() or firmware
-            except Exception:
-                pass
-
-            self.cache["manufacturer"] = manufacturer
-            self.cache["firmware"] = firmware
-
+                self.cache["manufacturer"] = manufacturer
+                self.cache["firmware"] = firmware
         await self.async_refresh_dynamic()
 
         # Bandwidth sensors (optional; per-device)
