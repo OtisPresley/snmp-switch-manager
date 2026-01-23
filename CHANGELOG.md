@@ -438,6 +438,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All changes are backward-compatible
 - New features are **opt-in** via Device Options
 
+---
+
+## [0.5.0] - 2026-01-23
+### Added
+- 🔐 **SNMPv3 Support**
+  - Full support for **SNMP v3** with:
+    - Username-based authentication
+    - Authentication protocols: **HMAC-SHA / HMAC-MD5**
+    - Privacy support using **DES**
+  - Configurable via:
+    **Device Options → Connection & Name**
+  - Seamless switching between **SNMP v2c ↔ SNMP v3** without recreating devices or entities
+- 🧭 **Official pfSense Support**
+  - Recognized as a **software platform** rather than a hardware switch
+  - Correctly parsed and exposed:
+    - Manufacturer: **pfSense**
+    - Model: **FreeBSD (cleaned, architecture removed)**
+    - Firmware: **pfSense version**
+    - Hostname: Fully-qualified system hostname
+  - No impact to existing switch support or vendor logic
+- 🎛️ **Simple Mode (Rule Helpers) – Completed**
+  - Unified, simplified rule dialogs for:
+    - Interface Include Rules
+    - Interface Exclude Rules
+    - Interface Rename Rules
+    - Bandwidth Sensor Include / Exclude Rules
+  - All rule types now use the **same consistent dialog structure**
+  - Existing rules are always displayed at the top of each dialog
+  - Advanced regex behavior remains fully supported behind the scenes
+
+### Improved
+- 🧩 **Options Flow Consistency & Reliability**
+  - All Device Options dialogs now:
+    - Correctly show current values and rules
+    - Avoid unnecessary reloads when submitting with no changes
+    - Apply changes deterministically and predictably
+  - Fixed placeholder handling in rule dialogs to prevent translation errors
+- 🧭 **Connection & Name UX Clarifications**
+  - Clear visual grouping of:
+    - **SNMP v2c settings**
+    - **SNMP v3 settings**
+  - Explicit guidance that:
+    - All fields are always visible
+    - Only the selected SNMP version determines which fields are used
+  - Reduces confusion caused by Home Assistant’s static form limitations
+
+### Notes
+- This release introduces **no breaking changes**
+- No existing entities are renamed or removed
+- All changes are backward-compatible
+- New functionality is opt-in via **Device Options**
+
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-simple-mode"></a>
