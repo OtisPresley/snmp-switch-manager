@@ -113,6 +113,37 @@ MAX_ENV_POLL_INTERVAL = 3600
 CONF_OVERRIDE_COMMUNITY = "override_community"
 CONF_OVERRIDE_PORT = "override_port" 
 
+# ---------------------------
+# SNMP Version / SNMPv3
+# ---------------------------
+
+CONF_SNMP_VERSION = "snmp_version"
+SNMP_VERSION_V2C = "v2c"
+SNMP_VERSION_V3 = "v3"
+
+CONF_SNMPV3_USERNAME = "snmpv3_username"
+CONF_SNMPV3_AUTH_PROTOCOL = "snmpv3_auth_protocol"
+CONF_SNMPV3_AUTH_PASSWORD = "snmpv3_auth_password"
+CONF_SNMPV3_PRIV_PROTOCOL = "snmpv3_priv_protocol"
+CONF_SNMPV3_PRIV_PASSWORD = "snmpv3_priv_password"
+
+SNMPV3_AUTH_NONE = "none"
+SNMPV3_AUTH_SHA = "sha"
+SNMPV3_AUTH_MD5 = "md5"
+
+SNMPV3_PRIV_NONE = "none"
+SNMPV3_PRIV_DES = "des"
+SNMPV3_PRIV_AES = "aes"  # reserved for future expansion
+
+# Stored bridge identifier used to keep Home Assistant Device Registry stable
+# when switching an existing device between SNMPv2c and SNMPv3.
+#
+# Historically, devices were identified using a string derived from
+# host/port/community for v2c. With v3, community may not exist; by persisting
+# the legacy identifier when available, HA will not recreate a device when the
+# SNMP version changes.
+CONF_LEGACY_DEVICE_ID = "legacy_device_id"
+
 # Include/exclude rules (simple modes)
 CONF_INCLUDE_STARTS_WITH = "include_starts_with"
 CONF_INCLUDE_CONTAINS = "include_contains"
