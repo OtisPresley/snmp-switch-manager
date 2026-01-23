@@ -13,6 +13,7 @@ from .helpers import classify_port_type, parse_pfsense_sysdescr
 
 from .snmp_compat import (
     CommunityData,
+    UsmUserData,
     SnmpEngine,
     UdpTransportTarget,
     ContextData,
@@ -23,6 +24,12 @@ from .snmp_compat import (
     set_cmd,
     OctetString,
     Integer,
+    usmNoAuthProtocol,
+    usmHMACMD5AuthProtocol,
+    usmHMACSHAAuthProtocol,
+    usmNoPrivProtocol,
+    usmDESPrivProtocol,
+    usmAesCfb128Protocol,
 )
 
 # Canonical OIDs from const.py (original repo)
@@ -81,6 +88,20 @@ from .const import (
     ENV_MODE_SENSORS,
     DEFAULT_ENV_POLL_INTERVAL,
     OID_ifType,
+    CONF_SNMP_VERSION,
+    SNMP_VERSION_V2C,
+    SNMP_VERSION_V3,
+    CONF_SNMPV3_USERNAME,
+    CONF_SNMPV3_AUTH_PROTOCOL,
+    CONF_SNMPV3_AUTH_PASSWORD,
+    CONF_SNMPV3_PRIV_PROTOCOL,
+    CONF_SNMPV3_PRIV_PASSWORD,
+    SNMPV3_AUTH_NONE,
+    SNMPV3_AUTH_SHA,
+    SNMPV3_AUTH_MD5,
+    SNMPV3_PRIV_NONE,
+    SNMPV3_PRIV_DES,
+    SNMPV3_PRIV_AES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -298,11 +319,20 @@ async def _do_set_admin_status(
 class SwitchSnmpClient:
     """SNMP client using PySNMP v7 asyncio API."""
 
-    def __init__(self, hass: HomeAssistant, host: str, community: str, port: int, custom_oids: Optional[Dict[str, str]] = None, bandwidth_options: Optional[Dict[str, Any]] = None, poe_options: Optional[Dict[str, Any]] = None, env_options: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        host: str,
+        snmp_settings: Dict[str, Any],
+        custom_oids: Optional[Dict[str, str]] = None,
+        bandwidth_options: Optional[Dict[str, Any]] = None,
+        poe_options: Optional[Dict[str, Any]] = None,
+        env_options: Optional[Dict[str, Any]] = None,
+    ) -> None:
         self.hass = hass
         self.host = host
-        self.community = community
-        self.port = port
+        self._snmp_settings = dict(snmp_settings or {})
+        self.port = int(self._snmp_settings.get("port") or 161)
         self.custom_oids: Dict[str, str] = dict(custom_oids or {})
 
         # Bandwidth sensor options (set by config entry options)
@@ -318,10 +348,11 @@ class SwitchSnmpClient:
 
         self.engine = None
         self.target = None
-        self._target_args = ((host, port),)
+        self._target_args = ((host, self.port),)
         self._target_kwargs = dict(timeout=1.5, retries=1)
 
-        self.community_data = CommunityData(community, mpModel=1)  # v2c
+        # SNMP auth/security model (v2c community or v3 USM)
+        self.auth_data = self._build_auth_data(self._snmp_settings)
         self.context = ContextData()
 
         self.cache: Dict[str, Any] = {
@@ -352,6 +383,62 @@ class SwitchSnmpClient:
         if v.startswith("."):
             v = v[1:]
         return v
+
+    @staticmethod
+    def _build_auth_data(settings: Dict[str, Any]):
+        """Build pysnmp authData object (v2c CommunityData or v3 UsmUserData).
+
+        This is the only place in the codebase that should care about SNMP
+        security model differences. Everything else must remain version-agnostic.
+        """
+
+        version = str((settings or {}).get("version") or SNMP_VERSION_V2C).lower()
+        if version != SNMP_VERSION_V3:
+            community = str((settings or {}).get("community") or "").strip()
+            return CommunityData(community, mpModel=1)
+
+        username = str((settings or {}).get(CONF_SNMPV3_USERNAME) or "").strip()
+        auth_proto = str((settings or {}).get(CONF_SNMPV3_AUTH_PROTOCOL) or SNMPV3_AUTH_NONE).strip().lower()
+        auth_pass = str((settings or {}).get(CONF_SNMPV3_AUTH_PASSWORD) or "")
+        priv_proto = str((settings or {}).get(CONF_SNMPV3_PRIV_PROTOCOL) or SNMPV3_PRIV_NONE).strip().lower()
+        priv_pass = str((settings or {}).get(CONF_SNMPV3_PRIV_PASSWORD) or "")
+
+        # Map string selections to pysnmp protocol constants
+        if auth_proto in ("", SNMPV3_AUTH_NONE):
+            auth_protocol = usmNoAuthProtocol
+            auth_key = None
+        elif auth_proto == SNMPV3_AUTH_MD5:
+            auth_protocol = usmHMACMD5AuthProtocol
+            auth_key = auth_pass
+        else:
+            # Default to SHA
+            auth_protocol = usmHMACSHAAuthProtocol
+            auth_key = auth_pass
+
+        if priv_proto in ("", SNMPV3_PRIV_NONE):
+            priv_protocol = usmNoPrivProtocol
+            priv_key = None
+        elif priv_proto == SNMPV3_PRIV_AES:
+            priv_protocol = usmAesCfb128Protocol
+            priv_key = priv_pass
+        else:
+            # Default to DES
+            priv_protocol = usmDESPrivProtocol
+            priv_key = priv_pass
+
+        # Build UsmUserData with appropriate security level
+        try:
+            if auth_key is None and priv_key is None:
+                return UsmUserData(username)
+            if auth_key is not None and priv_key is None:
+                return UsmUserData(username, auth_key, authProtocol=auth_protocol)
+            if auth_key is None and priv_key is not None:
+                # Priv without auth is uncommon and often unsupported; fall back to noPriv.
+                return UsmUserData(username)
+            return UsmUserData(username, auth_key, priv_key, authProtocol=auth_protocol, privProtocol=priv_protocol)
+        except Exception:
+            # Fall back to the safest noAuthNoPriv when input is invalid.
+            return UsmUserData(username)
 
 
     def set_uptime_poll_interval(self, seconds: float | int) -> None:
@@ -537,13 +624,13 @@ class SwitchSnmpClient:
     async def _async_get_one(self, oid: str) -> Optional[str]:
         await self._ensure_engine()
         await self._ensure_target()
-        return await _do_get_one(self.engine, self.community_data, self.target, self.context, oid)
+        return await _do_get_one(self.engine, self.auth_data, self.target, self.context, oid)
 
     async def _async_walk(self, base_oid: str) -> list[tuple[str, Any]]:
         await self._ensure_engine()
         await self._ensure_target()
         out: list[tuple[str, Any]] = []
-        async for oid_str, val in _do_next_walk(self.engine, self.community_data, self.target, self.context, base_oid):
+        async for oid_str, val in _do_next_walk(self.engine, self.auth_data, self.target, self.context, base_oid):
             out.append((oid_str, val))
         return out
 
@@ -1098,9 +1185,9 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
         uptime_oid = self._custom_oid("uptime") or OID_sysUpTime
 
         sysdescr, sysname, sysuptime = await asyncio.gather(
-            _do_get_one(self.engine, self.community_data, self.target, self.context, OID_sysDescr),
-            _do_get_one(self.engine, self.community_data, self.target, self.context, sysname_oid),
-            _do_get_one(self.engine, self.community_data, self.target, self.context, uptime_oid) if poll_uptime else asyncio.sleep(0, result=None),
+            _do_get_one(self.engine, self.auth_data, self.target, self.context, OID_sysDescr),
+            _do_get_one(self.engine, self.auth_data, self.target, self.context, sysname_oid),
+            _do_get_one(self.engine, self.auth_data, self.target, self.context, uptime_oid) if poll_uptime else asyncio.sleep(0, result=None),
         )
         if (not poll_uptime) and ("sysUpTime" in self.cache):
             sysuptime = self.cache.get("sysUpTime")
@@ -1145,7 +1232,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     try:
                         sw_rev = await _do_get_one(
                             self.engine,
-                            self.community_data,
+                            self.auth_data,
                             self.target,
                             self.context,
                             OID_entPhysicalSoftwareRev_CBS350,
@@ -1161,7 +1248,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     try:
                         zy_mfg = await _do_get_one(
                             self.engine,
-                            self.community_data,
+                            self.auth_data,
                             self.target,
                             self.context,
                             OID_entPhysicalMfgName_Zyxel,
@@ -1174,7 +1261,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     try:
                         zy_fw = await _do_get_one(
                             self.engine,
-                            self.community_data,
+                            self.auth_data,
                             self.target,
                             self.context,
                             OID_zyxel_firmware_version,
@@ -1190,7 +1277,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     try:
                         mk_ver = await _do_get_one(
                             self.engine,
-                            self.community_data,
+                            self.auth_data,
                             self.target,
                             self.context,
                             OID_mikrotik_software_version,
@@ -1202,7 +1289,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     try:
                         mk_model = await _do_get_one(
                             self.engine,
-                            self.community_data,
+                            self.auth_data,
                             self.target,
                             self.context,
                             OID_mikrotik_model,
@@ -1218,7 +1305,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     if mfg_oid:
                         mfg_val = await _do_get_one(
                             self.engine,
-                            self.community_data,
+                            self.auth_data,
                             self.target,
                             self.context,
                             mfg_oid,
@@ -1233,7 +1320,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     if fw_oid:
                         fw_val = await _do_get_one(
                             self.engine,
-                            self.community_data,
+                            self.auth_data,
                             self.target,
                             self.context,
                             fw_oid,
@@ -1306,7 +1393,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                         if probe_idx is not None:
                             probe_oid = f"{OID_ifHCInOctets}.{probe_idx}"
                             try:
-                                probe_val = await _do_get_one(self.engine, self.community_data, self.target, self.context, probe_oid)
+                                probe_val = await _do_get_one(self.engine, self.auth_data, self.target, self.context, probe_oid)
                                 if probe_val is not None:
                                     int(probe_val)  # validate numeric
                                     self._bw_use_hc = True
@@ -1324,7 +1411,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                         oids.append(f"{rx_base}.{idx_i}")
                         oids.append(f"{tx_base}.{idx_i}")
 
-                    got = await _do_get_many(self.engine, self.community_data, self.target, self.context, oids)
+                    got = await _do_get_many(self.engine, self.auth_data, self.target, self.context, oids)
 
                     bw_out: Dict[int, Dict[str, Any]] = {}
                     for idx_i in selected:
@@ -1991,7 +2078,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
     async def set_alias(self, if_index: int, alias: str) -> bool:
         await self._ensure_engine()
         await self._ensure_target()
-        ok = await _do_set_alias(self.engine, self.community_data, self.target, self.context, if_index, alias)
+        ok = await _do_set_alias(self.engine, self.auth_data, self.target, self.context, if_index, alias)
         if ok:
             self.cache.setdefault("ifTable", {}).setdefault(if_index, {})["alias"] = alias
         else:
@@ -2001,18 +2088,45 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
     async def set_admin_status(self, if_index: int, value: int) -> bool:
         await self._ensure_engine()
         await self._ensure_target()
-        return await _do_set_admin_status(self.engine, self.community_data, self.target, self.context, if_index, value)
+        return await _do_set_admin_status(self.engine, self.auth_data, self.target, self.context, if_index, value)
 
 
 # ---------- helpers for config_flow ----------
 
-async def test_connection(hass: HomeAssistant, host: str, community: str, port: int) -> bool:
-    client = SwitchSnmpClient(hass, host, community, port)
+async def test_connection(
+    hass: HomeAssistant,
+    host: str,
+    community: str,
+    port: int,
+    *,
+    snmp_settings: Optional[Dict[str, Any]] = None,
+) -> bool:
+    """Test SNMP connectivity.
+
+    Backwards compatible with the original v2c signature, but also supports
+    passing a pre-merged settings dict for SNMPv3.
+    """
+
+    settings = dict(snmp_settings or {})
+    if not settings:
+        settings = {"host": host, "port": port, "version": SNMP_VERSION_V2C, "community": community}
+    client = SwitchSnmpClient(hass, host, settings)
     sysname = await client._async_get_one(OID_sysName)
     return sysname is not None
 
-async def get_sysname(hass: HomeAssistant, host: str, community: str, port: int) -> Optional[str]:
-    client = SwitchSnmpClient(hass, host, community, port)
+
+async def get_sysname(
+    hass: HomeAssistant,
+    host: str,
+    community: str,
+    port: int,
+    *,
+    snmp_settings: Optional[Dict[str, Any]] = None,
+) -> Optional[str]:
+    settings = dict(snmp_settings or {})
+    if not settings:
+        settings = {"host": host, "port": port, "version": SNMP_VERSION_V2C, "community": community}
+    client = SwitchSnmpClient(hass, host, settings)
     return await client._async_get_one(OID_sysName)
 
 def _parse_numeric(val):
