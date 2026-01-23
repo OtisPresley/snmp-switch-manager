@@ -32,7 +32,7 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
 
 ## Highlights
 
-- 🔍 Automatic discovery of port count, speed, VLAN ID (PVID), description, and operational status via SNMP v2c
+- 🔍 Automatic discovery of port count, speed, VLAN ID (PVID), description, and operational status via SNMP (v2c or v3)
 - 🔄 Background polling that keeps Home Assistant entities and attributes in sync with live switch data
 - 🎚️ One `switch` entity per interface for toggling administrative state (up/down)
 - 🏷️ Service for updating the interface alias (`ifAlias`) directly from Home Assistant
@@ -46,8 +46,11 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
 ## Requirements
 
 - Home Assistant 2025.11.2 or newer (recommended)
-- A switch reachable via SNMP v2c (UDP/161) with read access to interface tables and write access to `ifAlias`
-- The SNMP community string that grants the required permissions
+- A switch (or SNMP-enabled network device) reachable via SNMP (UDP/161)
+- SNMP credentials with **read access** to interface tables
+- **Write access is optional** but required for:
+  - Updating `ifAlias` (port description)
+  - Toggling administrative state (if supported by the device)
 - pysnmp 7.x (the integration installs it automatically when needed)
 
 ---
@@ -132,15 +135,22 @@ The state of each port entity reflects the interface's administrative status. Tu
 
 ## Troubleshooting
 
-- **Ports missing:** Ensure the SNMP community string permits reads on the interface tables (`ifDescr`, `ifSpeed`, `ifOperStatus`).
-- **Description updates fail:** Confirm the community string has write permission for `ifAlias` (`1.3.6.1.2.1.31.1.1.1.18`).
-- **Unexpected speeds:** Some devices report zero or vendor-specific rates for unused interfaces; check the switch UI to confirm raw SNMP data.
+- **Ports missing:** Ensure your SNMP credentials permit reads on the interface tables (`ifDescr`, `ifSpeed`, `ifOperStatus`).
+- **Description updates fail:** Confirm your SNMP credentials have write permission for `ifAlias` (`1.3.6.1.2.1.31.1.1.1.18`).
+- **Unexpected speeds:** Some devices report zero or vendor-specific rates for unused interfaces; check the device UI to confirm raw SNMP data.
 
 ---
 
 ## Support
 
-If your switch does not display correctly, then the integration will need to have specific support added for it. Please open an issue with an text file attachment with the results of an `snmpwalk` command against your switch with an **RW SNMP v2c community string** and any necessary screenshots. Also describe what is incorrect and what it should look like.
+If your switch does not display correctly, then the integration may need device-specific support added for it.
+
+Please open an issue with:
+- A text file attachment containing `snmpwalk` output against your device (SNMP v2c **or** SNMP v3)
+- Any necessary screenshots
+- A description of what is incorrect and what it should look like
+
+> Tip: If you want port descriptions and administrative toggles to work, your SNMP credentials must allow writes to the required OIDs (device-dependent).
 
 ### Supported Switches
 👉 **Read the full documentation:**  
