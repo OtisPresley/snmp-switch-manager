@@ -18,7 +18,14 @@ try:
         walk_cmd,
         bulk_walk_cmd,
         is_end_of_mib,
-        UsmUserData,  # noqa: F401 (reserved for future v3 support)
+        UsmUserData,
+        # SNMPv3 USM protocol constants
+        usmNoAuthProtocol,
+        usmHMACMD5AuthProtocol,
+        usmHMACSHAAuthProtocol,
+        usmNoPrivProtocol,
+        usmDESPrivProtocol,
+        usmAesCfb128Protocol,
     )
     HAS_V7 = True
 except Exception:
@@ -35,6 +42,13 @@ if not HAS_V7:
         Integer,
         SnmpEngine,
         UdpTransportTarget,
+        UsmUserData,
+        usmNoAuthProtocol,
+        usmHMACMD5AuthProtocol,
+        usmHMACSHAAuthProtocol,
+        usmNoPrivProtocol,
+        usmDESPrivProtocol,
+        usmAesCfb128Protocol,
         get_cmd as _get_cmd,
         set_cmd as _set_cmd,
         next_cmd as _next_cmd,
