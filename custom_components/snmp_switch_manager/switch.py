@@ -11,6 +11,10 @@ from homeassistant.helpers import entity_registry as er
 
 from .const import (
     DOMAIN,
+    CONF_COMMUNITY,
+    CONF_LEGACY_DEVICE_ID,
+    CONF_SNMP_VERSION,
+    SNMP_VERSION_V3,
     CONF_PORT_RENAME_USER_RULES,
     CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
     CONF_ICON_RULES,
@@ -94,10 +98,20 @@ async def async_setup_entry(hass, entry, async_add_entities):
     iftable = client.cache.get("ifTable", {})
     hostname = client.cache.get("sysName") or entry.data.get("name") or client.host
 
-    device_info = DeviceInfo(
-        identifiers={(DOMAIN, f"{client.host}:{client.port}:{client.community}")},
-        name=hostname,
-    )
+    # Device identifiers must be stable. Historically we used host:port:community for SNMPv2c.
+    # When SNMPv3 was added, that attribute no longer existed on the client, and switching to
+    # entry.entry_id alone caused Home Assistant to create duplicate Devices for existing installs.
+    #
+    # To preserve backwards compatibility (and allow HA to automatically re-associate entities),
+    # include the legacy identifier for v2c entries. For v3 entries, do not include any secrets.
+    identifiers = {(DOMAIN, entry.entry_id)}
+    legacy_device_id = str(
+        entry.data.get(CONF_LEGACY_DEVICE_ID) or entry.options.get(CONF_LEGACY_DEVICE_ID) or ""
+    ).strip()
+    if legacy_device_id:
+        identifiers.add((DOMAIN, legacy_device_id))
+
+    device_info = DeviceInfo(identifiers=identifiers, name=hostname)
 
     ip_index = client.cache.get("ipIndex", {})
     ip_mask = client.cache.get("ipMask", {})
