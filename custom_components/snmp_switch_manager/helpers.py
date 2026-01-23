@@ -3,7 +3,66 @@ from __future__ import annotations
 
 import ipaddress
 import re
-from typing import Optional
+from typing import Any, Optional
+
+from .const import (
+    CONF_OVERRIDE_COMMUNITY,
+    CONF_OVERRIDE_PORT,
+    CONF_SNMP_VERSION,
+    SNMP_VERSION_V2C,
+    SNMP_VERSION_V3,
+    CONF_SNMPV3_USERNAME,
+    CONF_SNMPV3_AUTH_PROTOCOL,
+    CONF_SNMPV3_AUTH_PASSWORD,
+    CONF_SNMPV3_PRIV_PROTOCOL,
+    CONF_SNMPV3_PRIV_PASSWORD,
+)
+
+
+def get_snmp_connection_settings(entry_data: dict[str, Any], options: dict[str, Any]) -> dict[str, Any]:
+    """Return effective SNMP connection settings for an entry.
+
+    This is intentionally a *pure* helper: it does not create pysnmp objects.
+    It only merges entry data + per-device overrides into a single dict.
+
+    Precedence rules:
+      1) options override entry_data where applicable
+      2) SNMP version defaults to v2c
+
+    Returned keys:
+      host, port, version, community, v3_username, v3_auth_protocol,
+      v3_auth_password, v3_priv_protocol, v3_priv_password
+    """
+
+    host = str((entry_data or {}).get("host") or "").strip()
+    base_port = (entry_data or {}).get("port")
+    try:
+        port = int((options or {}).get(CONF_OVERRIDE_PORT, base_port))
+    except Exception:
+        port = int(base_port or 161)
+
+    version = str((options or {}).get(CONF_SNMP_VERSION) or (entry_data or {}).get(CONF_SNMP_VERSION) or SNMP_VERSION_V2C)
+    version = version if version in (SNMP_VERSION_V2C, SNMP_VERSION_V3) else SNMP_VERSION_V2C
+
+    community = str((options or {}).get(CONF_OVERRIDE_COMMUNITY) or (entry_data or {}).get("community") or "").strip()
+
+    v3_username = str((options or {}).get(CONF_SNMPV3_USERNAME) or (entry_data or {}).get(CONF_SNMPV3_USERNAME) or "").strip()
+    v3_auth_protocol = str((options or {}).get(CONF_SNMPV3_AUTH_PROTOCOL) or (entry_data or {}).get(CONF_SNMPV3_AUTH_PROTOCOL) or "").strip().lower()
+    v3_auth_password = str((options or {}).get(CONF_SNMPV3_AUTH_PASSWORD) or (entry_data or {}).get(CONF_SNMPV3_AUTH_PASSWORD) or "")
+    v3_priv_protocol = str((options or {}).get(CONF_SNMPV3_PRIV_PROTOCOL) or (entry_data or {}).get(CONF_SNMPV3_PRIV_PROTOCOL) or "").strip().lower()
+    v3_priv_password = str((options or {}).get(CONF_SNMPV3_PRIV_PASSWORD) or (entry_data or {}).get(CONF_SNMPV3_PRIV_PASSWORD) or "")
+
+    return {
+        "host": host,
+        "port": port,
+        "version": version,
+        "community": community,
+        CONF_SNMPV3_USERNAME: v3_username,
+        CONF_SNMPV3_AUTH_PROTOCOL: v3_auth_protocol,
+        CONF_SNMPV3_AUTH_PASSWORD: v3_auth_password,
+        CONF_SNMPV3_PRIV_PROTOCOL: v3_priv_protocol,
+        CONF_SNMPV3_PRIV_PASSWORD: v3_priv_password,
+    }
 
 def _abbr_from_speed_or_name(name: str) -> str:
     n = (name or "").lower()
