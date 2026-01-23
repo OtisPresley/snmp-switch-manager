@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ipaddress
+import re
 from typing import Optional
 
 def _abbr_from_speed_or_name(name: str) -> str:
@@ -120,3 +121,49 @@ def classify_port_type(
             port_type = "physical"
 
     return port_type
+
+
+# ----------------------------
+# pfSense sysDescr parsing
+# ----------------------------
+
+def parse_pfsense_sysdescr(sys_descr: str) -> dict[str, str | None]:
+    """Parse pfSense sysDescr into manufacturer/model/firmware.
+
+    Expected format (typical):
+      "pfSense <hostname> <firmware> FreeBSD <os_version>"
+
+    This is intentionally conservative: returns None fields when not detected.
+    """
+
+    sd = (sys_descr or "").strip()
+    if not sd.lower().startswith("pfsense"):
+        return {"manufacturer": None, "model": None, "firmware": None}
+
+    manufacturer = "pfSense"
+
+    # Firmware like "2.8.1-RELEASE" (also allow RC, BETA, etc.)
+    fw = None
+    m = re.search(r"\b(\d+\.\d+\.\d+-(?:RELEASE|RC\d*|BETA\d*|DEVELOPMENT))\b", sd, flags=re.IGNORECASE)
+    if m:
+        fw = m.group(1)
+
+    # Model/OS: "FreeBSD 15.0-CURRENT" (capture from FreeBSD onward)
+    model = None
+    m2 = re.search(r"\b(FreeBSD\s+[^,]+)$", sd)
+    if m2:
+        model = m2.group(1).strip()
+    else:
+        # Some variants include commas or extra tokens; try a more permissive match.
+        m3 = re.search(r"\b(FreeBSD\s+\S+(?:\s+\S+)*)\b", sd)
+        if m3:
+            model = m3.group(1).strip()
+
+    # pfSense often appends architecture (e.g., "amd64") after the FreeBSD string.
+    # Keep Model focused on the OS/version only.
+    if model:
+        toks = model.split()
+        if toks and toks[-1].lower() in {"amd64", "i386", "x86_64", "arm64", "aarch64"}:
+            model = " ".join(toks[:-1]).strip() or model
+
+    return {"manufacturer": manufacturer, "model": model, "firmware": fw}
