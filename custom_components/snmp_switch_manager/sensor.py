@@ -16,6 +16,10 @@ from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, Sen
 
 from .const import (
     DOMAIN,
+    CONF_COMMUNITY,
+    CONF_LEGACY_DEVICE_ID,
+    CONF_SNMP_VERSION,
+    SNMP_VERSION_V3,
     CONF_ICON_RULES,
     CONF_BW_ENABLE,
     CONF_BW_MODE,
@@ -135,8 +139,25 @@ async def async_setup_entry(hass, entry, async_add_entities):
         except Exception:
             return str(ticks) if ticks is not None else "Unknown"
 
+    # Device identifiers must be stable.
+    #
+    # Historically, SNMP Switch Manager used a v2c-only identifier that included
+    # host:port:community. When SNMPv3 was added, switching to entry.entry_id
+    # alone caused Home Assistant to create duplicate Devices on existing installs
+    # (because the identifiers no longer matched the existing Device).
+    #
+    # To preserve backwards compatibility (and allow HA to automatically re-associate
+    # entities to the original Device), include the legacy identifier for v2c entries.
+    # For v3 entries, do not include any secrets.
+    identifiers = {(DOMAIN, entry.entry_id)}
+    legacy_device_id = str(
+        entry.data.get(CONF_LEGACY_DEVICE_ID) or entry.options.get(CONF_LEGACY_DEVICE_ID) or ""
+    ).strip()
+    if legacy_device_id:
+        identifiers.add((DOMAIN, legacy_device_id))
+
     device_info = DeviceInfo(
-        identifiers={(DOMAIN, f"{client.host}:{client.port}:{client.community}")},
+        identifiers=identifiers,
         manufacturer=manufacturer if manufacturer != "Unknown" else None,
         model=model if model != "Unknown" else None,
         sw_version=firmware if firmware != "Unknown" else None,
