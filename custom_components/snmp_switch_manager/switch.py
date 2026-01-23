@@ -191,9 +191,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
         raw_name = row.get("display_name") or row.get("name") or row.get("descr") or f"if{idx}"
         alias = row.get("alias") or ""
 
-        # Skip internal CPU pseudo-interface
+        # Skip internal CPU pseudo-interface (can be disabled in Built-in Vendor Filters)
         if raw_name.strip().upper() == "CPU":
-            continue
+            if "generic_skip_cpu_interface" not in disabled_vendor_filter_ids:
+                continue
 
         lower = (raw_name or "").lower()
         ip_str = _ip_for_index(idx, ip_index, ip_mask)
