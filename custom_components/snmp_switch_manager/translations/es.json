@@ -1,348 +1,377 @@
 {
   "config": {
     "error": {
-      "cannot_connect": "Cannot connect or SNMP timed out"
+      "cannot_connect": "No se puede conectar o SNMP agotó el tiempo de espera",
+      "required": "Obligatorio",
+      "invalid_password_length": "La contraseña debe tener 8–31 caracteres"
     },
     "step": {
       "bandwidth_enable_disable": {
         "data": {
-          "bw_mode": "Bandwidth data as",
-          "enable_bandwidth_sensors": "Enable bandwidth sensors"
+          "bw_mode": "Datos de ancho de banda como",
+          "enable_bandwidth_sensors": "Habilitar sensores de ancho de banda"
         },
-        "description": "Enable bandwidth collection for this device.\n\nIf you choose Attributes, bandwidth values are added to port entities (no history).\nIf you choose Sensors, separate bandwidth sensors are created (history).",
-        "title": "Bandwidth Sensors"
+        "description": "Habilita la recopilación de ancho de banda para este dispositivo.\n\nSi eliges Atributos, los valores de ancho de banda se añaden a las entidades de puerto (sin historial).\nSi eliges Sensores, se crean sensores de ancho de banda separados (con historial).",
+        "title": "Sensores de ancho de banda"
       },
       "bandwidth_poll_interval": {
         "data": {
-          "bandwidth_poll_interval": "Poll interval (seconds)"
+          "bandwidth_poll_interval": "Intervalo de sondeo (segundos)"
         },
-        "description": "Set the polling interval used to calculate bandwidth/traffic.",
-        "title": "Bandwidth Sensors"
+        "description": "Establece el intervalo de sondeo utilizado para calcular el ancho de banda/tráfico.",
+        "title": "Sensores de ancho de banda"
       },
       "bandwidth_sensors": {
-        "description": "Enable optional RX/TX throughput and total traffic sensors for selected interfaces.",
+        "description": "Habilita sensores opcionales de rendimiento RX/TX y tráfico total para las interfaces seleccionadas.",
         "menu_options": {
-          "back": "Back",
-          "bandwidth_enable_disable": "Enable / Disable",
-          "bandwidth_exclude_rules": "Exclude Rules",
-          "bandwidth_include_rules": "Include Rules",
-          "bandwidth_poll_interval": "Poll interval"
+          "back": "Atrás",
+          "bandwidth_enable_disable": "Habilitar / Deshabilitar",
+          "bandwidth_exclude_rules": "Reglas de exclusión",
+          "bandwidth_include_rules": "Reglas de inclusión",
+          "bandwidth_poll_interval": "Intervalo de sondeo"
         },
-        "title": "Bandwidth Sensors"
+        "title": "Sensores de ancho de banda"
       },
       "environmental_enable_disable": {
         "data": {
-          "env_enabled": "Enable environmental sensors",
-          "env_mode": "Environmental data as",
-          "poe_enabled": "Enable PoE sensors",
-          "poe_mode": "PoE data as",
-          "poe_per_port_power": "Crear sensores PoE de potencia por puerto"
+          "env_enabled": "Habilitar sensores ambientales",
+          "env_mode": "Datos ambientales como",
+          "poe_enabled": "Habilitar sensores PoE",
+          "poe_mode": "Datos PoE como",
+          "poe_per_port_power": "Crear sensores de potencia PoE por puerto"
         },
-        "description": "Enable environmental/PoE monitoring for this device.\n\nIf you choose Attributes, values are added to port entities (no history).\nIf you choose Sensors, separate sensor entities are created (history).",
-        "title": "Environmental Sensors"
+        "description": "Habilita la monitorización ambiental/PoE para este dispositivo.\n\nSi eliges Atributos, los valores se añaden a las entidades de puerto (sin historial).\nSi eliges Sensores, se crean entidades de sensor separadas (con historial).",
+        "title": "Sensores ambientales"
       },
       "environmental_sensors": {
-        "description": "Enable optional environmental and PoE monitoring for this device.",
+        "description": "Habilita la monitorización opcional ambiental y PoE para este dispositivo.",
         "menu_options": {
-          "back": "Back",
-          "environmental_enable_disable": "Enable / Disable"
+          "back": "Atrás",
+          "environmental_enable_disable": "Habilitar / Deshabilitar"
         },
-        "title": "Environmental Sensors"
+        "title": "Sensores ambientales"
       },
       "init": {
-        "description": "Manage per-device overrides and advanced settings.",
+        "description": "Gestiona anulaciones por dispositivo y ajustes avanzados.",
         "menu_options": {
-          "bandwidth_sensors": "Bandwidth Sensors",
-          "connection_overrides": "Connection & Naming Overrides",
-          "environmental_sensors": "Environmental Sensors",
-          "manage_interfaces": "Manage Interfaces"
+          "bandwidth_sensors": "Sensores de ancho de banda",
+          "connection_overrides": "Conexión y anulaciones de nombre",
+          "environmental_sensors": "Sensores ambientales",
+          "manage_interfaces": "Gestionar interfaces"
         },
-        "title": "Device Options"
+        "title": "Opciones del dispositivo"
       },
       "manage_interfaces": {
         "menu_options": {
-          "back": "Back",
-          "builtin_filters": "Built-in Vendor Filters",
-          "interface_exclude_rules": "Excluded Interfaces",
-          "interface_include_rules": "Included Interfaces",
-          "port_name_rules": "Interface Name Rules"
+          "back": "Atrás",
+          "builtin_filters": "Filtros de proveedor integrados",
+          "interface_exclude_rules": "Interfaces excluidas",
+          "interface_include_rules": "Interfaces incluidas",
+          "port_name_rules": "Reglas de nombre de interfaz"
         },
-        "title": "Manage Interfaces"
+        "title": "Gestionar interfaces"
       },
       "user": {
         "data": {
-          "community": "SNMP community (RW for alias writes)",
           "host": "Host/IP",
-          "port": "Port"
+          "port": "Puerto",
+          "snmp_version": "Versión de SNMP"
         },
-        "description": "Provide SNMP access details. Uses SNMP v2c.",
-        "title": "Connect to your switch"
+        "description": "Elige la versión de SNMP y proporciona los detalles de conexión.",
+        "title": "Conectar a tu switch"
+      },
+      "snmpv2c": {
+        "data": {
+          "community": "Comunidad SNMP (RW para escribir alias)"
+        },
+        "description": "Proporciona la comunidad SNMP v2c.\n\nSi ves un error de autenticación, confirma la cadena de comunidad en el dispositivo.",
+        "title": "SNMP v2c"
+      },
+      "snmpv3": {
+        "data": {
+          "snmpv3_username": "Nombre de usuario SNMPv3",
+          "snmpv3_auth_protocol": "Protocolo de autenticación",
+          "snmpv3_auth_password": "Contraseña de autenticación",
+          "snmpv3_priv_protocol": "Protocolo de privacidad",
+          "snmpv3_priv_password": "Contraseña de privacidad"
+        },
+        "description": "Proporciona credenciales SNMP v3.\n\n- **Protocolo de autenticación:** HMAC-SHA o HMAC-MD5\n- **Protocolo de privacidad:** Ninguno o CBC-DES (depende del dispositivo)\n\nMuchos dispositivos requieren contraseñas de 8 a 31 caracteres y pueden rechazar caracteres especiales.",
+        "title": "SNMP v3"
       }
     }
   },
   "options": {
     "error": {
-      "invalid_oid": "Invalid OID format (must be numeric dotted OID)",
-      "invalid_poll_interval": "Invalid poll interval",
-      "invalid_port": "Invalid port",
-      "invalid_regex": "Invalid regex pattern",
-      "invalid_uptime_interval": "Invalid uptime refresh interval"
+      "invalid_oid": "Formato de OID no válido (debe ser un OID numérico con puntos)",
+      "invalid_poll_interval": "Intervalo de sondeo no válido",
+      "invalid_port": "Puerto no válido",
+      "invalid_regex": "Patrón regex no válido",
+      "invalid_uptime_interval": "Intervalo de actualización de tiempo de actividad no válido",
+      "required": "Obligatorio",
+      "invalid_password_length": "La contraseña debe tener 8–31 caracteres"
     },
     "step": {
       "bandwidth_enable": {
         "data": {
-          "enable_bandwidth_sensors": "Enable bandwidth sensors"
+          "enable_bandwidth_sensors": "Habilitar sensores de ancho de banda"
         },
-        "description": "Turn bandwidth sensor entities on or off for this device.",
-        "title": "Bandwidth Sensors"
+        "description": "Activa o desactiva las entidades de sensores de ancho de banda para este dispositivo.",
+        "title": "Sensores de ancho de banda"
       },
       "bandwidth_enable_disable": {
         "data": {
-          "bw_mode": "Bandwidth data as",
-          "enable_bandwidth_sensors": "Enable bandwidth collection"
+          "bw_mode": "Datos de ancho de banda como",
+          "enable_bandwidth_sensors": "Habilitar recopilación de ancho de banda"
         },
-        "description": "Enable bandwidth collection for this device.\n\nIf you choose **Attributes**, bandwidth values are added to port entities (no history).\nIf you choose **Sensors**, separate bandwidth sensors are created (history).",
-        "title": "Bandwidth Sensors"
+        "description": "Habilita la recopilación de ancho de banda para este dispositivo.\n\nSi eliges **Atributos**, los valores de ancho de banda se añaden a las entidades de puerto (sin historial).\nSi eliges **Sensores**, se crean sensores de ancho de banda separados (con historial).",
+        "title": "Sensores de ancho de banda"
       },
       "bandwidth_exclude_rules": {
         "data": {
-          "rule_action": "Action",
-          "rule_existing": "Existing rule",
-          "rule_match": "Match",
-          "rule_new_value": "New value",
-          "rule_value": "Value"
+          "rule_action": "Acción",
+          "rule_existing": "Regla existente",
+          "rule_match": "Coincidencia",
+          "rule_new_value": "Nuevo valor",
+          "rule_value": "Valor"
         },
-        "description": "Add or remove exclude rules. Exclude rules always take precedence.\n\nCurrent rules: {current_rules}",
-        "title": "Bandwidth Sensor Exclude Rules"
+        "description": "Añade o elimina reglas de exclusión. Las reglas de exclusión siempre tienen prioridad.",
+        "title": "Reglas de exclusión de sensores de ancho de banda"
       },
       "bandwidth_icons": {
         "data": {
-          "bw_rx_throughput_icon": "RX Throughput icon",
-          "bw_rx_total_icon": "RX Total icon",
-          "bw_tx_throughput_icon": "TX Throughput icon",
-          "bw_tx_total_icon": "TX Total icon"
+          "bw_rx_throughput_icon": "Icono de rendimiento RX",
+          "bw_rx_total_icon": "Icono de total RX",
+          "bw_tx_throughput_icon": "Icono de rendimiento TX",
+          "bw_tx_total_icon": "Icono de total TX"
         },
-        "description": "Optional icon overrides for bandwidth sensors. Leave blank to use defaults.",
-        "title": "Bandwidth Sensor Icons"
+        "description": "Anulaciones opcionales de iconos para sensores de ancho de banda. Deja en blanco para usar los valores predeterminados.",
+        "title": "Iconos de sensores de ancho de banda"
       },
       "bandwidth_include_rules": {
         "data": {
-          "rule_action": "Action",
-          "rule_existing": "Existing rule",
-          "rule_match": "Match",
-          "rule_new_value": "New value",
-          "rule_value": "Value"
+          "rule_action": "Acción",
+          "rule_existing": "Regla existente",
+          "rule_match": "Coincidencia",
+          "rule_new_value": "Nuevo valor",
+          "rule_value": "Valor"
         },
-        "description": "Add or remove include rules. If any include rules are set, only matching interfaces will get bandwidth sensors.\n\nCurrent rules: {current_rules}",
-        "title": "Bandwidth Sensor Include Rules"
+        "description": "Añade o elimina reglas de inclusión. Si hay reglas de inclusión, solo las interfaces que coincidan tendrán sensores de ancho de banda.",
+        "title": "Reglas de inclusión de sensores de ancho de banda"
       },
       "bandwidth_poll_interval": {
         "data": {
-          "bandwidth_poll_interval": "Poll interval (seconds)"
+          "bandwidth_poll_interval": "Intervalo de sondeo (segundos)"
         },
-        "description": "Set the poll interval for bandwidth sensors. Lower intervals update more often but increase SNMP load.",
-        "title": "Bandwidth Sensors"
+        "description": "Establece el intervalo de sondeo para los sensores de ancho de banda. Intervalos más bajos actualizan con más frecuencia, pero aumentan la carga de SNMP.",
+        "title": "Sensores de ancho de banda"
       },
       "bandwidth_sensors": {
-        "description": "Enable optional RX/TX throughput and total traffic sensors for selected interfaces.",
+        "description": "Habilita sensores opcionales de rendimiento RX/TX y tráfico total para las interfaces seleccionadas.",
         "menu_options": {
-          "back": "Back",
-          "bandwidth_enable_disable": "Enable / Disable",
-          "bandwidth_exclude_rules": "Exclude Rules",
-          "bandwidth_icons": "Bandwidth Sensor Icons",
-          "bandwidth_include_rules": "Include Rules",
-          "bandwidth_poll_interval": "Poll Interval"
+          "back": "Atrás",
+          "bandwidth_enable_disable": "Habilitar / Deshabilitar",
+          "bandwidth_exclude_rules": "Reglas de exclusión",
+          "bandwidth_icons": "Iconos de sensores de ancho de banda",
+          "bandwidth_include_rules": "Reglas de inclusión",
+          "bandwidth_poll_interval": "Intervalo de sondeo"
         },
-        "title": "Bandwidth Sensors"
+        "title": "Sensores de ancho de banda"
       },
       "builtin_filters": {
         "data": {
-          "disabled_vendor_filter_rule_ids": "Disabled built-in filter rules"
+          "disabled_vendor_filter_rule_ids": "Reglas de filtro integradas deshabilitadas"
         },
-        "description": "Enable or disable built-in vendor interface filter rules for this device.\n\nDisabled rules will not be applied during interface discovery.",
-        "title": "Built-in Vendor Filters"
+        "description": "Habilita o deshabilita las reglas integradas de filtro de interfaces por proveedor para este dispositivo.\n\nLas reglas deshabilitadas no se aplicarán durante el descubrimiento de interfaces.",
+        "title": "Filtros de proveedor integrados"
       },
       "connection_and_naming_overrides": {
         "data": {
-          "override_community": "SNMP community override (optional)",
-          "override_port": "SNMP port override (optional)",
-          "uptime_poll_interval": "Uptime refresh interval (seconds)"
+          "snmp_version": "Versión de SNMP",
+          "override_community": "SNMP v2c — Anulación de comunidad (opcional)",
+          "override_port": "SNMP v2c — Anulación de puerto (opcional)",
+          "uptime_poll_interval": "Intervalo de actualización de tiempo de actividad (segundos)",
+          "snmpv3_username": "SNMP v3 — Nombre de usuario (opcional)",
+          "snmpv3_auth_protocol": "SNMP v3 — Protocolo de autenticación (opcional)",
+          "snmpv3_auth_password": "SNMP v3 — Contraseña de autenticación (opcional)",
+          "snmpv3_priv_protocol": "SNMP v3 — Protocolo de privacidad (opcional)",
+          "snmpv3_priv_password": "SNMP v3 — Contraseña de privacidad (opcional)"
         },
-        "description": "Optional per-device overrides. Leave blank to use values from initial setup.",
-        "title": "Connection & Name"
+        "description": "Anulaciones opcionales por dispositivo. Deja en blanco para usar los valores de la configuración inicial.\n\n### Versión de SNMP\nTodos los campos son siempre visibles debido a limitaciones de Home Assistant. Solo la **versión de SNMP** seleccionada determina qué campos se usan.\n\n### SNMP v2c\nUsa **anulación de comunidad SNMP** y **anulación de puerto SNMP** solo si necesitas sobrescribir los valores de la configuración inicial.\n\n### SNMP v3\nRellena **nombre de usuario SNMPv3** y la configuración de autenticación/privacidad cuando se seleccione SNMP v3. Muchos dispositivos requieren contraseñas de 8 a 31 caracteres y pueden rechazar caracteres especiales.",
+        "title": "Conexión y nombre"
       },
       "custom_oids": {
         "data": {
-          "enable_custom_oids": "Enable custom diagnostic OIDs",
-          "firmware_oid": "Firmware OID (optional)",
-          "hostname_oid": "Hostname OID (optional)",
-          "manufacturer_oid": "Manufacturer OID (optional)",
-          "model_oid": "Model OID (optional)",
-          "reset_custom_oids": "Reset custom OIDs to defaults",
-          "uptime_oid": "Uptime OID (optional)"
+          "enable_custom_oids": "Habilitar OIDs de diagnóstico personalizados",
+          "firmware_oid": "OID de firmware (opcional)",
+          "hostname_oid": "OID de nombre de host (opcional)",
+          "manufacturer_oid": "OID de fabricante (opcional)",
+          "model_oid": "OID de modelo (opcional)",
+          "reset_custom_oids": "Restablecer OIDs personalizados a valores predeterminados",
+          "uptime_oid": "OID de tiempo de actividad (opcional)"
         },
-        "description": "Override diagnostic sensor OIDs for this device only. Leave blank to use automatic detection.",
-        "title": "Custom Diagnostic OIDs"
+        "description": "Sobrescribe los OIDs de sensores de diagnóstico solo para este dispositivo. Deja en blanco para usar la detección automática.",
+        "title": "OIDs de diagnóstico personalizados"
       },
       "device_options": {
-        "description": "Manage per-device overrides and advanced settings.",
+        "description": "Gestiona anulaciones por dispositivo y ajustes avanzados.",
         "menu_options": {
-          "bandwidth_sensors": "Bandwidth Sensors",
-          "connection_and_naming_overrides": "Connection & Name",
-          "custom_oids": "Custom Diagnostic OIDs",
-          "environmental_sensors": "Environmental Sensors",
-          "manage_interfaces": "Manage Interfaces"
+          "bandwidth_sensors": "Sensores de ancho de banda",
+          "connection_and_naming_overrides": "Conexión y nombre",
+          "custom_oids": "OIDs de diagnóstico personalizados",
+          "environmental_sensors": "Sensores ambientales",
+          "manage_interfaces": "Gestionar interfaces"
         },
-        "title": "Device Options"
+        "title": "Opciones del dispositivo"
       },
       "entity_icon_rules": {
         "data": {
-          "icon_action": "Action",
-          "icon_existing": "Existing rule",
-          "icon_icon": "Icon (e.g., mdi:ethernet)",
-          "icon_match": "Match type",
-          "icon_value": "Match value"
+          "icon_action": "Acción",
+          "icon_existing": "Regla existente",
+          "icon_icon": "Icono (p. ej., mdi:ethernet)",
+          "icon_match": "Tipo de coincidencia",
+          "icon_value": "Valor de coincidencia"
         },
-        "description": "Override interface entity icons based on interface name matching.\n\nCurrent rules:\n{current}",
-        "title": "Entity Icon Rules"
+        "description": "Sobrescribe los iconos de las entidades de interfaz según la coincidencia del nombre de la interfaz.",
+        "title": "Reglas de icono de entidad"
       },
       "environmental_enable_disable": {
         "data": {
-          "env_enabled": "Enable environmental sensors",
-          "env_mode": "Environmental data as",
-          "poe_enabled": "Enable PoE statistics",
-          "poe_mode": "PoE data as",
-          "poe_per_port_power": "Crear sensores PoE de potencia por puerto"
+          "env_enabled": "Habilitar sensores ambientales",
+          "env_mode": "Datos ambientales como",
+          "poe_enabled": "Habilitar estadísticas PoE",
+          "poe_mode": "Datos PoE como",
+          "poe_per_port_power": "Crear sensores de potencia PoE por puerto"
         },
-        "description": "Choose whether environmental/PoE data is stored as attributes (no history) or separate sensors (history).",
-        "title": "Environmental Sensors"
+        "description": "Elige si los datos ambientales/PoE se almacenan como atributos (sin historial) o como sensores separados (con historial).",
+        "title": "Sensores ambientales"
       },
       "environmental_poll_interval": {
         "data": {
-          "env_poll_interval": "Polling interval"
+          "env_poll_interval": "Intervalo de sondeo"
         },
-        "description": "How often to poll environmental values (in seconds).",
-        "title": "Environmental polling interval"
+        "description": "Con qué frecuencia sondear los valores ambientales (en segundos).",
+        "title": "Intervalo de sondeo ambiental"
       },
       "environmental_sensors": {
-        "description": "Enable optional environmental and PoE monitoring for this device.",
+        "description": "Habilita la monitorización opcional ambiental y PoE para este dispositivo.",
         "menu_options": {
-          "back": "Back",
-          "environmental_enable_disable": "Enable / Disable",
-          "environmental_poll_interval": "Environmental polling interval",
-          "poe_poll_interval": "PoE polling interval"
+          "back": "Atrás",
+          "environmental_enable_disable": "Habilitar / Deshabilitar",
+          "environmental_poll_interval": "Intervalo de sondeo ambiental",
+          "poe_poll_interval": "Intervalo de sondeo PoE"
         },
-        "title": "Environmental Sensors"
+        "title": "Sensores ambientales"
       },
       "exclude_rules": {
         "data": {
-          "rule_action": "Action",
-          "rule_existing": "Existing rule",
-          "rule_match": "Match type",
-          "rule_new_value": "New value",
-          "rule_value": "Match value"
+          "rule_action": "Acción",
+          "rule_existing": "Regla existente",
+          "rule_match": "Tipo de coincidencia",
+          "rule_new_value": "Nuevo valor",
+          "rule_value": "Valor de coincidencia"
         },
-        "description": "Add, edit, or remove interface exclude rules.\n\nCurrent rules:\n{current}",
-        "title": "Exclude Rules"
+        "description": "Añade, edita o elimina reglas de exclusión de interfaces.",
+        "title": "Reglas de exclusión"
       },
       "include_rules": {
         "data": {
-          "rule_action": "Action",
-          "rule_existing": "Existing rule",
-          "rule_match": "Match type",
-          "rule_new_value": "New value",
-          "rule_value": "Match value"
+          "rule_action": "Acción",
+          "rule_existing": "Regla existente",
+          "rule_match": "Tipo de coincidencia",
+          "rule_new_value": "Nuevo valor",
+          "rule_value": "Valor de coincidencia"
         },
-        "description": "Add, edit, or remove interface include rules.\n\nCurrent rules:\n{current}",
-        "title": "Include Rules"
+        "description": "Añade, edita o elimina reglas de inclusión de interfaces.",
+        "title": "Reglas de inclusión"
       },
       "manage_interfaces": {
-        "description": "Manage which interfaces are created as Home Assistant entities.",
+        "description": "Gestiona qué interfaces se crean como entidades de Home Assistant.",
         "menu_options": {
-          "back": "Back",
-          "builtin_vendor_filters": "Built-in Vendor Filters",
-          "entity_icon_rules": "Entity Icon Rules",
-          "excluded_interfaces": "Excluded Interfaces",
-          "included_interfaces": "Included Interfaces",
-          "interface_name_rules": "Interface Name Rules",
-          "interface_ip_display": "Visualización de IP de interfaces"
+          "back": "Atrás",
+          "builtin_vendor_filters": "Filtros de proveedor integrados",
+          "entity_icon_rules": "Reglas de icono de entidad",
+          "excluded_interfaces": "Interfaces excluidas",
+          "included_interfaces": "Interfaces incluidas",
+          "interface_name_rules": "Reglas de nombre de interfaz",
+          "interface_ip_display": "Mostrar IP de interfaz"
         },
-        "title": "Manage Interfaces"
+        "title": "Gestionar interfaces"
       },
       "poe_poll_interval": {
         "data": {
-          "poe_poll_interval": "Polling interval"
+          "poe_poll_interval": "Intervalo de sondeo"
         },
-        "description": "How often to poll PoE power values (in seconds).",
-        "title": "PoE polling interval"
+        "description": "Con qué frecuencia sondear los valores de potencia PoE (en segundos).",
+        "title": "Intervalo de sondeo PoE"
       },
       "port_name_rules": {
-        "description": "Customize how interface names are displayed in the UI and card.\n\nBuilt-in rules are provided as examples and can be disabled per device.",
+        "description": "Personaliza cómo se muestran los nombres de las interfaces en la UI y en la tarjeta.\n\nLas reglas integradas se proporcionan como ejemplos y se pueden desactivar por dispositivo.",
         "menu_options": {
-          "manage_interfaces": "Back",
-          "port_rename_custom": "Custom Rename Rules",
-          "port_rename_defaults": "Built-in Rename Rules",
-          "port_rename_restore_defaults": "Restore Built-in Rules"
+          "manage_interfaces": "Atrás",
+          "port_rename_custom": "Reglas personalizadas de cambio de nombre",
+          "port_rename_defaults": "Reglas integradas de cambio de nombre",
+          "port_rename_restore_defaults": "Restaurar reglas integradas"
         },
-        "title": "Interface Name Rules"
+        "title": "Reglas de nombre de interfaz"
       },
       "port_rename_custom": {
-        "description": "Add or remove your own regex-based display name rules. Custom rules take priority over built-in rules.",
-        "menu_options": {
-          "port_name_rules": "Back",
-          "port_rename_custom_add": "Add Rule",
-          "port_rename_custom_edit": "Edit Rule",
-          "port_rename_custom_remove": "Remove Rule"
-        },
-        "title": "Custom Rename Rules"
+        "title": "Reglas personalizadas de cambio de nombre",
+        "description": "Añade, edita o elimina reglas personalizadas de cambio de nombre.\n\nLas reglas se aplican en orden y tienen prioridad sobre las reglas integradas.\n\nConsejo: Al editar, deja “Reemplazo” en blanco para conservar el reemplazo existente (usa Eliminar + Añadir para establecer un reemplazo vacío).",
+        "data": {
+          "rule_action": "Acción",
+          "rule_existing": "Regla existente",
+          "rule_match": "Tipo de coincidencia",
+          "rule_value": "Valor de coincidencia",
+          "rule_replace": "Reemplazo"
+        }
       },
       "port_rename_custom_add": {
         "data": {
-          "description": "Description (optional)",
-          "pattern": "Regex pattern",
-          "replace": "Replacement"
+          "description": "Descripción (opcional)",
+          "pattern": "Patrón regex",
+          "replace": "Reemplazo"
         },
-        "description": "Create a regex rule that transforms the displayed interface name.\n\nExample pattern: ^Gi(\\\\d+)/0/(\\\\d+)$\nExample replace: Uplink-\\\\1-\\\\2",
-        "title": "Add Rename Rule"
+        "description": "Crea una regla regex que transforme el nombre de la interfaz mostrado.\n\nEjemplo de patrón: ^Gi(\\\\d+)/0/(\\\\d+)$\nEjemplo de reemplazo: Uplink-\\\\1-\\\\2",
+        "title": "Añadir regla de cambio de nombre"
       },
       "port_rename_custom_edit": {
         "data": {
-          "selected": "Selected rule"
+          "selected": "Regla seleccionada"
         },
-        "description": "Select an existing rule to edit.",
-        "title": "Edit Custom Name Rule"
+        "description": "Selecciona una regla existente para editar.",
+        "title": "Editar regla de nombre personalizada"
       },
       "port_rename_custom_remove": {
         "data": {
-          "remove_index": "Rule"
+          "remove_index": "Regla"
         },
-        "description": "Select a custom rule to remove.\n\nCurrent custom rules:\n{current_rules}",
-        "title": "Remove Rename Rule"
+        "description": "Selecciona una regla personalizada para eliminar.",
+        "title": "Eliminar regla de cambio de nombre"
       },
       "port_rename_defaults": {
         "data": {
-          "builtin_link_aggregate_to_po": "Normalize link aggregate → Po",
-          "builtin_loopback_to_lo0": "Normalize loopback → Lo0",
-          "builtin_port_channel_to_po": "Normalize port-channel → Po",
-          "builtin_portchannel_to_po": "Normalize PortChannel → Po",
-          "builtin_unit_slot_port_100m_to_fa": "Normalize Unit/Slot/Port 100M → Fa",
-          "builtin_unit_slot_port_10g_to_te": "Normalize Unit/Slot/Port 10G → Te",
-          "builtin_unit_slot_port_1g_to_gi": "Normalize Unit/Slot/Port 1G → Gi",
-          "builtin_unit_slot_port_20g_to_tw": "Normalize Unit/Slot/Port 20G → Tw",
-          "defaults_action": "Action",
-          "port_rename_disabled_default_ids": "Built-in Rename Rules (disable)"
+          "builtin_link_aggregate_to_po": "Normalizar agregado de enlace → Po",
+          "builtin_loopback_to_lo0": "Normalizar loopback → Lo0",
+          "builtin_port_channel_to_po": "Normalizar port-channel → Po",
+          "builtin_portchannel_to_po": "Normalizar PortChannel → Po",
+          "builtin_unit_slot_port_100m_to_fa": "Normalizar Unidad/Slot/Puerto 100M → Fa",
+          "builtin_unit_slot_port_10g_to_te": "Normalizar Unidad/Slot/Puerto 10G → Te",
+          "builtin_unit_slot_port_1g_to_gi": "Normalizar Unidad/Slot/Puerto 1G → Gi",
+          "builtin_unit_slot_port_20g_to_tw": "Normalizar Unidad/Slot/Puerto 20G → Tw",
+          "defaults_action": "Acción",
+          "port_rename_disabled_default_ids": "Reglas integradas de cambio de nombre (desactivar)"
         },
-        "description": "Enable or disable built-in display name rules for this device.\n\nCurrent built-ins:\n{rules}",
-        "title": "Built-in Rename Rules"
+        "description": "Habilita o deshabilita las reglas integradas de nombre mostrado para este dispositivo.\n\nReglas integradas actuales:\n{rules}",
+        "title": "Reglas integradas de cambio de nombre"
       },
       "interface_ip_display": {
-        "title": "Visualización de IP de interfaces",
+        "title": "Mostrar IP de interfaz",
         "description": "Controla cómo se muestran las direcciones IP en las interfaces.",
         "data": {
-          "hide_ip_on_physical_interfaces": "Ocultar el campo IP en interfaces físicas"
+          "hide_ip_on_physical_interfaces": "Ocultar campo IP en interfaces físicas"
         },
         "data_description": {
-          "hide_ip_on_physical_interfaces": "Cuando está habilitado, las direcciones IP solo se mostrarán en interfaces virtuales o lógicas (como interfaces VLAN o de administración)."
+          "hide_ip_on_physical_interfaces": "Cuando está habilitado, las direcciones IP solo se mostrarán en interfaces virtuales o lógicas (como interfaces VLAN o de gestión)."
         }
       }
     }
@@ -350,20 +379,20 @@
   "selector": {
     "bandwidth_data_as": {
       "options": {
-        "attributes": "Attributes (no history)",
-        "sensors": "Sensors (history)"
+        "attributes": "Atributos (sin historial)",
+        "sensors": "Sensores (historial)"
       }
     },
     "env_data_as": {
       "options": {
-        "attributes": "Attributes (no history)",
-        "sensors": "Sensors (history)"
+        "attributes": "Atributos (sin historial)",
+        "sensors": "Sensores (historial)"
       }
     },
     "poe_data_as": {
       "options": {
-        "attributes": "Attributes (no history)",
-        "sensors": "Sensors (history)"
+        "attributes": "Atributos (sin historial)",
+        "sensors": "Sensores (historial)"
       }
     }
   },
