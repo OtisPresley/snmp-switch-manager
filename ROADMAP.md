@@ -126,43 +126,32 @@ This roadmap reflects **active development priorities** and **realistic implemen
   - Existing rules remain fully compatible (no migration required)
   - Eliminates need for separate “Advanced” vs “Simple” modes while preserving full flexibility
 
+- ✅ 🔐 SNMPv3 Support (Secure SNMP)
+  - Optional per-device support for **SNMPv3**
+  - Seamless switching between **SNMPv2c ↔ SNMPv3** without recreating devices or entities
+  - Username-based authentication with support for:
+    - **HMAC-SHA**
+    - **HMAC-MD5**
+  - Optional privacy (encryption) support using:
+    - **DES**
+  - SNMP version and credentials configured via:
+    **Device Options → Connection & Name**
+  - Stable device identity preserved across SNMP version changes
+    - Prevents duplicate devices in the Home Assistant Device Registry
+    - Existing dashboards and entity IDs remain intact
+  - Unified polling logic shared between SNMPv2c and SNMPv3
+    - No changes to entity models, OID handling, or UI behavior
+  - Fully async-safe implementation
+    - No blocking calls introduced
+    - Compatible with Home Assistant’s event loop
+  - All credentials stored securely using Home Assistant config entries
+  - Backward compatible by design
+    - Existing SNMPv2c configurations continue to function unchanged
+
 ---
 
 ## 📝 Planned
-
-### 🔐 SNMPv3 Support (Secure SNMP)
-**Priority:** 🟡 Medium  
-**Target Release:** v0.5.0
-
-Add optional support for **SNMPv3** to enable secure, authenticated, and encrypted communication with supported network devices.
-
-#### Planned Capabilities
-- 🔐 **SNMPv3 authentication**
-  - Username-based access
-  - Support for common auth protocols (e.g. SHA / MD5)
-- 🔒 **Optional SNMPv3 encryption**
-  - Privacy (encryption) protocols where supported by the device
-- 🔄 **SNMP version selection per device**
-  - SNMPv2c and SNMPv3 configurable independently
-  - No global migration requirement
-
-#### Design Goals
-- ✅ **Backward compatible**
-  - Existing SNMPv2c configurations remain unchanged
-- ✅ **Per-device configuration**
-  - SNMP version and credentials scoped to the selected device only
-- ✅ **Unified polling logic**
-  - No changes to entity models, OID handling, or UI behavior
-- ✅ **Async-safe implementation**
-  - Fully compatible with Home Assistant’s event loop
-- ✅ **Secure credential storage**
-  - All secrets managed via Home Assistant config entries
-
-#### Notes
-- Initial implementation may prioritize **SNMP GET operations**  
-  (WALK support may be expanded incrementally)
-- Feature is optional and **will not be required** for standard operation
-- Implementation scope depends on device compatibility and performance validation
+### _Nothing here right now_
 
 ---
 
