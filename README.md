@@ -47,7 +47,7 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
 
 - Home Assistant 2025.11.2 or newer (recommended)
 - A switch (or SNMP-enabled network device) reachable via SNMP (UDP/161)
-- SNMP credentials with **read access** to interface tables
+- SNMP credentials with **read-write access** to interface tables
 - **Write access is optional** but required for:
   - Updating `ifAlias` (port description)
   - Toggling administrative state (if supported by the device)
