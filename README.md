@@ -111,7 +111,7 @@ These services are optional and are typically used by:
 
 Most users will not need to use services directly.
 
-👉 See the GitHub Wiki for full usage guidance and examples:
+👉 **See the GitHub Wiki for full usage guidance and examples:**
 https://github.com/OtisPresley/snmp-switch-manager/wiki
 
 ### Example: Update a port description
