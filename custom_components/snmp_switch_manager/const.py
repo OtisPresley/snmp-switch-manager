@@ -79,6 +79,11 @@ OID_ipAdEntAddr = "1.3.6.1.2.1.4.20.1.1"
 OID_ipAdEntIfIndex = "1.3.6.1.2.1.4.20.1.2"
 OID_ipAdEntNetMask = "1.3.6.1.2.1.4.20.1.3"
 
+# --- POWER-ETHERNET-MIB (RFC 3621) ---
+OID_pethMainPsePower = "1.3.6.1.2.1.105.1.3.1.1.2"
+OID_pethMainPseConsumptionPower = "1.3.6.1.2.1.105.1.3.1.1.4"
+OID_pethMainPseOperStatus = "1.3.6.1.2.1.105.1.3.1.1.3"
+
 # ---------------------------
 # Options / device overrides
 # ---------------------------
