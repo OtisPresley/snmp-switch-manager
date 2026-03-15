@@ -62,6 +62,7 @@ from .const import (
     OID_pethMainPsePower,
     OID_pethMainPseConsumptionPower,
     OID_pethMainPseOperStatus,
+    OID_pethPsePortActualPower,
     OID_ifInOctets,
     OID_ifOutOctets,
     OID_ifHCInOctets,
@@ -1632,23 +1633,39 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     for k in ("poe_budget_total_w", "poe_power_used_w", "poe_power_available_w", "poe_health_status", "poe_health_status_raw"):
                         self.cache.pop(k, None)
 
-                # --- (2) Dell N-Series per-port PoE power (private MIB) ---
-                # Keep this for any existing features; not used by new PoE summary entities.
+                # --- (2) Per-port PoE power (mW) ---
                 poe_power_mw: Dict[int, float] = {}
-                poe_oid = "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.15.1.1.1.2.1"
+
+                # A) Dell N-Series (private MIB)
+                poe_dell_oid = "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.15.1.1.1.2.1"
                 try:
-                    poe_table = await self._async_walk(poe_oid)
+                    poe_table = await self._async_walk(poe_dell_oid)
                     for oid, val in poe_table:
                         try:
                             if_index = int(str(oid).split(".")[-1])
+                            mw = _parse_numeric(val)
+                            if mw is not None:
+                                poe_power_mw[if_index] = float(mw)
                         except Exception:
                             continue
-                        mw = _parse_numeric(val)
-                        if mw is None:
-                            continue
-                        poe_power_mw[if_index] = mw
                 except Exception:
-                    poe_power_mw = {}
+                    pass
+
+                # B) Standard pethPsePortActualPower (RFC 3621)
+                # Used for Zyxel, Aruba, etc. Only add if Dell table didn't already populate
+                try:
+                    for oid, val in await self._async_walk(OID_pethPsePortActualPower):
+                        try:
+                            # Index is typically group.port (e.g. .1.1). Take the last item.
+                            port_idx = int(str(oid).split(".")[-1])
+                            if port_idx not in poe_power_mw:
+                                mw = _parse_numeric(val)
+                                if mw is not None:
+                                    poe_power_mw[port_idx] = float(mw)
+                        except Exception:
+                            continue
+                except Exception:
+                    pass
 
                 self.cache["poe_power_mw"] = poe_power_mw
 
