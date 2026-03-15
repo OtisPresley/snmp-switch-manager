@@ -490,6 +490,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All changes are backward-compatible
 - New functionality is opt-in via **Device Options**
 
+## [0.5.1-beta.1] - 2026-01-20
+### Added
+- ⚡ Support for Zyxel PoE
+
+---
+
+
 <!-- ROADMAP ANCHOR LINKS -->
 
 <a name="roadmap-simple-mode"></a>
