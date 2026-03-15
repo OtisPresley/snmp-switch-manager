@@ -83,6 +83,7 @@ OID_ipAdEntNetMask = "1.3.6.1.2.1.4.20.1.3"
 OID_pethMainPsePower = "1.3.6.1.2.1.105.1.3.1.1.2"
 OID_pethMainPseConsumptionPower = "1.3.6.1.2.1.105.1.3.1.1.4"
 OID_pethMainPseOperStatus = "1.3.6.1.2.1.105.1.3.1.1.3"
+OID_pethPsePortActualPower = "1.3.6.1.2.1.105.1.1.1.15"
 
 # ---------------------------
 # Options / device overrides
