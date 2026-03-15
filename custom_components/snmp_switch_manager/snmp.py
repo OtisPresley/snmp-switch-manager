@@ -59,6 +59,9 @@ from .const import (
     OID_mikrotik_model,
     OID_entPhysicalMfgName_Zyxel,
     OID_zyxel_firmware_version,
+    OID_pethMainPsePower,
+    OID_pethMainPseConsumptionPower,
+    OID_pethMainPseOperStatus,
     OID_ifInOctets,
     OID_ifOutOctets,
     OID_ifHCInOctets,
@@ -1523,11 +1526,11 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 # Standard columns (POWER-ETHERNET-MIB / RFC3621):
                 #   pethPsePortGroupIndex is typically the instance suffix (.1, .2, ...)
                 # Budget Total (W): 1.3.6.1.2.1.105.1.3.1.1.2.<idx>
-                # Power Used (mW):  1.3.6.1.2.1.105.1.3.1.1.4.<idx>
+                # Power Used (W):   1.3.6.1.2.1.105.1.3.1.1.4.<idx>
                 # Health Status:    1.3.6.1.2.1.105.1.3.1.1.3.<idx>
-                poe_budget_col = "1.3.6.1.2.1.105.1.3.1.1.2"
-                poe_used_mw_col = "1.3.6.1.2.1.105.1.3.1.1.4"
-                poe_health_col = "1.3.6.1.2.1.105.1.3.1.1.3"
+                poe_budget_col = OID_pethMainPsePower
+                poe_used_w_col = OID_pethMainPseConsumptionPower
+                poe_health_col = OID_pethMainPseOperStatus
 
                 def _worst_poe_health(raw_vals: list[int]) -> Optional[int]:
                     if not raw_vals:
@@ -1542,7 +1545,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     return inv.get(worst, 3)
 
                 budget_list: list[float] = []
-                used_mw_list: list[float] = []
+                used_w_list: list[float] = []
                 health_list: list[int] = []
 
                 try:
@@ -1556,14 +1559,14 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     budget_list = []
 
                 try:
-                    for oid, val in await self._async_walk(poe_used_mw_col):
+                    for oid, val in await self._async_walk(poe_used_w_col):
                         n = _parse_numeric(val)
                         if n is None:
                             continue
                         if float(n) >= 0:
-                            used_mw_list.append(float(n))
+                            used_w_list.append(float(n))
                 except Exception:
-                    used_mw_list = []
+                    used_w_list = []
 
                 try:
                     for oid, val in await self._async_walk(poe_health_col):
@@ -1578,14 +1581,14 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     health_list = []
 
                 # If the device doesn't support walking the columns, fall back to scalar index .1.
-                if not budget_list and not used_mw_list and not health_list:
+                if not budget_list and not used_w_list and not health_list:
                     budget_w = _parse_numeric(await self._async_get_one(poe_budget_col + ".1"))
-                    used_mw = _parse_numeric(await self._async_get_one(poe_used_mw_col + ".1"))
+                    used_w_raw = _parse_numeric(await self._async_get_one(poe_used_w_col + ".1"))
                     health_raw = _parse_numeric(await self._async_get_one(poe_health_col + ".1"))
                     if budget_w is not None:
                         budget_list = [float(budget_w)]
-                    if used_mw is not None:
-                        used_mw_list = [float(used_mw)]
+                    if used_w_raw is not None:
+                        used_w_list = [float(used_w_raw)]
                     if health_raw is not None:
                         try:
                             health_list = [int(health_raw)]
@@ -1593,10 +1596,10 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                             health_list = []
 
                 # Only publish if at least one value is present (device supports PoE stats)
-                if budget_list or used_mw_list or health_list:
+                if budget_list or used_w_list or health_list:
                     try:
                         budget_total_w = sum(budget_list) if budget_list else None
-                        used_w = (sum(used_mw_list) / 1000.0) if used_mw_list else None
+                        used_w = sum(used_w_list) if used_w_list else None
 
                         if budget_total_w is not None:
                             self.cache["poe_budget_total_w"] = float(budget_total_w)
