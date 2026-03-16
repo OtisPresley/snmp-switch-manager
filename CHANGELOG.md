@@ -490,17 +490,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All changes are backward-compatible
 - New functionality is opt-in via **Device Options**
 
-## [0.5.1-beta.1] - 2026-01-20
+## [0.5.1-beta.1] - 2026-03-15
 ### Added
 - ⚡ Support for Zyxel PoE
 
 ---
 
-## [0.5.1-beta.2] - 2026-01-20
+## [0.5.1-beta.2] - 2026-03-15
 ### Fixed
 - 🚧 Support for Zyxel Interface PoE statistics
 
 ---
+
+## [0.5.1-beta.3] - 2026-03-16
+### Fixed
+- 🚧 Support for Zyxel Interface PoE statistics
 
 
 <!-- ROADMAP ANCHOR LINKS -->
