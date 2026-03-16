@@ -702,7 +702,8 @@ class SwitchSnmpClient:
                         continue
                     if if_index > 0 and base_port > 0:
                         baseport_by_ifindex[if_index] = base_port
-
+                if baseport_by_ifindex:
+                    self.cache["ifindex_by_baseport"] = {v: k for k, v in baseport_by_ifindex.items()}
                 if baseport_by_ifindex:
                     pvid_by_baseport: Dict[int, int] = {}
                     for oid, val in await self._async_walk(OID_dot1qPvid):
@@ -1599,8 +1600,15 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 # Only publish if at least one value is present (device supports PoE stats)
                 if budget_list or used_w_list or health_list:
                     try:
-                        budget_total_w = sum(budget_list) if budget_list else None
-                        used_w = sum(used_w_list) if used_w_list else None
+                        b_sum = sum(budget_list) if budget_list else 0.0
+                        u_sum = sum(used_mw_list) if used_mw_list else 0.0
+                        
+                        # Heuristic: RFC 3621 says aggregate power is Watts.
+                        # Vendors like Dell use mW. If value > 5000, it's definitely mW.
+                        scale = 1000.0 if (b_sum > 5000 or u_sum > 5000) else 1.0
+
+                        budget_total_w = (b_sum / scale) if budget_list else None
+                        used_w = (u_sum / scale) if used_mw_list else None
 
                         if budget_total_w is not None:
                             self.cache["poe_budget_total_w"] = float(budget_total_w)
@@ -1638,18 +1646,24 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
 
                 # A) Dell N-Series (private MIB)
                 poe_dell_oid = "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.15.1.1.1.2.1"
+                # A) Dell N-Series (private MIB)
                 try:
-                    poe_table = await self._async_walk(poe_dell_oid)
-                    for oid, val in poe_table:
-                        try:
-                            if_index = int(str(oid).split(".")[-1])
+                    for oid, val in await self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.15.1.1.1.2.1"):
+                        idx = int(str(oid).split(".")[-1])
+                        mw = _parse_numeric(val)
+                        if mw is not None: poe_power_mw[idx] = float(mw)
+                except Exception: pass
+
+                # B) Standard pethPsePortActualPower (RFC 3621) for Zyxel/Aruba
+                try:
+                    ifindex_map = self.cache.get("ifindex_by_baseport", {})
+                    for oid, val in await self._async_walk("1.3.6.1.2.1.105.1.1.1.1.15"):
+                        port_idx = int(str(oid).split(".")[-1])
+                        target_idx = ifindex_map.get(port_idx, port_idx)
+                        if target_idx not in poe_power_mw:
                             mw = _parse_numeric(val)
-                            if mw is not None:
-                                poe_power_mw[if_index] = float(mw)
-                        except Exception:
-                            continue
-                except Exception:
-                    pass
+                            if mw is not None: poe_power_mw[target_idx] = float(mw)
+                except Exception: pass
 
                 # B) Standard pethPsePortActualPower (RFC 3621)
                 # Used for Zyxel, Aruba, etc. Only add if Dell table didn't already populate
