@@ -502,7 +502,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.5.1-beta.3] - 2026-03-16
+## [0.5.1-beta.4] - 2026-03-16
 ### Fixed
 - 🚧 Support for Zyxel Interface PoE statistics
 
