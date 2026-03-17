@@ -59,10 +59,6 @@ from .const import (
     OID_mikrotik_model,
     OID_entPhysicalMfgName_Zyxel,
     OID_zyxel_firmware_version,
-    OID_pethMainPsePower,
-    OID_pethMainPseConsumptionPower,
-    OID_pethMainPseOperStatus,
-    OID_pethPsePortActualPower,
     OID_ifInOctets,
     OID_ifOutOctets,
     OID_ifHCInOctets,
@@ -702,8 +698,7 @@ class SwitchSnmpClient:
                         continue
                     if if_index > 0 and base_port > 0:
                         baseport_by_ifindex[if_index] = base_port
-                if baseport_by_ifindex:
-                    self.cache["ifindex_by_baseport"] = {v: k for k, v in baseport_by_ifindex.items()}
+                self.cache["ifindex_by_baseport"] = {v: k for k, v in baseport_by_ifindex.items() if v and k}
                 if baseport_by_ifindex:
                     pvid_by_baseport: Dict[int, int] = {}
                     for oid, val in await self._async_walk(OID_dot1qPvid):
@@ -1508,145 +1503,48 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
         self.cache.setdefault("poe_power_mw", {})
 
         if not poe_enabled:
-            # Clear dynamic values when disabled (keep keys stable where appropriate)
             self.cache["poe_power_mw"] = {}
             for k in ("poe_budget_total_w", "poe_power_used_w", "poe_power_available_w", "poe_health_status", "poe_health_status_raw"):
                 self.cache.pop(k, None)
         else:
-            # Throttle PoE polling based on the PoE polling interval option
-            interval = int(self._poe_options.get(CONF_POE_POLL_INTERVAL, DEFAULT_POE_POLL_INTERVAL))
+            interval = int(self._poe_options.get(CONF_POE_POLL_INTERVAL, 30))
             interval = max(1, interval)
             now_mono = time.monotonic()
-            should_poll = (now_mono - float(self._poe_last_poll or 0.0)) >= interval
-            # Always poll once after startup
-            should_poll = should_poll or float(self._poe_last_poll or 0.0) == 0.0
+            should_poll = (now_mono - float(self._poe_last_poll or 0.0)) >= interval or float(self._poe_last_poll or 0.0) == 0.0
 
             if should_poll:
                 self._poe_last_poll = now_mono
 
                 # --- (1) Standard PoE totals + health (POWER-ETHERNET-MIB) ---
-                # Standard columns (POWER-ETHERNET-MIB / RFC3621):
-                #   pethPsePortGroupIndex is typically the instance suffix (.1, .2, ...)
-                # Budget Total (W): 1.3.6.1.2.1.105.1.3.1.1.2.<idx>
-                # Power Used (W):   1.3.6.1.2.1.105.1.3.1.1.4.<idx>
-                # Health Status:    1.3.6.1.2.1.105.1.3.1.1.3.<idx>
-                poe_budget_col = OID_pethMainPsePower
-                poe_used_w_col = OID_pethMainPseConsumptionPower
-                poe_health_col = OID_pethMainPseOperStatus
-
-                def _worst_poe_health(raw_vals: list[int]) -> Optional[int]:
-                    if not raw_vals:
-                        return None
-                    # Conservative: unknown -> FAULTY
-                    rank = {1: 1, 2: 2, 3: 3}
-                    worst = 0
-                    for v in raw_vals:
-                        worst = max(worst, rank.get(int(v), 3))
-                    # Map back to 1/2/3
-                    inv = {1: 1, 2: 2, 3: 3}
-                    return inv.get(worst, 3)
-
-                budget_list: list[float] = []
-                used_w_list: list[float] = []
-                health_list: list[int] = []
+                budget_list, used_raw_list, health_list = [], [], []
 
                 try:
-                    for oid, val in await self._async_walk(poe_budget_col):
+                    for _, val in await self._async_walk("1.3.6.1.2.1.105.1.3.1.1.2"):
                         n = _parse_numeric(val)
-                        if n is None:
-                            continue
-                        if float(n) >= 0:
-                            budget_list.append(float(n))
-                except Exception:
-                    budget_list = []
+                        if n is not None and float(n) >= 0: budget_list.append(float(n))
+                except Exception: pass
 
                 try:
-                    for oid, val in await self._async_walk(poe_used_w_col):
+                    for _, val in await self._async_walk("1.3.6.1.2.1.105.1.3.1.1.4"):
                         n = _parse_numeric(val)
-                        if n is None:
-                            continue
-                        if float(n) >= 0:
-                            used_w_list.append(float(n))
-                except Exception:
-                    used_w_list = []
+                        if n is not None and float(n) >= 0: used_raw_list.append(float(n))
+                except Exception: pass
 
-                try:
-                    for oid, val in await self._async_walk(poe_health_col):
-                        n = _parse_numeric(val)
-                        if n is None:
-                            continue
-                        try:
-                            health_list.append(int(n))
-                        except Exception:
-                            continue
-                except Exception:
-                    health_list = []
+                # Adaptive Scaling: Heuristic to support Watts vs mW
+                b_sum = sum(budget_list) if budget_list else 0.0
+                u_sum = sum(used_raw_list) if used_raw_list else 0.0
+                scale = 1000.0 if (b_sum > 5000 or u_sum > 5000) else 1.0
 
-                # If the device doesn't support walking the columns, fall back to scalar index .1.
-                if not budget_list and not used_w_list and not health_list:
-                    budget_w = _parse_numeric(await self._async_get_one(poe_budget_col + ".1"))
-                    used_w_raw = _parse_numeric(await self._async_get_one(poe_used_w_col + ".1"))
-                    health_raw = _parse_numeric(await self._async_get_one(poe_health_col + ".1"))
-                    if budget_w is not None:
-                        budget_list = [float(budget_w)]
-                    if used_w_raw is not None:
-                        used_w_list = [float(used_w_raw)]
-                    if health_raw is not None:
-                        try:
-                            health_list = [int(health_raw)]
-                        except Exception:
-                            health_list = []
-
-                # Only publish if at least one value is present (device supports PoE stats)
-                if budget_list or used_w_list or health_list:
-                    try:
-                        b_sum = sum(budget_list) if budget_list else 0.0
-                        u_sum = sum(used_mw_list) if used_mw_list else 0.0
-                        
-                        # Heuristic: RFC 3621 says aggregate power is Watts.
-                        # Vendors like Dell use mW. If value > 5000, it's definitely mW.
-                        scale = 1000.0 if (b_sum > 5000 or u_sum > 5000) else 1.0
-
-                        budget_total_w = (b_sum / scale) if budget_list else None
-                        used_w = (u_sum / scale) if used_mw_list else None
-
-                        if budget_total_w is not None:
-                            self.cache["poe_budget_total_w"] = float(budget_total_w)
-                        else:
-                            self.cache.pop("poe_budget_total_w", None)
-
-                        if used_w is not None:
-                            self.cache["poe_power_used_w"] = round(float(used_w), 3)
-                        else:
-                            self.cache.pop("poe_power_used_w", None)
-
-                        if (budget_total_w is not None) and (used_w is not None):
-                            avail_w = float(budget_total_w) - float(used_w)
-                            if avail_w < 0:
-                                avail_w = 0.0
-                            self.cache["poe_power_available_w"] = round(avail_w, 3)
-                        else:
-                            self.cache.pop("poe_power_available_w", None)
-
-                        hr = _worst_poe_health(health_list)
-                        if hr is not None:
-                            self.cache["poe_health_status_raw"] = int(hr)
-                            self.cache["poe_health_status"] = {1: "HEALTHY", 2: "DISABLED", 3: "FAULTY"}.get(int(hr), str(hr))
-                        else:
-                            self.cache.pop("poe_health_status_raw", None)
-                            self.cache.pop("poe_health_status", None)
-                    except Exception:
-                        pass
-                else:
-                    for k in ("poe_budget_total_w", "poe_power_used_w", "poe_power_available_w", "poe_health_status", "poe_health_status_raw"):
-                        self.cache.pop(k, None)
+                if budget_list or used_raw_list:
+                    self.cache["poe_budget_total_w"] = round(b_sum / scale, 1) if budget_list else None
+                    self.cache["poe_power_used_w"] = round(u_sum / scale, 1) if used_raw_list else None
+                    if budget_list and used_raw_list:
+                        self.cache["poe_power_available_w"] = round(max(0.0, (b_sum - u_sum) / scale), 1)
 
                 # --- (2) Per-port PoE power (mW) ---
                 poe_power_mw: Dict[int, float] = {}
 
-                # A) Dell N-Series (private MIB)
-                poe_dell_oid = "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.15.1.1.1.2.1"
-                # A) Dell N-Series (private MIB)
+                # A) Dell Private MIB
                 try:
                     for oid, val in await self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.15.1.1.1.2.1"):
                         idx = int(str(oid).split(".")[-1])
@@ -1654,32 +1552,17 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                         if mw is not None: poe_power_mw[idx] = float(mw)
                 except Exception: pass
 
-                # B) Standard pethPsePortActualPower (RFC 3621) for Zyxel/Aruba
+                # B) Standard OID (with physical port translation for Zyxel/Aruba)
                 try:
                     ifindex_map = self.cache.get("ifindex_by_baseport", {})
                     for oid, val in await self._async_walk("1.3.6.1.2.1.105.1.1.1.1.15"):
                         port_idx = int(str(oid).split(".")[-1])
+                        # Map hardware port to Home Assistant ifIndex
                         target_idx = ifindex_map.get(port_idx, port_idx)
                         if target_idx not in poe_power_mw:
                             mw = _parse_numeric(val)
                             if mw is not None: poe_power_mw[target_idx] = float(mw)
                 except Exception: pass
-
-                # B) Standard pethPsePortActualPower (RFC 3621)
-                # Used for Zyxel, Aruba, etc. Only add if Dell table didn't already populate
-                try:
-                    for oid, val in await self._async_walk(OID_pethPsePortActualPower):
-                        try:
-                            # Index is typically group.port (e.g. .1.1). Take the last item.
-                            port_idx = int(str(oid).split(".")[-1])
-                            if port_idx not in poe_power_mw:
-                                mw = _parse_numeric(val)
-                                if mw is not None:
-                                    poe_power_mw[port_idx] = float(mw)
-                        except Exception:
-                            continue
-                except Exception:
-                    pass
 
                 self.cache["poe_power_mw"] = poe_power_mw
 
