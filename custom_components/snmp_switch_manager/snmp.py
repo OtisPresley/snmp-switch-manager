@@ -1533,13 +1533,19 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 # Adaptive Scaling: Heuristic to support Watts vs mW
                 b_sum = sum(budget_list) if budget_list else 0.0
                 u_sum = sum(used_raw_list) if used_raw_list else 0.0
-                scale = 1000.0 if (b_sum > 5000 or u_sum > 5000) else 1.0
-
+    
+                # Heuristic: Scale budget and used independently to handle mixed vendor units.
+                # Dell switches often report Budget in Watts but Consumption in milliwatts.
+                scale_b = 1000.0 if b_sum > 5000 else 1.0
+                scale_u = 1000.0 if u_sum > 5000 else 1.0
+    
                 if budget_list or used_raw_list:
-                    self.cache["poe_budget_total_w"] = round(b_sum / scale, 1) if budget_list else None
-                    self.cache["poe_power_used_w"] = round(u_sum / scale, 1) if used_raw_list else None
+                    self.cache["poe_budget_total_w"] = round(b_sum / scale_b, 1) if budget_list else None
+                    self.cache["poe_power_used_w"] = round(u_sum / scale_u, 1) if used_raw_list else None
                     if budget_list and used_raw_list:
-                        self.cache["poe_power_available_w"] = round(max(0.0, (b_sum - u_sum) / scale), 1)
+                        # Calculation for available power must use the same independent scales
+                        avail = (b_sum / scale_b) - (u_sum / scale_u)
+                        self.cache["poe_power_available_w"] = round(max(0.0, avail), 1)
 
                 # --- (2) Per-port PoE power (mW) ---
                 poe_power_mw: Dict[int, float] = {}
