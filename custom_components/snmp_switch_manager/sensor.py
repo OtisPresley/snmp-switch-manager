@@ -1451,7 +1451,7 @@ class PoEPowerSensor(CoordinatorEntity, SensorEntity):
         if mw is None:
             return 0.0
         try:
-            return float(mw) / 1000.0
+            return round(float(mw) / 1000.0, 1)
         except Exception:
             return None
  
