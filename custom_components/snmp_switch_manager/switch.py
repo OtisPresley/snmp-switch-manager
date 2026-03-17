@@ -533,20 +533,18 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
 
         # PoE per-port power (optional)
         if (
-            self.coordinator.data.get("poe_enabled")
+          self.coordinator.data.get("poe_enabled")
             and self.coordinator.data.get("poe_mode") == POE_MODE_ATTRIBUTES
         ):
             poe_map = self.coordinator.data.get("poe_power_mw") or {}
             mw = poe_map.get(self._if_index)
             if mw is not None:
-                try:
-                    watts = float(mw) / 1000.0
-                    # Keep a numeric value for automations, and also provide a human-friendly
-                    # formatted string that includes the unit.
-                    # Show a single attribute line with unit in the label.
-                    attrs["PoE Power (W)"] = round(watts, 1)
-                except Exception:
-                    pass
+                 try:
+                     # All vendors store mW internally in our coordinator data for precision.
+                     # This ensures the UI always displays Watts consistently (mW / 1000).
+                     attrs["PoE Power (W)"] = round(float(mw) / 1000.0, 1)
+                 except Exception:
+                     pass
 
 
         # Bandwidth attributes (optional)
