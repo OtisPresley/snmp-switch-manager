@@ -28,6 +28,7 @@ OID_entPhysicalName = "1.3.6.1.2.1.47.1.1.1.1.7"
 # Zyxel specific
 OID_entPhysicalMfgName_Zyxel = "1.3.6.1.2.1.47.1.1.1.1.12.67108992"
 OID_zyxel_firmware_version = "1.3.6.1.4.1.890.1.15.3.1.6.0"
+OID_pethPsePortActualPower = "1.3.6.1.2.1.105.1.1.1.1.15"
 
 # MikroTik RouterOS (MIKROTIK-MIB)
 OID_mikrotik_software_version = "1.3.6.1.4.1.14988.1.1.7.4.0"
@@ -47,19 +48,19 @@ OID_ifPhysAddress = "1.3.6.1.2.1.2.2.1.6"
 OID_ifAdminStatus = "1.3.6.1.2.1.2.2.1.7"
 OID_ifOperStatus = "1.3.6.1.2.1.2.2.1.8"
 OID_ifLastChange = "1.3.6.1.2.1.2.2.1.9"
-OID_ifInOctets = "1.3.6.1.2.1.10"
-OID_ifInUcastPkts = "1.3.6.1.2.1.11"
-OID_ifInNUcastPkts = "1.3.6.1.2.1.12"
-OID_ifInDiscards = "1.3.6.1.2.1.13"
-OID_ifInErrors = "1.3.6.1.2.1.14"
-OID_ifInUnknownProtos = "1.3.6.1.2.1.15"
-OID_ifOutOctets = "1.3.6.1.2.1.16"
-OID_ifOutUcastPkts = "1.3.6.1.2.1.17"
-OID_ifOutNUcastPkts = "1.3.6.1.2.1.18"
-OID_ifOutDiscards = "1.3.6.1.2.1.19"
-OID_ifOutErrors = "1.3.6.1.2.1.20"
-OID_ifOutQLen = "1.3.6.1.2.1.21"
-OID_ifSpecific = "1.3.6.1.2.1.22"
+OID_ifInOctets = "1.3.6.1.2.1.2.2.1.10"
+OID_ifInUcastPkts = "1.3.6.1.2.1.2.2.1.11"
+OID_ifInNUcastPkts = "1.3.6.1.2.1.2.2.1.12"
+OID_ifInDiscards = "1.3.6.1.2.1.2.2.1.13"
+OID_ifInErrors = "1.3.6.1.2.1.2.2.1.14"
+OID_ifInUnknownProtos = "1.3.6.1.2.1.2.2.1.15"
+OID_ifOutOctets = "1.3.6.1.2.1.2.2.1.16"
+OID_ifOutUcastPkts = "1.3.6.1.2.1.2.2.1.17"
+OID_ifOutNUcastPkts = "1.3.6.1.2.1.2.2.1.18"
+OID_ifOutDiscards = "1.3.6.1.2.1.2.2.1.19"
+OID_ifOutErrors = "1.3.6.1.2.1.2.2.1.20"
+OID_ifOutQLen = "1.3.6.1.2.1.2.2.1.21"
+OID_ifSpecific = "1.3.6.1.2.1.2.2.1.22"
 
 # IF-MIB extras
 OID_ifAlias = "1.3.6.1.2.1.31.1.1.1.18"
@@ -78,12 +79,6 @@ OID_dot1dBasePortIfIndex = "1.3.6.1.2.1.17.1.4.1.2"
 OID_ipAdEntAddr = "1.3.6.1.2.1.4.20.1.1"
 OID_ipAdEntIfIndex = "1.3.6.1.2.1.4.20.1.2"
 OID_ipAdEntNetMask = "1.3.6.1.2.1.4.20.1.3"
-
-# --- POWER-ETHERNET-MIB (RFC 3621) ---
-OID_pethMainPsePower = "1.3.6.1.2.1.105.1.3.1.1.2"
-OID_pethMainPseConsumptionPower = "1.3.6.1.2.1.105.1.3.1.1.4"
-OID_pethMainPseOperStatus = "1.3.6.1.2.1.105.1.3.1.1.3"
-OID_pethPsePortActualPower = "1.3.6.1.2.1.105.1.1.1.1.15"
 
 # ---------------------------
 # Options / device overrides
