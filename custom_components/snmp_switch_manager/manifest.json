@@ -13,6 +13,8 @@
   "loggers": [
     "pysnmp"
   ],
-  "requirements": [],
+  "requirements": [
+    "pysnmp>=6.2.6"
+  ],
   "version": "0.5.1-beta.4"
 }

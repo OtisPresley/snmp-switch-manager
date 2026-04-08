@@ -106,15 +106,9 @@ class EnvironmentBaseSensor(CoordinatorEntity, SensorEntity):
         return self._device_info
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    entry_data = hass.data[DOMAIN][entry.entry_id]
-    client: SwitchSnmpClient = entry_data["client"]
-    coordinator = entry_data["coordinator"]
-
-    # Ensure coordinator has initial data so we can create only supported sensors
-    try:
-        await coordinator.async_config_entry_first_refresh()
-    except Exception:
-        pass
+    runtime = entry.runtime_data
+    client: SwitchSnmpClient = runtime.client
+    coordinator = runtime.coordinator
 
     coord_data = coordinator.data or {}
 
