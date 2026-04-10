@@ -1,16 +1,21 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import timedelta
 import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
     DOMAIN,
     PLATFORMS,
     DEFAULT_POLL_INTERVAL,
+    CONF_POLL_INTERVAL,
+    MIN_POLL_INTERVAL,
+    MAX_POLL_INTERVAL,
     CONF_BANDWIDTH_POLL_INTERVAL,
     DEFAULT_BANDWIDTH_POLL_INTERVAL,
     CONF_CUSTOM_OIDS,
@@ -42,15 +47,25 @@ from .const import (
     CONF_HIDE_IP_ON_PHYSICAL,
     CONF_HIDE_IP_ON_PHYSICAL_INTERFACES,
 )
-from .snmp import SwitchSnmpClient
+from .snmp import SwitchSnmpClient, SnmpAuthError
 from .helpers import get_snmp_connection_settings
 
 _LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
+class SnmpSwitchRuntimeData:
+    """Runtime data stored on a config entry (replaces hass.data[DOMAIN][entry_id])."""
+
+    client: SwitchSnmpClient
+    coordinator: DataUpdateCoordinator
+
 
 # Use standard aliasing compatible with Python <3.12
 SwitchManagerConfigEntry = ConfigEntry
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    await async_register_services(hass)
     return True
 
 
@@ -132,6 +147,8 @@ def _postprocess_if_names(data: dict, options: dict) -> dict:
         if renamed != raw and "name_raw" not in row:
             row["name_raw"] = raw
         row["name"] = renamed
+        # Keep display_name in sync so platform consumers don't re-apply rules.
+        row["display_name"] = renamed
     return data
 
 
@@ -175,7 +192,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
         poe_options=poe_options,
         env_options=env_options,
     )
-    await client.async_initialize()
+    try:
+        await client.async_initialize()
+    except SnmpAuthError as exc:
+        raise ConfigEntryAuthFailed(
+            f"SNMP authentication failed for {host}: {exc}"
+        ) from exc
 
     # Apply per-device option for sysUpTime throttling
     client.set_uptime_poll_interval(entry.options.get(CONF_UPTIME_POLL_INTERVAL, DEFAULT_UPTIME_POLL_INTERVAL))
@@ -188,7 +210,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
         hass,
         _LOGGER,
         name=f"{DOMAIN}-coordinator-{host}",
-        update_interval=timedelta(seconds=DEFAULT_POLL_INTERVAL),
+        update_interval=timedelta(seconds=max(
+            MIN_POLL_INTERVAL,
+            min(
+                MAX_POLL_INTERVAL,
+                int(entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL) or DEFAULT_POLL_INTERVAL),
+            ),
+        )),
         # IMPORTANT: use the client's poll method directly. The client is
         # responsible for handling/guarding poll errors so we don't mark all
         # coordinator-backed entities unavailable.
@@ -196,13 +224,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
     )
     await coordinator.async_config_entry_first_refresh()
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
-        "client": client,
-        "coordinator": coordinator,
-    }
-
-    # Register services (idempotent)
-    await async_register_services(hass)
+    entry.runtime_data = SnmpSwitchRuntimeData(client=client, coordinator=coordinator)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -216,7 +238,12 @@ async def _async_update_listener(hass: HomeAssistant, entry: SwitchManagerConfig
 async def async_unload_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
+        runtime: SnmpSwitchRuntimeData | None = getattr(entry, "runtime_data", None)
+        if runtime is not None:
+            try:
+                await runtime.client.async_close()
+            except Exception:
+                pass
     return unloaded
 
 async def async_register_services(hass: HomeAssistant):
@@ -233,11 +260,12 @@ async def async_register_services(hass: HomeAssistant):
 
         # Resolve the integration entry and client from the entity's config_entry_id
         entry_id = ent.config_entry_id
-        data = hass.data.get(DOMAIN, {}).get(entry_id)
-        if not data:
+        config_entry = hass.config_entries.async_get_entry(entry_id)
+        runtime: SnmpSwitchRuntimeData | None = getattr(config_entry, "runtime_data", None) if config_entry else None
+        if not runtime:
             return
 
-        client = data["client"]
+        client = runtime.client
         # Parse if_index from our unique_id pattern "<entry_id>-if-<index>"
         unique_id = ent.unique_id or ""
         try:
@@ -246,7 +274,7 @@ async def async_register_services(hass: HomeAssistant):
             return
 
         await client.set_alias(if_index, description)
-        await data["coordinator"].async_request_refresh()
+        await runtime.coordinator.async_request_refresh()
 
     if not hass.services.has_service(DOMAIN, "set_port_description"):
         hass.services.async_register(DOMAIN, "set_port_description", handle_set_alias)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import ipaddress
 import logging
-import re
 from typing import Any, Dict, Optional
 
 from homeassistant.components.switch import SwitchEntity
@@ -15,10 +15,7 @@ from .const import (
     CONF_LEGACY_DEVICE_ID,
     CONF_SNMP_VERSION,
     SNMP_VERSION_V3,
-    CONF_PORT_RENAME_USER_RULES,
-    CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
     CONF_ICON_RULES,
-    DEFAULT_PORT_RENAME_RULES,
     CONF_INCLUDE_STARTS_WITH,
     CONF_INCLUDE_CONTAINS,
     CONF_INCLUDE_ENDS_WITH,
@@ -89,9 +86,9 @@ OPER_STATE = {
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    data = hass.data[DOMAIN][entry.entry_id]
-    client: SwitchSnmpClient = data["client"]
-    coordinator = data["coordinator"]
+    runtime = entry.runtime_data
+    client: SwitchSnmpClient = runtime.client
+    coordinator = runtime.coordinator
 
     entities: list[IfAdminSwitch] = []
     desired_if_indexes: set[int] = set()
@@ -116,42 +113,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
     ip_index = client.cache.get("ipIndex", {})
     ip_mask = client.cache.get("ipMask", {})
 
-    def _build_port_rename_rules() -> list[tuple[str, re.Pattern[str], str]]:
-        """Return ordered (id, compiled_regex, replace) rules for this entry."""
-        rules: list[tuple[str, re.Pattern[str], str]] = []
-
-        disabled = set(entry.options.get(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS) or [])
-
-        # User rules first (highest priority)
-        for i, r in enumerate(entry.options.get(CONF_PORT_RENAME_USER_RULES) or []):
-            try:
-                pattern = str(r.get("pattern") or "").strip()
-                replace = str(r.get("replace") or "")
-                if not pattern:
-                    continue
-                rules.append((f"user_{i}", re.compile(pattern, re.IGNORECASE), replace))
-            except Exception:
-                # Ignore invalid user rules (they should be validated in the UI)
-                continue
-
-        # Built-in defaults next
-        for r in DEFAULT_PORT_RENAME_RULES:
-            rid = r.get("id") or ""
-            if not rid or rid in disabled:
-                continue
-            try:
-                pattern = str(r.get("pattern") or "").strip()
-                replace = str(r.get("replace") or "")
-                if not pattern:
-                    continue
-                rules.append((rid, re.compile(pattern, re.IGNORECASE), replace))
-            except Exception:
-                continue
-
-        return rules
-
-    port_rename_rules = _build_port_rename_rules()
-
     # Include/Exclude interface rules (simple string match; include wins over exclude)
     include_starts = [str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_STARTS_WITH, []) or []) if str(s).strip()]
     include_contains = [str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_CONTAINS, []) or []) if str(s).strip()]
@@ -173,19 +134,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
             or any(x in name_l for x in contains)
             or any(name_l.endswith(x) for x in ends)
         )
-
-    def _apply_port_rename(display_name: str) -> str:
-        """Apply all port rename rules in order (each rule substituted at most once)."""
-        if not display_name or not port_rename_rules:
-            return display_name
-        out = display_name
-        for _rid, rx, rep in port_rename_rules:
-            if rx.search(out):
-                try:
-                    out = rx.sub(rep, out, count=1)
-                except Exception:
-                    continue
-        return out
 
     # Vendor detection
     manufacturer = (client.cache.get("manufacturer") or "").lower()
@@ -327,10 +275,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
                     continue
 
 
-                # Apply per-device port rename rules to the *raw* interface name first.
-        # This allows rules to match vendor-specific raw strings (e.g. "Unit: ...") before any normalization.
-        # _apply_port_rename() closes over port_rename_rules
-        raw_for_display = _apply_port_rename((raw_name or "").strip())
+        # display_name from the coordinator already has rename rules applied by
+        # _postprocess_if_names in __init__.py. No further renaming needed here.
+        raw_for_display = (raw_name or "").strip()
 
         # Try to parse Gi1/0/1 style to preserve unit/slot/port in display name
         unit = 1
@@ -348,7 +295,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
             pass
 
         display = format_interface_name(raw_for_display, unit=unit, slot=slot, port=port)
-        display = _apply_port_rename(display)
 
         entities.append(
             IfAdminSwitch(
@@ -394,8 +340,6 @@ def _ip_for_index(if_index: int, ip_by_ifindex: Dict[int, str], ip_mask_by_ifind
     if not mask:
         return ip
     try:
-        import ipaddress
-
         net = ipaddress.IPv4Network((ip, mask), strict=False)
         return f"{ip}/{net.prefixlen}"
     except Exception:

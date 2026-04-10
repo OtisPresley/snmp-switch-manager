@@ -21,6 +21,7 @@ from .snmp_compat import (
     ObjectIdentity,
     get_cmd,
     next_cmd,
+    bulk_walk_cmd,
     set_cmd,
     OctetString,
     Integer,
@@ -171,6 +172,29 @@ OID_routeCol = "1.3.6.1.2.1.4.24.7.1.9"
 
 # ---------- low-level sync helpers offloaded by compat -------------
 
+# Phrases in pysnmp errorIndication that indicate authentication failure.
+_AUTH_ERROR_PHRASES = (
+    "wrongdigest",
+    "unknownusernam",
+    "authorizationerror",
+    "notintimewindow",
+    "unknownsecurityname",
+    "unsupportedsecuritylevel",
+)
+
+
+def _is_auth_error(err_ind: Any) -> bool:
+    """Return True when err_ind indicates an SNMP authentication/security failure."""
+    if err_ind is None:
+        return False
+    s = str(err_ind).lower()
+    return any(phrase in s for phrase in _AUTH_ERROR_PHRASES)
+
+
+class SnmpAuthError(Exception):
+    """Raised when SNMP authentication fails; triggers ConfigEntryAuthFailed."""
+
+
 async def _do_get_one(engine, community, target, context, oid: str) -> Optional[str]:
     err_ind, err_stat, err_idx, vbs = await get_cmd(
         engine,
@@ -180,6 +204,8 @@ async def _do_get_one(engine, community, target, context, oid: str) -> Optional[
         ObjectType(ObjectIdentity(oid)),
         lookupMib=False,  # <<< prevent FS MIB access
     )
+    if _is_auth_error(err_ind):
+        raise SnmpAuthError(str(err_ind))
     if err_ind or err_stat:
         return None
     for vb in vbs:
@@ -251,8 +277,46 @@ async def _do_get_many(engine, community, target, context, oids: list[str]) -> D
 async def _do_next_walk(
     engine, community, target, context, base_oid: str
 ) -> Iterable[Tuple[str, Any]]:
-    current_oid = base_oid
+    """Walk an OID subtree using GETBULK (max-repetitions=25), falling back to GETNEXT.
+
+    GETBULK dramatically reduces round-trips: a 48-port switch walk that needed 48+
+    individual requests with GETNEXT completes in 2–3 requests with GETBULK.
+    """
     seen: set[str] = set()
+
+    # --- GETBULK attempt --------------------------------------------------
+    try:
+        async for err_ind, err_stat, err_idx, vb_list in bulk_walk_cmd(
+            engine,
+            community,
+            target,
+            context,
+            0,  # non-repeaters
+            25,  # max-repetitions
+            ObjectType(ObjectIdentity(base_oid)),
+            lexicographicMode=False,
+            lookupMib=False,
+        ):
+            if err_ind or err_stat:
+                # Device doesn't support GETBULK (e.g. SNMPv1) — fall through
+                raise StopAsyncIteration
+            for vb in vb_list if isinstance(vb_list, (list, tuple)) else [vb_list]:
+                oid_obj, val = vb
+                oid_str = str(oid_obj)
+                if not (oid_str == base_oid or oid_str.startswith(base_oid + ".")):
+                    return
+                if oid_str in seen:
+                    return
+                seen.add(oid_str)
+                yield oid_str, val
+        return
+    except StopAsyncIteration:
+        pass
+    except Exception:
+        pass
+
+    # --- GETNEXT fallback (SNMPv1 or bulk_walk_cmd unavailable) ----------
+    current_oid = base_oid
     while True:
         err_ind, err_stat, err_idx, vbs = await next_cmd(
             engine,
@@ -261,7 +325,7 @@ async def _do_next_walk(
             context,
             ObjectType(ObjectIdentity(current_oid)),
             lexicographicMode=False,
-            lookupMib=False,  # <<< prevent FS MIB access
+            lookupMib=False,
         )
         if err_ind or err_stat or not vbs:
             break
@@ -373,6 +437,14 @@ class SwitchSnmpClient:
         self._last_uptime_poll: float = 0.0
         self._uptime_poll_interval: float = 300.0
 
+        # IPv4 address data rarely changes; throttle refreshes independently.
+        self._last_ipv4_poll: float = 0.0
+        self._ipv4_poll_interval: float = 300.0
+
+        # Vendor-specific firmware/model OIDs (CBS350, Zyxel, MikroTik) never
+        # change at runtime; fetch once during async_initialize and skip on polls.
+        self._vendor_oids_fetched: bool = False
+
     def _custom_oid(self, key: str) -> Optional[str]:
         val = (self.custom_oids or {}).get(key)
         if not val:
@@ -456,32 +528,67 @@ class SwitchSnmpClient:
         if self.engine is not None:
             return
 
-        def _build_engine_with_minimal_preload():
+        def _build_engine_and_preload_mibs():
             eng = SnmpEngine()
             try:
                 mib_builder = eng.getMibBuilder()
-                # Pre-load core pysnmp modules off the event loop.
-                # Home Assistant flags synchronous FS access (os.listdir/open) from pysnmp's MIB loader
-                # when it occurs on the asyncio loop thread. Preloading here ensures pysnmp will not
-                # hit the filesystem later during async polling/walks.
+                # Pre-load ALL MIB modules used by this integration off the event loop.
+                # Home Assistant flags synchronous FS access (os.listdir/open) from pysnmp's
+                # MIB loader when it occurs on the asyncio loop thread. Preloading here
+                # ensures pysnmp will not hit the filesystem during async polling/walks.
+                #
+                # Modules covered:
+                #   - Core SMI / ASN.1 machinery (SNMPv2-SMI, SNMPv2-TC, …)
+                #   - SNMPv3 USM / framework (needed for v3 auth/priv negotiation)
+                #   - IF-MIB types (OctetString counters, ifType enumerations)
+                #   - ENTITY-MIB, HOST-RESOURCES-MIB, BRIDGE-MIB, Q-BRIDGE-MIB
+                #   - IP-MIB, POWER-ETHERNET-MIB
                 mib_builder.loadModules(
+                    # Core / SMI
                     "SNMPv2-SMI",
                     "SNMPv2-TC",
                     "SNMPv2-CONF",
                     "SNMPv2-MIB",
                     "__SNMPv2-MIB",
+                    # SNMPv3
                     "SNMP-FRAMEWORK-MIB",
                     "SNMP-COMMUNITY-MIB",
                     "SNMP-TARGET-MIB",
                     "SNMP-NOTIFICATION-MIB",
                     "SNMPv2-TM",
                     "PYSNMP-SOURCE-MIB",
+                    # Interface MIBs
+                    "IF-MIB",
+                    "IANAifType-MIB",
+                    # Entity / hardware inventory
+                    "ENTITY-MIB",
+                    # IP address tables
+                    "IP-MIB",
+                    # Bridge / VLAN MIBs
+                    "BRIDGE-MIB",
+                    "Q-BRIDGE-MIB",
+                    # Host resources (CPU / memory fallback)
+                    "HOST-RESOURCES-MIB",
+                    "HOST-RESOURCES-TYPES",
+                    # PoE
+                    "POWER-ETHERNET-MIB",
                 )
             except Exception:
+                # loadModules is best-effort; some MIBs may not ship with the installed
+                # pysnmp version. Any that were loaded are already cached; missing ones
+                # will trigger a one-time lazy load but that is a minor fallback.
                 pass
+
+            # Disable all MIB source search paths after preloading so that pysnmp
+            # cannot fall back to filesystem access during async event-loop operations.
+            try:
+                mib_builder.setMibSources()  # empty → no further FS searches
+            except Exception:
+                pass
+
             return eng
 
-        self.engine = await self.hass.async_add_executor_job(_build_engine_with_minimal_preload)
+        self.engine = await self.hass.async_add_executor_job(_build_engine_and_preload_mibs)
 
     async def _ensure_target(self) -> None:
         if self.target is None:
@@ -489,9 +596,37 @@ class SwitchSnmpClient:
 
     # ---------- lifecycle / fetch ----------
 
+    async def async_close(self) -> None:
+        """Release pysnmp resources (transport handles, background tasks).
+
+        Must be called from async_unload_entry to prevent resource leaks on
+        integration reload or reconfiguration.
+        """
+        if self.engine is None:
+            return
+        try:
+            # pysnmp 7.x (v3arch asyncio): close the transport dispatcher.
+            dispatcher = getattr(self.engine, "transportDispatcher", None)
+            if dispatcher is not None:
+                if hasattr(dispatcher, "closeDispatcher"):
+                    dispatcher.closeDispatcher()
+        except Exception:
+            pass
+        finally:
+            self.engine = None
+            self.target = None
+
     async def async_initialize(self) -> None:
         await self._ensure_engine()
         await self._ensure_target()
+
+        # Issue a warm-up GET on the event loop to flush any remaining lazy pysnmp
+        # internal state (PDU type registry, transport layer) before the real walks
+        # begin. This is a best-effort call — errors are intentionally ignored.
+        try:
+            await self._async_get_one(OID_sysDescr)
+        except Exception:
+            pass
 
         # Build interface table and state first (names, alias, admin/oper)
         await self._async_walk_interfaces(dynamic_only=False)
@@ -499,6 +634,7 @@ class SwitchSnmpClient:
         # Build IPv4 maps and attach to interfaces (original repo logic)
         await self._async_walk_ipv4()
         self._attach_ipv4_to_interfaces()
+        self._last_ipv4_poll = time.monotonic()
 
         # System fields
         self.cache["sysDescr"] = await self._async_get_one(OID_sysDescr)
@@ -638,28 +774,47 @@ class SwitchSnmpClient:
         if not dynamic_only:
             self.cache["ifTable"] = {}
 
+            # Walk all static interface columns in parallel.
+            (
+                idx_rows,
+                descr_rows,
+                name_rows,
+                alias_rows,
+                speed_rows,
+                hispeed_rows,
+                iftype_rows,
+            ) = await asyncio.gather(
+                self._async_walk(OID_ifIndex),
+                self._async_walk(OID_ifDescr),
+                self._async_walk(OID_ifName),
+                self._async_walk(OID_ifAlias),
+                self._async_walk(OID_ifSpeed),
+                self._async_walk(OID_ifHighSpeed),
+                self._async_walk(OID_ifType),
+            )
+
             # Indexes
-            for oid, val in await self._async_walk(OID_ifIndex):
+            for oid, val in idx_rows:
                 idx = int(oid.split(".")[-1])
                 self.cache["ifTable"][idx] = {"index": idx}
 
             # Descriptions
-            for oid, val in await self._async_walk(OID_ifDescr):
+            for oid, val in descr_rows:
                 idx = int(oid.split(".")[-1])
                 self.cache["ifTable"].setdefault(idx, {})["descr"] = str(val)
 
             # Names
-            for oid, val in await self._async_walk(OID_ifName):
+            for oid, val in name_rows:
                 idx = int(oid.split(".")[-1])
                 self.cache["ifTable"].setdefault(idx, {})["name"] = str(val)
 
             # Aliases
-            for oid, val in await self._async_walk(OID_ifAlias):
+            for oid, val in alias_rows:
                 idx = int(oid.split(".")[-1])
                 self.cache["ifTable"].setdefault(idx, {})["alias"] = str(val)
 
             # Speeds (prefer ifHighSpeed where present; fall back to ifSpeed)
-            for oid, val in await self._async_walk(OID_ifSpeed):
+            for oid, val in speed_rows:
                 idx = int(oid.split(".")[-1])
                 try:
                     bps = _parse_numeric(val)
@@ -670,7 +825,7 @@ class SwitchSnmpClient:
                 if bps > 0:
                     self.cache["ifTable"].setdefault(idx, {})["speed_bps"] = bps
 
-            for oid, val in await self._async_walk(OID_ifHighSpeed):
+            for oid, val in hispeed_rows:
                 idx = int(oid.split(".")[-1])
                 try:
                     v = int(val)
@@ -682,8 +837,20 @@ class SwitchSnmpClient:
                     bps = v if v >= 1_000_000 else v * 1_000_000
                     self.cache["ifTable"].setdefault(idx, {})["speed_bps"] = bps
 
+            # ifType (needed for port classification)
+            for oid, val in iftype_rows:
+                idx = int(oid.split(".")[-1])
+                rec = self.cache["ifTable"].get(idx)
+                if rec is not None:
+                    try:
+                        rec["if_type"] = int(val)
+                    except Exception:
+                        rec["if_type"] = None
+
             # VLAN (PVID) mapping via BRIDGE-MIB / Q-BRIDGE-MIB
             # Map ifIndex -> dot1dBasePort -> dot1qPvid (untagged VLAN)
+            # Also capture bridge_ifindexes here to avoid a second walk later.
+            bridge_ifindexes: set[int] = set()
             try:
                 baseport_by_ifindex: Dict[int, int] = {}
                 for oid, val in await self._async_walk(OID_dot1dBasePortIfIndex):
@@ -698,6 +865,7 @@ class SwitchSnmpClient:
                         continue
                     if if_index > 0 and base_port > 0:
                         baseport_by_ifindex[if_index] = base_port
+                        bridge_ifindexes.add(if_index)
                 self.cache["ifindex_by_baseport"] = {v: k for k, v in baseport_by_ifindex.items() if v and k}
                 if baseport_by_ifindex:
                     pvid_by_baseport: Dict[int, int] = {}
@@ -830,27 +998,9 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 ds = (rec.get("descr") or "").strip()
                 rec["display_name"] = nm or ds or f"ifIndex {idx}"
 
-        # Dynamic state only
-            # Interface types (IF-MIB ifType)
-            for oid, val in await self._async_walk(OID_ifType):
-                idx = int(oid.split(".")[-1])
-                rec = self.cache["ifTable"].get(idx)
-                if rec is not None:
-                    try:
-                        rec["if_type"] = int(val)
-                    except Exception:
-                        rec["if_type"] = None
-
             # Bridge membership (BRIDGE-MIB dot1dBasePortIfIndex)
-            bridge_ifindexes: set[int] = set()
-            try:
-                for oid, val in await self._async_walk(OID_dot1dBasePortIfIndex):
-                    try:
-                        bridge_ifindexes.add(int(val))
-                    except Exception:
-                        continue
-            except Exception:
-                bridge_ifindexes = set()
+            # bridge_ifindexes was already populated during the VLAN/PVID walk above
+            # and ifType was fetched in the parallel walk at the start of this block.
 
             for idx, rec in self.cache["ifTable"].items():
                 if not isinstance(rec, dict):
@@ -1159,8 +1309,15 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
         await self._ensure_engine()
         await self._ensure_target()
         await self._async_walk_interfaces(dynamic_only=True)
-        await self._async_walk_ipv4()
-        self._attach_ipv4_to_interfaces()
+        # IPv4 data rarely changes; throttle separately (default 300 s).
+        now_mono = time.monotonic()
+        if (
+            self._last_ipv4_poll == 0.0
+            or (now_mono - self._last_ipv4_poll) >= self._ipv4_poll_interval
+        ):
+            self._last_ipv4_poll = now_mono
+            await self._async_walk_ipv4()
+            self._attach_ipv4_to_interfaces()
 
     # ---------- coordinator hook ----------
     async def async_poll(self) -> Dict[str, Any]:
@@ -1228,7 +1385,9 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                         manufacturer = " ".join(toks[:-1])
 
                 # Cisco CBS350: prefer ENTITY-MIB software revision when available.
-                if (model_hint and "CBS" in model_hint) or ("CBS" in sd):
+                # Vendor-specific OIDs only fetched once — firmware/model never changes.
+                if not self._vendor_oids_fetched:
+                  if (model_hint and "CBS" in model_hint) or ("CBS" in sd):
                     try:
                         sw_rev = await _do_get_one(
                             self.engine,
@@ -1236,15 +1395,14 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                             self.target,
                             self.context,
                             OID_entPhysicalSoftwareRev_CBS350,
-                            OID_hwEntityTemperature,
                         )
                     except Exception:
                         sw_rev = None
                     if sw_rev:
                         firmware = sw_rev.strip() or firmware
 
-                # Zyxel: prefer vendor-specific manufacturer/firmware OIDs when detected
-                if "zyxel" in sd.lower():
+                  # Zyxel: prefer vendor-specific manufacturer/firmware OIDs when detected
+                  if "zyxel" in sd.lower():
                     try:
                         zy_mfg = await _do_get_one(
                             self.engine,
@@ -1271,8 +1429,8 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     if zy_fw:
                         firmware = zy_fw.strip() or firmware
 
-                # MikroTik RouterOS: override using MIKROTIK-MIB when detected
-                if "mikrotik" in sd.lower() or "routeros" in sd.lower():
+                  # MikroTik RouterOS: override using MIKROTIK-MIB when detected
+                  if "mikrotik" in sd.lower() or "routeros" in sd.lower():
                     manufacturer = "MikroTik"
                     try:
                         mk_ver = await _do_get_one(
@@ -1298,6 +1456,8 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                         mk_model = None
                     if mk_model:
                         self.cache["model"] = mk_model.strip() or self.cache.get("model")
+
+                  self._vendor_oids_fetched = True
 
                 # Custom OIDs: per-device overrides take precedence over vendor logic and generic parsing
                 try:
@@ -1515,17 +1675,30 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
             if should_poll:
                 self._poe_last_poll = now_mono
 
+                # Fetch all PoE data tables in parallel.
+                (
+                    budget_rows,
+                    used_rows,
+                    dell_poe_rows,
+                    std_poe_rows,
+                ) = await asyncio.gather(
+                    self._async_walk("1.3.6.1.2.1.105.1.3.1.1.2"),
+                    self._async_walk("1.3.6.1.2.1.105.1.3.1.1.4"),
+                    self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.15.1.1.1.2.1"),
+                    self._async_walk("1.3.6.1.2.1.105.1.1.1.1.15"),
+                )
+
                 # --- (1) Standard PoE totals + health (POWER-ETHERNET-MIB) ---
-                budget_list, used_raw_list, health_list = [], [], []
+                budget_list, used_raw_list = [], []
 
                 try:
-                    for _, val in await self._async_walk("1.3.6.1.2.1.105.1.3.1.1.2"):
+                    for _, val in budget_rows:
                         n = _parse_numeric(val)
                         if n is not None and float(n) >= 0: budget_list.append(float(n))
                 except Exception: pass
 
                 try:
-                    for _, val in await self._async_walk("1.3.6.1.2.1.105.1.3.1.1.4"):
+                    for _, val in used_rows:
                         n = _parse_numeric(val)
                         if n is not None and float(n) >= 0: used_raw_list.append(float(n))
                 except Exception: pass
@@ -1552,7 +1725,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
 
                 # A) Dell Private MIB
                 try:
-                    for oid, val in await self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.15.1.1.1.2.1"):
+                    for oid, val in dell_poe_rows:
                         idx = int(str(oid).split(".")[-1])
                         mw = _parse_numeric(val)
                         if mw is not None: poe_power_mw[idx] = float(mw)
@@ -1561,7 +1734,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 # B) Standard OID (with physical port translation for Zyxel/Aruba)
                 try:
                     ifindex_map = self.cache.get("ifindex_by_baseport", {})
-                    for oid, val in await self._async_walk("1.3.6.1.2.1.105.1.1.1.1.15"):
+                    for oid, val in std_poe_rows:
                         port_idx = int(str(oid).split(".")[-1])
                         # Map hardware port to Home Assistant ifIndex
                         target_idx = ifindex_map.get(port_idx, port_idx)
@@ -1599,12 +1772,35 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 self._env_last_poll = now_mono
                 env_power_mw: Dict[int, float] = {}
 
-                # Dell N-Series (observed):
+                # Fetch all Dell OS6 environmental tables in parallel.
+                (
+                    dell_power_rows,
+                    mem_free_raw,
+                    mem_total_raw,
+                    cpu_raw,
+                    fans_rows,
+                    fan_status_rows,
+                    psu_status_rows,
+                    temps_rows,
+                    unit_temp_raw,
+                    unit_temp_state_raw,
+                ) = await asyncio.gather(
+                    self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.9.1.4.1"),
+                    self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.1.0"),
+                    self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.2.0"),
+                    self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.9.0"),
+                    self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.6.1.4.1"),
+                    self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.6.1.3.1"),
+                    self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.7.1.2.1"),
+                    self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.8.1.5.1"),
+                    self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.15.1.3.1"),
+                    self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.15.1.2.1"),
+                )
+
+                # Dell N-Series power
                 # 1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.9.1.4.1.<idx> = INTEGER: <mW>
-                # This aligns with CLI "show system" Current Power (Watts).
                 env_oid = "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.9.1.4.1"
-                env_table = await self._async_walk(env_oid)
-                for oid, val in env_table:
+                for oid, val in dell_power_rows:
                     try:
                         env_idx = int(str(oid).split(".")[-1])
                     except Exception:
@@ -1620,27 +1816,21 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 # Dell OS6 CPU / Memory / Fan metrics (best-effort; safe to ignore if not supported)
 
                 # Memory OIDs return values in KB on Dell OS6 (based on observed values).
-                # Values may come back as typed strings (e.g. "Gauge32: 12345"); parse numerics defensively.
                 try:
-                    mem_free_kb_raw = await self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.1.0")
-                    mem_free_kb = _parse_numeric(mem_free_kb_raw)
+                    mem_free_kb = _parse_numeric(mem_free_raw)
                     self.cache["env_mem_free_kb"] = int(mem_free_kb) if mem_free_kb is not None else None
                 except Exception:
                     self.cache["env_mem_free_kb"] = None
 
                 try:
-                    mem_total_kb_raw = await self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.2.0")
-                    mem_total_kb = _parse_numeric(mem_total_kb_raw)
+                    mem_total_kb = _parse_numeric(mem_total_raw)
                     self.cache["env_mem_total_kb"] = int(mem_total_kb) if mem_total_kb is not None else None
                 except Exception:
                     self.cache["env_mem_total_kb"] = None
 
                 try:
-                    cpu_s = str(await self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.9.0"))
+                    cpu_s = str(cpu_raw)
                     self.cache["env_cpu_raw"] = cpu_s
-                    # Observed example:
-                    #   "    5 Secs ( 10.5746%)   60 Secs ( 11.9951%)  300 Secs ( 12.3370%)"
-                    # Use a tolerant parse: grab the first 3 percentage-like numbers.
                     nums = re.findall(r"([0-9]+(?:\.[0-9]+)?)\s*%", cpu_s)
                     if len(nums) >= 3:
                         self.cache["env_cpu_5s"] = float(nums[0])
@@ -1657,7 +1847,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
 
                 try:
                     fans: dict[int, int] = {}
-                    for oid, val in await self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.6.1.4.1"):
+                    for oid, val in fans_rows:
                         try:
                             idx = int(str(oid).split(".")[-1])
                         except Exception:
@@ -1670,10 +1860,9 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 except Exception:
                     self.cache["env_fans_rpm"] = None
 
-                # Fan status (observed: 2 = OK)
                 try:
                     fan_status: dict[int, int] = {}
-                    for oid, val in await self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.6.1.3.1"):
+                    for oid, val in fan_status_rows:
                         try:
                             idx = int(str(oid).split(".")[-1])
                         except Exception:
@@ -1686,10 +1875,9 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 except Exception:
                     self.cache["env_fans_status"] = None
 
-                # PSU status (observed: 2 = OK)
                 try:
                     psu_status: dict[int, int] = {}
-                    for oid, val in await self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.7.1.2.1"):
+                    for oid, val in psu_status_rows:
                         try:
                             idx = int(str(oid).split(".")[-1])
                         except Exception:
@@ -1702,10 +1890,9 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 except Exception:
                     self.cache["env_psu_status"] = None
 
-                # Temperatures (C) - includes "System Temperature" at index 0 on Dell OS6
                 try:
                     temps_c: dict[int, int] = {}
-                    for oid, val in await self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.8.1.5.1"):
+                    for oid, val in temps_rows:
                         try:
                             idx = int(str(oid).split(".")[-1])
                         except Exception:
@@ -1718,16 +1905,13 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 except Exception:
                     self.cache["env_temps_c"] = None
 
-                # Unit/System temperature + state (Dell OS6)
                 try:
-                    raw = await self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.15.1.3.1")
-                    n = _parse_numeric(raw)
+                    n = _parse_numeric(unit_temp_raw)
                     self.cache["env_unit_temp_c"] = int(n) if n is not None else None
                 except Exception:
                     self.cache["env_unit_temp_c"] = None
                 try:
-                    raw = await self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.15.1.2.1")
-                    n = _parse_numeric(raw)
+                    n = _parse_numeric(unit_temp_state_raw)
                     self.cache["env_unit_temp_state"] = int(n) if n is not None else None
                 except Exception:
                     self.cache["env_unit_temp_state"] = None
@@ -1764,19 +1948,32 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                             types[idx] = int(n)
 
                         if types:
+                            # Fetch value, scale, precision, and oper-status columns in parallel.
+                            (
+                                value_rows,
+                                scale_rows,
+                                prec_rows,
+                                oper_rows,
+                            ) = await asyncio.gather(
+                                self._async_walk(ent_value_oid),
+                                self._async_walk(ent_scale_oid),
+                                self._async_walk(ent_prec_oid),
+                                self._async_walk(ent_oper_oid),
+                            )
+
                             values: dict[int, Any] = {}
                             scales: dict[int, int] = {}
                             precs: dict[int, int] = {}
                             opers: dict[int, int] = {}
 
-                            for oid, val in await self._async_walk(ent_value_oid):
+                            for oid, val in value_rows:
                                 try:
                                     idx = int(str(oid).split(".")[-1])
                                 except Exception:
                                     continue
                                 values[idx] = val
 
-                            for oid, val in await self._async_walk(ent_scale_oid):
+                            for oid, val in scale_rows:
                                 try:
                                     idx = int(str(oid).split(".")[-1])
                                 except Exception:
@@ -1786,7 +1983,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                                     continue
                                 scales[idx] = int(n)
 
-                            for oid, val in await self._async_walk(ent_prec_oid):
+                            for oid, val in prec_rows:
                                 try:
                                     idx = int(str(oid).split(".")[-1])
                                 except Exception:
@@ -1796,7 +1993,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                                     continue
                                 precs[idx] = int(n)
 
-                            for oid, val in await self._async_walk(ent_oper_oid):
+                            for oid, val in oper_rows:
                                 try:
                                     idx = int(str(oid).split(".")[-1])
                                 except Exception:

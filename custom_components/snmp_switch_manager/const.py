@@ -8,6 +8,9 @@ CONF_COMMUNITY = "community"
 
 DEFAULT_PORT = 161
 DEFAULT_POLL_INTERVAL = 10  # seconds
+CONF_POLL_INTERVAL = "poll_interval"
+MIN_POLL_INTERVAL = 5    # seconds
+MAX_POLL_INTERVAL = 300  # seconds
 
 PLATFORMS = ["sensor", "switch"]
 
