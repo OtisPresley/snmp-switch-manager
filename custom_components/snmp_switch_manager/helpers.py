@@ -76,6 +76,8 @@ def _abbr_from_speed_or_name(name: str) -> str:
         return "Fa"
     if n.startswith("fi"):
         return "Fi"
+    if n.startswith("fo"):
+        return "Fo"
     if n.startswith("hu"):
         return "Hu"
     if n.startswith("po") or n.startswith("port-channel") or n.startswith("portchannel"):
@@ -87,6 +89,7 @@ def _abbr_from_speed_or_name(name: str) -> str:
     if "100g" in n: return "Hu"
     if "10g" in n: return "Te"
     if "20g" in n: return "Tw"
+    if "40g" in n: return "Fo"
     if "1g" in n or "1000" in n: return "Gi"
     return "Gi"
 
