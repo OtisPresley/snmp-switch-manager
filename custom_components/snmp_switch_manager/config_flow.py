@@ -121,6 +121,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             port = int(user_input.get(CONF_PORT, DEFAULT_PORT))
             version = str(user_input.get(CONF_SNMP_VERSION, SNMP_VERSION_V2C))
 
+            await self.async_set_unique_id(f"{host}_{port}")
+
             # Stash for subsequent credential steps
             self._setup_host = host
             self._setup_port = port
