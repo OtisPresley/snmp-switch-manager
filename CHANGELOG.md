@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Created the initial integration
 
-## \[0.5.2\] - 2026-04-10
+## \[0.5.1\] - 2026-04-10
 
 Special thanks to [@cerebrate](https://github.com/cerebrate) for significant architectural improvements and performance optimizations.
 
