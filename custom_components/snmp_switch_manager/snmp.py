@@ -657,6 +657,23 @@ class SwitchSnmpClient:
 
         manufacturer = None
         firmware = None
+        
+        # Specialty Detection for Jt-Com, Goodtop, H3C, and Zyxel
+        self._is_jtcom = False
+        self._is_h3c = False
+        self._is_zyxel = False  # <--- New flag
+        desc_lower = sd.lower()
+        
+        if any(x in desc_lower for x in ["jt-com", "jtcom", "goodtop"]):
+            manufacturer = "Jt-Com"
+            self.cache["model"] = "Managed Switch"
+            self._is_jtcom = True
+        elif "h3c" in desc_lower:
+            manufacturer = "H3C"
+            self._is_h3c = True
+        elif "zyxel" in desc_lower:  # <--- Detect Zyxel
+            manufacturer = "Zyxel"
+            self._is_zyxel = True
 
         # pfSense is a software platform; sysDescr includes hostname + firmware + OS.
         # Parse it explicitly and avoid applying generic switch parsing.
@@ -1022,6 +1039,22 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
         for oid, val in await self._async_walk(OID_ifOperStatus):
             idx = int(oid.split(".")[-1])
             self.cache["ifTable"].setdefault(idx, {})["oper"] = int(val)
+        
+        # Specialty Math for Jt-Com/Goodtop and Plugin UI speed formatting
+        for idx, rec in self.cache["ifTable"].items():
+            if not isinstance(rec, dict): continue
+            
+            raw_s = float(rec.get("speed_bps", 0))
+            high_s = float(rec.get("speed_high", 0))
+            
+            # H3C and Jt-Com both benefit from prioritizing HighSpeed OID
+            if getattr(self, "_is_jtcom", False) or getattr(self, "_is_h3c", False):
+                speed_mbps = high_s if high_s > 0 else (raw_s / 1000000)
+            else:
+                speed_mbps = high_s if high_s > 0 else (raw_s / 1000000)
+            
+            rec["speed_mbps"] = speed_mbps
+            rec["speed"] = f"{int(speed_mbps)} Mbps" if speed_mbps > 0 else "Down"
 
     async def _async_walk_ipv4(self) -> None:
         """
@@ -1703,14 +1736,18 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                         if n is not None and float(n) >= 0: used_raw_list.append(float(n))
                 except Exception: pass
 
-                # Adaptive Scaling: Heuristic to support Watts vs mW
+               # Adaptive Scaling: Heuristic to support Watts vs mW
                 b_sum = sum(budget_list) if budget_list else 0.0
                 u_sum = sum(used_raw_list) if used_raw_list else 0.0
     
-                # Heuristic: Scale budget and used independently to handle mixed vendor units.
-                # Dell switches often report Budget in Watts but Consumption in milliwatts.
-                scale_b = 1000.0 if b_sum > 5000 else 1.0
-                scale_u = 1000.0 if u_sum > 5000 else 1.0
+                # Heuristic: Scale budget and used independently.
+                # FIX: Force Watts for Zyxel aggregate totals if they are in expected ranges.
+                if getattr(self, "_is_zyxel", False):
+                    scale_b = 1.0 if b_sum < 2000 else 1000.0
+                    scale_u = 1.0 if u_sum < 2000 else 1000.0
+                else:
+                    scale_b = 1000.0 if b_sum > 5000 else 1.0
+                    scale_u = 1000.0 if u_sum > 5000 else 1.0
     
                 if budget_list or used_raw_list:
                     self.cache["poe_budget_total_w"] = round(b_sum / scale_b, 1) if budget_list else None
@@ -1731,16 +1768,27 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                         if mw is not None: poe_power_mw[idx] = float(mw)
                 except Exception: pass
 
-                # B) Standard OID (with physical port translation for Zyxel/Aruba)
+                # B) Standard OID (with physical port translation for Zyxel/Aruba/H3C)
                 try:
                     ifindex_map = self.cache.get("ifindex_by_baseport", {})
                     for oid, val in std_poe_rows:
                         port_idx = int(str(oid).split(".")[-1])
-                        # Map hardware port to Home Assistant ifIndex
-                        target_idx = ifindex_map.get(port_idx, port_idx)
+                        
+                        # --- ISSUE #66 FIX START ---
+                        if getattr(self, "_is_zyxel", False):
+                            # Zyxel XMG series often uses a direct 1-to-1 mapping for physical 
+                            # ports in ifTable, but ifindex_by_baseport may not resolve 
+                            # correctly on all firmware. We verify if the index exists.
+                            target_idx = ifindex_map.get(port_idx, port_idx)
+                        else:
+                            # Standard mapping for Jt-Com and others
+                            target_idx = ifindex_map.get(port_idx, port_idx)
+                        # --- ISSUE #66 FIX END ---
+
                         if target_idx not in poe_power_mw:
                             mw = _parse_numeric(val)
-                            if mw is not None: poe_power_mw[target_idx] = float(mw)
+                            if mw is not None: 
+                                poe_power_mw[target_idx] = float(mw)
                 except Exception: pass
 
                 self.cache["poe_power_mw"] = poe_power_mw
