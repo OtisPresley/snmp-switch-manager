@@ -7,16 +7,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[Unreleased\]
+## \[0.5.2-beta.1\] - 2026-05-13
 
-### 🛣️ Roadmap Tracking
+### Fixed
 
-* 🔐 **SNMPv3 Support (Secure SNMP)**
-  ✅ Completed in **v0.5.0**
-
-### Added
-
-* Created the initial integration
+* 🚧 **Jt-Com / Goodtop Port Speeds:** Restored correct port speed calculation and display formatting for specialty hardware
+* 🚧 **Device Registry Stability:** Fixed a regression causing duplicate switch devices by restoring consistent unique_id anchoring
+* 🚧 **Plugin UI Data:** Restored missing port status and speed attributes required for the custom Lovelace card and plugin webpage
 
 ## \[0.5.1\] - 2026-04-10
 
@@ -149,3 +146,14 @@ Special thanks to [@cerebrate](https://github.com/cerebrate) for significant arc
 ### Added
 
 * 🔍 Initial release with automatic discovery and Lovelace card support
+
+## \[Unreleased\]
+
+### 🛣️ Roadmap Tracking
+
+* 🔐 **SNMPv3 Support (Secure SNMP)**
+  ✅ Completed in **v0.5.0**
+
+### Added
+
+* Created the initial integration
