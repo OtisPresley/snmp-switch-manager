@@ -667,11 +667,21 @@ class _BandwidthBase(CoordinatorEntity, SensorEntity):
         is configured, it is stored in _attr_icon during __init__.
         """
         return getattr(self, "_attr_icon", None)
+
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Restore attributes for the custom card and plugin UI."""
+        # This maps the data from the 'ifTable' you fixed in snmp.py (Line 1032)
+        iface = self.coordinator.data.get("ifTable", {}).get(self._if_index, {})
+        
         return {
             "if_index": self._if_index,
             "direction": self._direction,
+            "speed_mbps": iface.get("speed_mbps"),
+            "calculated_speed": iface.get("speed"),
+            "status": iface.get("status"),
+            "manufacturer": self.coordinator.data.get("manufacturer"),
+            "model": self.coordinator.data.get("model")
         }
 
     def _if_name(self) -> str:
