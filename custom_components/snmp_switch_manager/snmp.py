@@ -64,6 +64,9 @@ from .const import (
     OID_ifOutOctets,
     OID_ifHCInOctets,
     OID_ifHCOutOctets,
+    OID_h3c_entity_cpu_usage,
+    OID_h3c_entity_mem_usage,
+    OID_h3c_entity_temp,
     CONF_BW_ENABLE,
     CONF_BW_INCLUDE_STARTS_WITH,
     CONF_BW_INCLUDE_CONTAINS,
@@ -2238,7 +2241,32 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                                     self.cache["env_mem_free_kb"] = int(free_bytes / 1024)
                     except Exception:
                         pass
-
+                # ---- H3C / HP Comware Fallback (Issue #73) ----
+                if getattr(self, "_is_h3c", False):
+                    try:
+                        # Attempt to poll the first instance (index .1)
+                        h_cpu, h_mem, h_temp = await asyncio.gather(
+                            self._async_get_one(f"{OID_h3c_entity_cpu_usage}.1"),
+                            self._async_get_one(f"{OID_h3c_entity_mem_usage}.1"),
+                            self._async_get_one(f"{OID_h3c_entity_temp}.1"),
+                        )
+                        
+                        if h_cpu is not None:
+                            self.cache["env_cpu_5s"] = float(h_cpu)
+                            self.cache["env_cpu_60s"] = float(h_cpu)
+                            self.cache["env_cpu_300s"] = float(h_cpu)
+                        
+                        if h_mem is not None:
+                            # H3C reports memory usage as a percentage (%) directly
+                            # Simulate total/available fields to satisfy sensor.py logic
+                            self.cache["env_mem_total_kb"] = 100
+                            self.cache["env_mem_free_kb"] = 100 - float(h_mem)
+                            
+                        if h_temp is not None:
+                            self.cache.setdefault("env_temps_c", {})[1] = int(h_temp)
+                            self.cache.setdefault("env_temp_labels", {})[1] = "System"
+                    except Exception:
+                        pass
 
         return self.cache
 
