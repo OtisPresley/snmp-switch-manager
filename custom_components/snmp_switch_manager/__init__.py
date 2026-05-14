@@ -115,7 +115,7 @@ def _apply_port_rename_all(name: str, rules: list[tuple[str, _re.Pattern[str], s
     return out
 
 
-def _postprocess_if_names(data: dict, options: dict) -> dict:
+def _postprocess_if_names(data: dict, options: dict, rules: list[tuple[str, _re.Pattern[str], str]]) -> dict:
     """Apply port rename rules to ifTable names in coordinator data."""
     # Persist option flags for downstream consumers
     data["hide_ip_on_physical"] = bool(
@@ -125,7 +125,6 @@ def _postprocess_if_names(data: dict, options: dict) -> dict:
         )
     )
 
-    rules = _build_port_rename_rules(options)
     if not rules:
         return data
     if_table = (data or {}).get("ifTable")
@@ -197,9 +196,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
     # Apply per-device option for sysUpTime throttling
     client.set_uptime_poll_interval(entry.options.get(CONF_UPTIME_POLL_INTERVAL, DEFAULT_UPTIME_POLL_INTERVAL))
 
+    port_rename_rules = _build_port_rename_rules(entry.options)
+
     async def _update_method():
         data = await client.async_poll()
-        return _postprocess_if_names(data, entry.options)
+        return _postprocess_if_names(data, entry.options, port_rename_rules)
 
     coordinator = DataUpdateCoordinator(
         hass,

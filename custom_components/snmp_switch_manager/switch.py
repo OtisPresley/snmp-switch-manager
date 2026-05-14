@@ -24,7 +24,7 @@ from .const import (
     BW_MODE_ATTRIBUTES,
 )
 from .snmp import SwitchSnmpClient
-from .helpers import format_interface_name
+from .helpers import format_interface_name, check_vendor_interface_rules
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,11 +51,11 @@ def _format_bps(bps: Any) -> str:
 def _speed_display(row: Any) -> str:
     """Return a human-friendly interface speed string for a row from ifTable."""
     try:
-        admin = int(row.get('admin', 0) or 0)
+        admin = int(row.get('admin') or 0)
     except Exception:
         admin = 0
     try:
-        oper = int(row.get('oper', 0) or 0)
+        oper = int(row.get('oper') or 0)
     except Exception:
         oper = 0
 
@@ -107,14 +107,21 @@ async def async_setup_entry(hass, entry, async_add_entities):
     ip_index = client.cache.get("ipIndex", {})
     ip_mask = client.cache.get("ipMask", {})
 
-    # Include/Exclude interface rules (simple string match; include wins over exclude)
-    include_starts = [str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_STARTS_WITH, []) or []) if str(s).strip()]
-    include_contains = [str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_CONTAINS, []) or []) if str(s).strip()]
-    include_ends = [str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_ENDS_WITH, []) or []) if str(s).strip()]
+    ip_by_ifindex = {}
+    for ip, idx in ip_index.items():
+        try:
+            ip_by_ifindex[int(idx)] = ip
+        except Exception:
+            pass
 
-    exclude_starts = [str(s).strip().lower() for s in (entry.options.get(CONF_EXCLUDE_STARTS_WITH, []) or []) if str(s).strip()]
+    # Include/Exclude interface rules (simple string match; include wins over exclude)
+    include_starts = tuple(str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_STARTS_WITH, []) or []) if str(s).strip())
+    include_contains = [str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_CONTAINS, []) or []) if str(s).strip()]
+    include_ends = tuple(str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_ENDS_WITH, []) or []) if str(s).strip())
+
+    exclude_starts = tuple(str(s).strip().lower() for s in (entry.options.get(CONF_EXCLUDE_STARTS_WITH, []) or []) if str(s).strip())
     exclude_contains = [str(s).strip().lower() for s in (entry.options.get(CONF_EXCLUDE_CONTAINS, []) or []) if str(s).strip()]
-    exclude_ends = [str(s).strip().lower() for s in (entry.options.get(CONF_EXCLUDE_ENDS_WITH, []) or []) if str(s).strip()]
+    exclude_ends = tuple(str(s).strip().lower() for s in (entry.options.get(CONF_EXCLUDE_ENDS_WITH, []) or []) if str(s).strip())
 
     any_include_rules = bool(include_starts or include_contains or include_ends)
 
@@ -122,12 +129,14 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     icon_rules = entry.options.get(CONF_ICON_RULES, []) or []
 
-    def _matches_any(name_l: str, starts: list[str], contains: list[str], ends: list[str]) -> bool:
-        return (
-            any(name_l.startswith(x) for x in starts)
-            or any(x in name_l for x in contains)
-            or any(name_l.endswith(x) for x in ends)
-        )
+    def _matches_any(name_l: str, starts: tuple[str, ...], contains: list[str], ends: tuple[str, ...]) -> bool:
+        if starts and name_l.startswith(starts):
+            return True
+        if ends and name_l.endswith(ends):
+            return True
+        if contains and any(x in name_l for x in contains):
+            return True
+        return False
 
     # Vendor detection
     manufacturer = (client.cache.get("manufacturer") or "").lower()
@@ -137,8 +146,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
     is_cisco_sg = manufacturer.startswith("sg") and sys_descr.startswith("sg")
 
     # Detect Junos / Juniper EX series
-    manufacturer = (client.cache.get("manufacturer") or "").lower()
-    sys_descr = (client.cache.get("sysDescr") or "").lower()
     is_junos = "juniper" in manufacturer or "junos" in sys_descr or "ex2200" in sys_descr
 
     for idx, row in sorted(iftable.items()):
@@ -152,12 +159,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
             if "generic_skip_cpu_interface" not in disabled_vendor_filter_ids:
                 continue
 
-        lower = (raw_name or "").lower()
-        ip_str = _ip_for_index(idx, ip_index, ip_mask)
+        normalized_name = (raw_name or "").strip().lower()
+        ip_str = _ip_for_index(idx, ip_by_ifindex, ip_mask)
 
-        name_l = (raw_name or "").strip().lower()
-        include_hit = _matches_any(name_l, include_starts, include_contains, include_ends)
-        exclude_hit = _matches_any(name_l, exclude_starts, exclude_contains, exclude_ends)
+        include_hit = _matches_any(normalized_name, include_starts, include_contains, include_ends)
+        exclude_hit = _matches_any(normalized_name, exclude_starts, exclude_contains, exclude_ends)
 
         # Exclude rules always win.
         if exclude_hit:
@@ -168,9 +174,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
             continue
 
         is_port_channel = (
-            (lower.startswith("po") and not lower.startswith("port"))
-            or lower.startswith("port-channel")
-            or lower.startswith("link aggregate")
+            (normalized_name.startswith("po") and not normalized_name.startswith("port"))
+            or normalized_name.startswith("port-channel")
+            or normalized_name.startswith("link aggregate")
         )
         if is_port_channel and not (ip_str or alias):
             # Only create PortChannel entity if configured (alias or IP present),
@@ -179,95 +185,23 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 continue
 
         # Get interface details
-        name = raw_name.strip()
-        lower_name = name.lower()
         admin = row.get("admin")
         oper = row.get("oper")
         has_ip = bool(ip_str)
-        include = False
-        
 
-        # Cisco SG interface selection rules (can disable individual built-in rules)
-        if is_cisco_sg:
-            enable_physical = "cisco_sg_physical_fa_gi" not in disabled_vendor_filter_ids
-            enable_vlan = "cisco_sg_vlan_admin_or_oper" not in disabled_vendor_filter_ids
-            enable_has_ip = "cisco_sg_other_has_ip" not in disabled_vendor_filter_ids
+        include, raw_name = check_vendor_interface_rules(
+            normalized_name=normalized_name,
+            raw_name=raw_name,
+            admin=admin,
+            oper=oper,
+            has_ip=has_ip,
+            is_cisco_sg=is_cisco_sg,
+            is_junos=is_junos,
+            disabled_vendor_filter_ids=disabled_vendor_filter_ids,
+        )
 
-            if enable_physical or enable_vlan or enable_has_ip:
-                name = raw_name.strip()
-                lower_name = name.lower()
-                admin = row.get("admin")
-                oper = row.get("oper")
-                has_ip = bool(ip_str)
-                include = False
-
-                if enable_physical and (lower_name.startswith("fa") or lower_name.startswith("gi")) and oper != 6:
-                    include = True
-
-                elif enable_vlan and (lower_name.startswith("vlan") or lower_name.isdigit()):
-                    if lower_name.isdigit():
-                        # Cisco SG VLAN interfaces may present as unprefixed digits (e.g. "1" for VLAN 1).
-                        # Only include when up/admin-disabled and an IP is configured to avoid duplicates.
-                        if (oper == 1 or admin == 2) and has_ip:
-                            raw_name = "VLAN " + raw_name
-                            name = raw_name.strip()
-                            lower_name = name.lower()
-                            include = True
-                    else:
-                        if admin in (1, 2) and oper in (1, 2, 6, 7):
-                            include = True
-
-                # 3) Link Access Group / PortChannel interfaces should also be displayed if operationally up
-                # or administratively disabled.
-                elif enable_vlan and lower_name.startswith("po"):
-                    if oper == 1 or admin == 2:
-                        include = True
-
-                elif enable_has_ip and has_ip:
-                    include = True
-
-                if not include and not include_hit:
-                    continue
-
-
-
-        # Junos (e.g. EX2200) interface selection rules (can disable individual built-in rules)
-        if is_junos:
-            enable_physical = "junos_physical_ge" not in disabled_vendor_filter_ids
-            enable_l3_subif = "junos_l3_subif_has_ip" not in disabled_vendor_filter_ids
-            enable_vlan = "junos_vlan_admin_or_oper" not in disabled_vendor_filter_ids
-            enable_has_ip = "junos_other_has_ip" not in disabled_vendor_filter_ids
-
-            if enable_physical or enable_l3_subif or enable_vlan or enable_has_ip:
-                name = raw_name.strip()
-                lower_name = name.lower()
-                admin = row.get("admin")
-                oper = row.get("oper")
-                has_ip = bool(ip_str)
-                include = False
-
-                # 1) Physical front-panel ports: ge-0/0/X (no subinterface suffix)
-                if enable_physical and lower_name.startswith("ge-") and "." not in name:
-                    include = True
-
-                # 2) L3 subinterfaces: ge-0/0/X.Y – only keep non-.0 with an IP address
-                elif enable_l3_subif and lower_name.startswith("ge-") and "." in name:
-                    base, sub = name.split(".", 1)
-                    if sub != "0" and has_ip:
-                        include = True
-
-                # 3) VLAN interfaces that are operationally up or administratively disabled
-                elif enable_vlan and lower_name.startswith("vlan"):
-                    if admin in (1, 2) and oper in (1, 2, 6, 7):
-                        include = True
-
-                # 4) Any other non-physical interface with an IP address configured
-                elif enable_has_ip and has_ip:
-                    include = True
-
-                if not include and not include_hit:
-                    continue
-
+        if not include and not include_hit:
+            continue
 
         # display_name from the coordinator already has rename rules applied by
         # _postprocess_if_names in __init__.py. No further renaming needed here.
@@ -325,14 +259,22 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     async_add_entities(entities)
 
-def _ip_for_index(if_index: int, ip_by_ifindex: Dict[int, str], ip_mask_by_ifindex: Dict[int, str]) -> Optional[str]:
+def _ip_for_index(if_index: int, ip_by_ifindex: Dict[int, str], ip_mask: Dict[str, str]) -> Optional[str]:
     """Return IP/maskbits string for an ifIndex if present."""
     ip = ip_by_ifindex.get(if_index)
     if not ip:
         return None
-    mask = ip_mask_by_ifindex.get(if_index)
+    mask = ip_mask.get(ip)
     if not mask:
         return ip
+    try:
+        mask_parts = [int(p) for p in mask.split(".")]
+        if len(mask_parts) == 4:
+            prefix_len = sum(bin(x).count('1') for x in mask_parts)
+            return f"{ip}/{prefix_len}"
+    except Exception:
+        pass
+
     try:
         net = ipaddress.IPv4Network((ip, mask), strict=False)
         return f"{ip}/{net.prefixlen}"
@@ -370,10 +312,12 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
         # Name includes hostname so entity_id becomes e.g. switch.switch1_gi1_0_1
         self._attr_name = f"{hostname} {display_name}"
         self._attr_device_info = device_info
+        
+        # Calculate icon once during setup
+        self._attr_icon = self._calculate_icon()
 
 
-    @property
-    def icon(self) -> str | None:
+    def _calculate_icon(self) -> str | None:
         """Return an optional icon override from user rules (first match wins)."""
         name_l = (self._display_name or self._raw_name or "").lower()
         for r in self._icon_rules:
@@ -395,7 +339,8 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
 
     @property
     def is_on(self) -> bool:
-        row = self.coordinator.data.get("ifTable", {}).get(self._if_index, {})
+        data = self.coordinator.data or {}
+        row = data.get("ifTable", {}).get(self._if_index, {})
         return row.get("admin") == 1
 
     async def async_turn_on(self, **kwargs):
@@ -412,7 +357,8 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
-        row = self.coordinator.data.get("ifTable", {}).get(self._if_index, {})
+        data = self.coordinator.data or {}
+        row = data.get("ifTable", {}).get(self._if_index, {})
         attrs: Dict[str, Any] = {
             "Index": self._if_index,
             "Name": self._display,
@@ -451,30 +397,30 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
                     pass
 
             if allowed_vlans:
-                attrs["Allowed VLANs"] = ",".join(str(v) for v in allowed_vlans)
+                attrs["Allowed VLANs"] = allowed_vlans
 
             if tagged_vlans:
-                attrs["Tagged VLANs"] = ",".join(str(v) for v in tagged_vlans)
+                attrs["Tagged VLANs"] = tagged_vlans
 
             untagged_vlans = row.get("untagged_vlans") or []
             if untagged_vlans:
-                attrs["Untagged VLANs"] = ",".join(str(v) for v in untagged_vlans)
+                attrs["Untagged VLANs"] = untagged_vlans
 
         port_type = str(row.get("port_type") or "unknown")
         attrs["Port Type"] = port_type
 
-        hide_ip_on_physical = bool(self.coordinator.data.get("hide_ip_on_physical", False))
+        hide_ip_on_physical = bool(data.get("hide_ip_on_physical", False))
 
-        ip = _ip_for_index(self._if_index, self.coordinator.data.get("ip_by_ifindex", {}), self.coordinator.data.get("ip_mask_by_ifindex", {}))
+        ip = _ip_for_index(self._if_index, data.get("ip_by_ifindex", {}), data.get("ip_mask_by_ifindex", {}))
         if ip and not (hide_ip_on_physical and port_type == "physical"):
             attrs["IP"] = ip
 
         # PoE per-port power (optional)
         if (
-          self.coordinator.data.get("poe_enabled")
-            and self.coordinator.data.get("poe_mode") == POE_MODE_ATTRIBUTES
+          data.get("poe_enabled")
+            and data.get("poe_mode") == POE_MODE_ATTRIBUTES
         ):
-            poe_map = self.coordinator.data.get("poe_power_mw") or {}
+            poe_map = data.get("poe_power_mw") or {}
             mw = poe_map.get(self._if_index)
             if mw is not None:
                  try:
@@ -487,10 +433,10 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
 
         # Bandwidth attributes (optional)
         if (
-            self.coordinator.data.get('bw_enabled')
-            and self.coordinator.data.get('bw_mode') == BW_MODE_ATTRIBUTES
+            data.get('bw_enabled')
+            and data.get('bw_mode') == BW_MODE_ATTRIBUTES
         ):
-            bw_row = (self.coordinator.data.get('bandwidth') or {}).get(self._if_index) or {}
+            bw_row = (data.get('bandwidth') or {}).get(self._if_index) or {}
             # Throughput (bit/s)
             rx_bps = bw_row.get('rx_bps')
             tx_bps = bw_row.get('tx_bps')

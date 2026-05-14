@@ -107,6 +107,14 @@ def format_interface_name(raw_name: str, unit: int=1, slot: int=0, port: Optiona
 
 def ip_to_cidr(ip: str, mask: str) -> Optional[str]:
     try:
+        mask_parts = [int(p) for p in mask.split(".") if p.isdigit()]
+        if len(mask_parts) == 4:
+            prefix_len = sum(bin(x).count('1') for x in mask_parts)
+            return f"{ip}/{prefix_len}"
+    except Exception:
+        pass
+
+    try:
         net = ipaddress.IPv4Network((ip, mask), strict=False)
         return f"{ip}/{net.prefixlen}"
     except Exception:
@@ -230,3 +238,96 @@ def parse_pfsense_sysdescr(sys_descr: str) -> dict[str, str | None]:
             model = " ".join(toks[:-1]).strip() or model
 
     return {"manufacturer": manufacturer, "model": model, "firmware": fw}
+
+
+def uptime_human(ticks: Any) -> str:
+    """Convert sysUpTime (hundredths of seconds) to human string."""
+    try:
+        t = int(ticks)
+        sec = t // 100
+        d, r = divmod(sec, 86400)
+        h, r = divmod(r, 3600)
+        m, s = divmod(r, 60)
+        return f"{d}d {h}h {m}m {s}s"
+    except Exception:
+        return str(ticks) if ticks is not None else "Unknown"
+
+
+def check_vendor_interface_rules(
+    normalized_name: str,
+    raw_name: str,
+    admin: int | None,
+    oper: int | None,
+    has_ip: bool,
+    is_cisco_sg: bool,
+    is_junos: bool,
+    disabled_vendor_filter_ids: set[str],
+) -> tuple[bool, str]:
+    """
+    Check if an interface is included based on vendor-specific rules.
+    Returns (include, modified_raw_name).
+    """
+    include = True
+    modified_raw_name = raw_name
+
+    if is_cisco_sg:
+        enable_physical = "cisco_sg_physical_fa_gi" not in disabled_vendor_filter_ids
+        enable_vlan = "cisco_sg_vlan_admin_or_oper" not in disabled_vendor_filter_ids
+        enable_has_ip = "cisco_sg_other_has_ip" not in disabled_vendor_filter_ids
+        include = False
+
+        if enable_physical or enable_vlan or enable_has_ip:
+            if enable_physical and (normalized_name.startswith("fa") or normalized_name.startswith("gi")) and oper != 6:
+                include = True
+
+            elif enable_vlan and (normalized_name.startswith("vlan") or normalized_name.isdigit()):
+                if normalized_name.isdigit():
+                    # Cisco SG VLAN interfaces may present as unprefixed digits (e.g. "1" for VLAN 1).
+                    # Only include when up/admin-disabled and an IP is configured to avoid duplicates.
+                    if (oper == 1 or admin == 2) and has_ip:
+                        modified_raw_name = "VLAN " + raw_name
+                        include = True
+                else:
+                    if admin in (1, 2) and oper in (1, 2, 6, 7):
+                        include = True
+
+            # 3) Link Access Group / PortChannel interfaces should also be displayed if operationally up
+            # or administratively disabled.
+            elif enable_vlan and normalized_name.startswith("po"):
+                if oper == 1 or admin == 2:
+                    include = True
+
+            elif enable_has_ip and has_ip:
+                include = True
+
+    elif is_junos:
+        enable_physical = "junos_physical_ge" not in disabled_vendor_filter_ids
+        enable_l3_subif = "junos_l3_subif_has_ip" not in disabled_vendor_filter_ids
+        enable_vlan = "junos_vlan_admin_or_oper" not in disabled_vendor_filter_ids
+        enable_has_ip = "junos_other_has_ip" not in disabled_vendor_filter_ids
+        include = False
+
+        if enable_physical or enable_l3_subif or enable_vlan or enable_has_ip:
+            # 1) Physical front-panel ports: ge-0/0/X (no subinterface suffix)
+            if enable_physical and normalized_name.startswith("ge-") and "." not in raw_name:
+                include = True
+
+            # 2) L3 subinterfaces: ge-0/0/X.Y – only keep non-.0 with an IP address
+            elif enable_l3_subif and normalized_name.startswith("ge-") and "." in raw_name:
+                try:
+                    base, sub = raw_name.split(".", 1)
+                    if sub != "0" and has_ip:
+                        include = True
+                except Exception:
+                    pass
+
+            # 3) VLAN interfaces that are operationally up or administratively disabled
+            elif enable_vlan and normalized_name.startswith("vlan"):
+                if admin in (1, 2) and oper in (1, 2, 6, 7):
+                    include = True
+
+            # 4) Any other non-physical interface with an IP address configured
+            elif enable_has_ip and has_ip:
+                include = True
+
+    return include, modified_raw_name

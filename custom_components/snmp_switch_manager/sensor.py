@@ -42,6 +42,7 @@ from .const import (
     Any,
 )
 from .snmp import SwitchSnmpClient
+from .helpers import check_vendor_interface_rules, uptime_human
 
 _LOGGER = logging.getLogger(__name__)
 # Dell OS6 temperature sensor label mapping (index -> label)
@@ -115,18 +116,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
     host_label = hostname or entry.data.get("name") or client.host
     uptime_ticks = client.cache.get("sysUpTime")
 
-    # Convert sysUpTime (hundredths of seconds) to human string
-    def _uptime_human(ticks):
-        try:
-            t = int(ticks)
-            sec = t // 100
-            d, r = divmod(sec, 86400)
-            h, r = divmod(r, 3600)
-            m, s = divmod(r, 60)
-            return f"{d}d {h}h {m}m {s}s"
-        except Exception:
-            return str(ticks) if ticks is not None else "Unknown"
-
     # Device identifiers must be stable.
     #
     # Historically, SNMP Switch Manager used a v2c-only identifier that included
@@ -156,7 +145,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         SimpleTextSensor(coordinator, entry, "manufacturer", manufacturer, device_info, host_label),
         SimpleTextSensor(coordinator, entry, "model", model, device_info, host_label),
         SimpleTextSensor(coordinator, entry, "firmware", firmware, device_info, host_label),
-        SimpleTextSensor(coordinator, entry, "uptime", _uptime_human(uptime_ticks), device_info, host_label),
+        SimpleTextSensor(coordinator, entry, "uptime", uptime_human(uptime_ticks), device_info, host_label),
         SimpleTextSensor(coordinator, entry, "hostname", hostname or client.host, device_info, host_label),
     ]
 
@@ -197,22 +186,27 @@ async def async_setup_entry(hass, entry, async_add_entities):
         is_cisco_sg = manufacturer_l.startswith("sg") and sys_descr_l.startswith("sg")
         is_junos = ("juniper" in manufacturer_l) or ("junos" in sys_descr_l) or ("ex2200" in sys_descr_l)
 
-        def _ip_for_index(if_index: int) -> str | None:
-            # Match switch.py behavior: return "<ip>/<maskbits>" if present for this ifIndex
+        ip_by_ifindex = {}
+        for ip, idx in ip_index.items():
             try:
-                for ip, idx in (ip_index or {}).items():
-                    if int(idx) == int(if_index):
-                        mask = str((ip_mask or {}).get(ip) or "")
-                        bits = 0
-                        if mask:
-                            # Convert dotted quad to mask bits
-                            parts = [int(p) for p in mask.split(".") if p.isdigit()]
-                            if len(parts) == 4:
-                                bits = sum(bin(p).count("1") for p in parts)
-                        return f"{ip}/{bits}" if bits else str(ip)
+                ip_by_ifindex[int(idx)] = ip
             except Exception:
+                pass
+
+        def _ip_for_index(if_index: int) -> str | None:
+            ip = ip_by_ifindex.get(int(if_index))
+            if not ip:
                 return None
-            return None
+            mask = str(ip_mask.get(ip) or "")
+            if mask:
+                try:
+                    parts = [int(p) for p in mask.split(".") if p.isdigit()]
+                    if len(parts) == 4:
+                        bits = sum(bin(p).count("1") for p in parts)
+                        return f"{ip}/{bits}"
+                except Exception:
+                    pass
+            return str(ip)
 
         for idx_i, row in (iftable or {}).items():
             try:
@@ -242,47 +236,22 @@ async def async_setup_entry(hass, entry, async_add_entities):
             has_ip = bool(ip_str)
             include = True  # default for unknown vendors
 
-            if is_cisco_sg:
-                enable_physical = "cisco_sg_physical_fa_gi" not in disabled_vendor_filter_ids
-                enable_vlan = "cisco_sg_vlan_admin_or_oper" not in disabled_vendor_filter_ids
-                enable_has_ip = "cisco_sg_other_has_ip" not in disabled_vendor_filter_ids
-                include = False
-
-                if enable_physical and (lower.startswith("fa") or lower.startswith("gi")):
-                    include = True
-                elif enable_vlan and lower.startswith("vlan"):
-                    if oper == 1 or admin == 2:
-                        include = True
-                elif enable_has_ip and has_ip:
-                    include = True
-
-            elif is_junos:
-                enable_physical = "junos_physical_ge" not in disabled_vendor_filter_ids
-                enable_l3_subif = "junos_l3_subif_has_ip" not in disabled_vendor_filter_ids
-                enable_vlan = "junos_vlan_admin_or_oper" not in disabled_vendor_filter_ids
-                enable_has_ip = "junos_other_has_ip" not in disabled_vendor_filter_ids
-                include = False
-
-                if enable_physical and lower.startswith("ge-") and "." not in raw_name:
-                    include = True
-                elif enable_l3_subif and lower.startswith("ge-") and "." in raw_name:
-                    try:
-                        _base, sub = raw_name.split(".", 1)
-                        if sub != "0" and has_ip:
-                            include = True
-                    except Exception:
-                        pass
-                elif enable_vlan and lower.startswith("vlan"):
-                    if oper == 1 or admin == 2:
-                        include = True
-                elif enable_has_ip and has_ip:
-                    include = True
+            include, _ = check_vendor_interface_rules(
+                normalized_name=lower,
+                raw_name=raw_name,
+                admin=admin,
+                oper=oper,
+                has_ip=has_ip,
+                is_cisco_sg=is_cisco_sg,
+                is_junos=is_junos,
+                disabled_vendor_filter_ids=disabled_vendor_filter_ids,
+            )
 
             if include:
                 allowed_if_indexes.add(idx_i)
 
-        def _clean_list(key: str) -> list[str]:
-            return [str(s).strip().lower() for s in (entry.options.get(key, []) or []) if str(s).strip()]
+        def _clean_list(key: str) -> tuple[str, ...]:
+            return tuple(str(s).strip().lower() for s in (entry.options.get(key, []) or []) if str(s).strip())
 
         include_starts = _clean_list(CONF_BW_INCLUDE_STARTS_WITH)
         include_contains = _clean_list(CONF_BW_INCLUDE_CONTAINS)
@@ -291,12 +260,16 @@ async def async_setup_entry(hass, entry, async_add_entities):
         exclude_contains = _clean_list(CONF_BW_EXCLUDE_CONTAINS)
         exclude_ends = _clean_list(CONF_BW_EXCLUDE_ENDS_WITH)
 
-        def _matches_any(name_l: str, starts: list[str], contains: list[str], ends: list[str]) -> bool:
-            return (
-                any(name_l.startswith(x) for x in starts)
-                or any(x in name_l for x in contains)
-                or any(name_l.endswith(x) for x in ends)
-            )
+        def _matches_any(name_l: str, starts: tuple[str, ...], contains: tuple[str, ...], ends: tuple[str, ...]) -> bool:
+            if starts and name_l.startswith(starts):
+                return True
+            if ends and name_l.endswith(ends):
+                return True
+            if contains:
+                for x in contains:
+                    if x in name_l:
+                        return True
+            return False
 
         selected_indexes: list[int] = []
         for if_index, row in iftable.items():
@@ -601,16 +574,7 @@ class SimpleTextSensor(CoordinatorEntity, SensorEntity):
         if self._key == "hostname":
             return data.get("sysName") or self._value
         if self._key == "uptime":
-            ticks = data.get("sysUpTime")
-            try:
-                t = int(ticks)
-                sec = t // 100
-                d, r = divmod(sec, 86400)
-                h, r = divmod(r, 3600)
-                m, s = divmod(r, 60)
-                return f"{d}d {h}h {m}m {s}s"
-            except Exception:
-                return str(ticks)
+            return uptime_human(data.get("sysUpTime"))
         # prefer parsed cache values if present
         if self._key == "manufacturer":
             return data.get("manufacturer") or self._value

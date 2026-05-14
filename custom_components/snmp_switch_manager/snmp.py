@@ -398,6 +398,17 @@ class SwitchSnmpClient:
 
         # Bandwidth sensor options (set by config entry options)
         self._bandwidth_options: Dict[str, Any] = dict(bandwidth_options or {})
+        
+        def _clean_list(key: str) -> tuple[str, ...]:
+            return tuple(str(s).strip().lower() for s in (self._bandwidth_options.get(key, []) or []) if str(s).strip())
+
+        self._bw_include_starts = _clean_list(CONF_BW_INCLUDE_STARTS_WITH)
+        self._bw_include_contains = _clean_list(CONF_BW_INCLUDE_CONTAINS)
+        self._bw_include_ends = _clean_list(CONF_BW_INCLUDE_ENDS_WITH)
+        self._bw_exclude_starts = _clean_list(CONF_BW_EXCLUDE_STARTS_WITH)
+        self._bw_exclude_contains = _clean_list(CONF_BW_EXCLUDE_CONTAINS)
+        self._bw_exclude_ends = _clean_list(CONF_BW_EXCLUDE_ENDS_WITH)
+
         self._poe_options = poe_options or {}
         self._poe_last_poll: float = 0.0
 
@@ -1536,22 +1547,16 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 try:
                     iftable = self.cache.get("ifTable", {}) or {}
 
-                    def _clean_list(key: str) -> list[str]:
-                        return [str(s).strip().lower() for s in (self._bandwidth_options.get(key, []) or []) if str(s).strip()]
-
-                    include_starts = _clean_list(CONF_BW_INCLUDE_STARTS_WITH)
-                    include_contains = _clean_list(CONF_BW_INCLUDE_CONTAINS)
-                    include_ends = _clean_list(CONF_BW_INCLUDE_ENDS_WITH)
-                    exclude_starts = _clean_list(CONF_BW_EXCLUDE_STARTS_WITH)
-                    exclude_contains = _clean_list(CONF_BW_EXCLUDE_CONTAINS)
-                    exclude_ends = _clean_list(CONF_BW_EXCLUDE_ENDS_WITH)
-
-                    def _matches_any(name_l: str, starts: list[str], contains: list[str], ends: list[str]) -> bool:
-                        return (
-                            any(name_l.startswith(x) for x in starts)
-                            or any(x in name_l for x in contains)
-                            or any(name_l.endswith(x) for x in ends)
-                        )
+                    def _matches_any(name_l: str, starts: tuple[str, ...], contains: tuple[str, ...], ends: tuple[str, ...]) -> bool:
+                        if starts and name_l.startswith(starts):
+                            return True
+                        if ends and name_l.endswith(ends):
+                            return True
+                        if contains:
+                            for x in contains:
+                                if x in name_l:
+                                    return True
+                        return False
 
                     selected: list[int] = []
                     for idx, row in iftable.items():
@@ -1563,11 +1568,11 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                         if not raw_name:
                             continue
                         nl = raw_name.lower()
-                        include_hit = _matches_any(nl, include_starts, include_contains, include_ends)
-                        exclude_hit = _matches_any(nl, exclude_starts, exclude_contains, exclude_ends)
+                        include_hit = _matches_any(nl, self._bw_include_starts, self._bw_include_contains, self._bw_include_ends)
+                        exclude_hit = _matches_any(nl, self._bw_exclude_starts, self._bw_exclude_contains, self._bw_exclude_ends)
 
                         # If include rules are defined, only include matches.
-                        if (include_starts or include_contains or include_ends):
+                        if (self._bw_include_starts or self._bw_include_contains or self._bw_include_ends):
                             if not include_hit:
                                 continue
 
