@@ -83,6 +83,11 @@ OID_ipAdEntAddr = "1.3.6.1.2.1.4.20.1.1"
 OID_ipAdEntIfIndex = "1.3.6.1.2.1.4.20.1.2"
 OID_ipAdEntNetMask = "1.3.6.1.2.1.4.20.1.3"
 
+# H3C specific (HH3C-ENTITY-EXT-MIB)
+OID_h3c_entity_cpu_usage = "1.3.6.1.4.1.25506.2.6.1.1.1.1.6"
+OID_h3c_entity_mem_usage = "1.3.6.1.4.1.25506.2.6.1.1.1.1.8"
+OID_h3c_entity_temp = "1.3.6.1.4.1.25506.2.6.1.1.1.1.12"
+
 # ---------------------------
 # Options / device overrides
 # ---------------------------
