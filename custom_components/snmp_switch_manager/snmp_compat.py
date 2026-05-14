@@ -1,4 +1,5 @@
-import asyncio
+# ruff: noqa: F401
+"""Compatibility layer for PySNMP to ensure forward compatibility with PySNMP 7+ and legacy versions."""
 
 # Prefer new API (PySNMP >= 7, v3arch asyncio)
 try:
@@ -59,19 +60,51 @@ if not HAS_V7:
     )
 
     async def get_cmd(*a, **k):
+        """Legacy wrapper for get_cmd."""
         return await _get_cmd(*a, **k)
 
     async def set_cmd(*a, **k):
+        """Legacy wrapper for set_cmd."""
         return await _set_cmd(*a, **k)
 
     async def next_cmd(*a, **k):
+        """Legacy wrapper for next_cmd."""
         return await _next_cmd(*a, **k)
 
     async def bulk_cmd(*a, **k):
+        """Legacy wrapper for bulk_cmd."""
         return await _bulk_cmd(*a, **k)
 
     async def walk_cmd(*a, **k):
+        """Legacy wrapper for walk_cmd."""
         return await _walk_cmd(*a, **k)
 
     async def bulk_walk_cmd(*a, **k):
+        """Legacy wrapper for bulk_walk_cmd."""
         return await _bulk_walk_cmd(*a, **k)
+
+# The __all__ list tells other tools which symbols are public.
+__all__ = [
+    "CommunityData",
+    "ContextData",
+    "ObjectIdentity",
+    "ObjectType",
+    "OctetString",
+    "Integer",
+    "SnmpEngine",
+    "UdpTransportTarget",
+    "get_cmd",
+    "set_cmd",
+    "next_cmd",
+    "bulk_cmd",
+    "walk_cmd",
+    "bulk_walk_cmd",
+    "is_end_of_mib",
+    "UsmUserData",
+    "usmNoAuthProtocol",
+    "usmHMACMD5AuthProtocol",
+    "usmHMACSHAAuthProtocol",
+    "usmNoPrivProtocol",
+    "usmDESPrivProtocol",
+    "usmAesCfb128Protocol",
+]

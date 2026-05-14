@@ -83,16 +83,12 @@ from .const import (
     CONF_POE_MODE,
     CONF_POE_POLL_INTERVAL,
     POE_MODE_ATTRIBUTES,
-    POE_MODE_SENSORS,
-    DEFAULT_POE_POLL_INTERVAL,
     CONF_ENV_ENABLE,
     CONF_ENV_MODE,
     CONF_ENV_POLL_INTERVAL,
     ENV_MODE_ATTRIBUTES,
-    ENV_MODE_SENSORS,
     DEFAULT_ENV_POLL_INTERVAL,
     OID_ifType,
-    CONF_SNMP_VERSION,
     SNMP_VERSION_V2C,
     SNMP_VERSION_V3,
     CONF_SNMPV3_USERNAME,
@@ -101,10 +97,8 @@ from .const import (
     CONF_SNMPV3_PRIV_PROTOCOL,
     CONF_SNMPV3_PRIV_PASSWORD,
     SNMPV3_AUTH_NONE,
-    SNMPV3_AUTH_SHA,
     SNMPV3_AUTH_MD5,
     SNMPV3_PRIV_NONE,
-    SNMPV3_PRIV_DES,
     SNMPV3_PRIV_AES,
 )
 
@@ -937,18 +931,18 @@ class SwitchSnmpClient:
                     # Prefer "current" VLAN membership tables when present.
                     # Dell N-series (and some others) expose only the "static" tables.
                     try:
-                        cur_allowed = await _collect_vlan_portlists(
+                        await _collect_vlan_portlists(
 OID_dot1qVlanCurrentEgressPorts = "1.3.6.1.2.1.17.7.1.4.2.1.4"
                         )
                     except Exception:
-                        cur_allowed = 0
+                        pass
 
                     try:
-                        cur_untagged = await _collect_vlan_portlists(
+                        await _collect_vlan_portlists(
 OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                         )
                     except Exception:
-                        cur_untagged = 0
+                        pass
 
                     # Fall back to static membership when current tables are not implemented.
                     # Some platforms expose richer/complete VLAN membership only via the static tables.
@@ -1045,7 +1039,8 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
         
         # Specialty Math for Jt-Com/Goodtop and Plugin UI speed formatting
         for idx, rec in self.cache["ifTable"].items():
-            if not isinstance(rec, dict): continue
+            if not isinstance(rec, dict):
+                continue
             
             raw_s = float(rec.get("speed_bps", 0))
             high_s = float(rec.get("speed_high", 0))
@@ -1730,14 +1725,18 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 try:
                     for _, val in budget_rows:
                         n = _parse_numeric(val)
-                        if n is not None and float(n) >= 0: budget_list.append(float(n))
-                except Exception: pass
+                        if n is not None and float(n) >= 0: 
+                            budget_list.append(float(n))
+                except Exception: 
+                    pass
 
                 try:
                     for _, val in used_rows:
                         n = _parse_numeric(val)
-                        if n is not None and float(n) >= 0: used_raw_list.append(float(n))
-                except Exception: pass
+                        if n is not None and float(n) >= 0: 
+                            used_raw_list.append(float(n))
+                except Exception: 
+                    pass
 
                # Adaptive Scaling: Heuristic to support Watts vs mW
                 b_sum = sum(budget_list) if budget_list else 0.0
@@ -1768,8 +1767,10 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     for oid, val in dell_poe_rows:
                         idx = int(str(oid).split(".")[-1])
                         mw = _parse_numeric(val)
-                        if mw is not None: poe_power_mw[idx] = float(mw)
-                except Exception: pass
+                        if mw is not None: 
+                            poe_power_mw[idx] = float(mw)
+                except Exception: 
+                    pass
 
                 # B) Standard OID (with physical port translation for Zyxel/Aruba/H3C)
                 try:
@@ -1792,7 +1793,8 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                             mw = _parse_numeric(val)
                             if mw is not None: 
                                 poe_power_mw[target_idx] = float(mw)
-                except Exception: pass
+                except Exception: 
+                    pass
 
                 self.cache["poe_power_mw"] = poe_power_mw
 
@@ -1850,7 +1852,6 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
 
                 # Dell N-Series power
                 # 1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.9.1.4.1.<idx> = INTEGER: <mW>
-                env_oid = "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.9.1.4.1"
                 for oid, val in dell_power_rows:
                     try:
                         env_idx = int(str(oid).split(".")[-1])

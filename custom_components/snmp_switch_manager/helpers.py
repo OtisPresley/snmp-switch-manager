@@ -84,10 +84,14 @@ def _abbr_from_speed_or_name(name: str) -> str:
         return "Lo"
     if n.startswith("vl"):
         return "Vl"
-    if "100g" in n: return "Hu"
-    if "10g" in n: return "Te"
-    if "20g" in n: return "Tw"
-    if "1g" in n or "1000" in n: return "Gi"
+    if "100g" in n:
+        return "Hu"
+    if "10g" in n:
+        return "Te"
+    if "20g" in n:
+        return "Tw"
+    if "1g" in n or "1000" in n:
+        return "Gi"
     return "Gi"
 
 def format_interface_name(raw_name: str, unit: int=1, slot: int=0, port: Optional[int]=None) -> str:

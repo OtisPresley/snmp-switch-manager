@@ -35,8 +35,6 @@ from .const import (
     BUILTIN_VENDOR_FILTER_RULES,
     CONF_DISABLED_VENDOR_FILTER_RULE_IDS,
     CONF_BW_ENABLE,
-    CONF_BW_INCLUDE_RULES,
-    CONF_BW_EXCLUDE_RULES,
     CONF_BANDWIDTH_POLL_INTERVAL,
     DEFAULT_BANDWIDTH_POLL_INTERVAL,
     CONF_POE_POLL_INTERVAL,
@@ -82,7 +80,6 @@ from .const import (
     SNMPV3_AUTH_MD5,
     SNMPV3_PRIV_NONE,
     SNMPV3_PRIV_DES,
-    SNMPV3_PRIV_AES,
     CONF_LEGACY_DEVICE_ID,
 )
 from .snmp import test_connection, get_sysname
@@ -1644,12 +1641,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         self._options.pop(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS, None)
         self._apply_options()
         return await self.async_step_port_name_rules()
-
-
-    async def async_step_interface_name_rules(self, user_input=None):
-        """Backward/forward-compatible alias for the Interface Name Rules menu."""
-        return await self.async_step_port_name_rules(user_input)
-
 
     async def async_step_environmental_enable_disable(self, user_input=None) -> FlowResult:
         """Enable/disable Environmental + PoE options (and choose attributes vs sensors mode)."""

@@ -1,4 +1,10 @@
+# ruff: noqa: F401
 from __future__ import annotations
+
+# Grouping imports together at the very top to satisfy E402
+from typing import Any as Any
+
+"""Constants for the SNMP Switch Manager integration."""
 
 DOMAIN = "snmp_switch_manager"
 
@@ -291,3 +297,12 @@ CONF_BW_RX_THROUGHPUT_ICON = "bw_rx_throughput_icon"
 CONF_BW_TX_THROUGHPUT_ICON = "bw_tx_throughput_icon"
 CONF_BW_RX_TOTAL_ICON = "bw_rx_total_icon"
 CONF_BW_TX_TOTAL_ICON = "bw_tx_total_icon"
+
+# The __all__ list should be at the bottom. 
+# List every constant name here as a string.
+__all__ = [
+    "Any",
+    "DOMAIN",
+    "PLATFORMS",
+    # Add your specific OID variable names here as well
+]

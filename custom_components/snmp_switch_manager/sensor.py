@@ -5,7 +5,6 @@ from homeassistant.util import slugify
 from homeassistant.const import (
     EntityCategory,
     PERCENTAGE,
-    REVOLUTIONS_PER_MINUTE,
     UnitOfPower,
     UnitOfTemperature,
 )
@@ -16,11 +15,7 @@ from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, Sen
 
 from .const import (
     DOMAIN,
-    CONF_COMMUNITY,
     CONF_LEGACY_DEVICE_ID,
-    CONF_SNMP_VERSION,
-    SNMP_VERSION_V3,
-    CONF_ICON_RULES,
     CONF_BW_ENABLE,
     CONF_BW_MODE,
     BW_MODE_SENSORS,
@@ -38,14 +33,13 @@ from .const import (
     POE_MODE_SENSORS,
     CONF_ENV_ENABLE,
     CONF_ENV_MODE,
-    CONF_ENV_POLL_INTERVAL,
     ENV_MODE_ATTRIBUTES,
     ENV_MODE_SENSORS,
-    DEFAULT_ENV_POLL_INTERVAL,
     CONF_BW_RX_THROUGHPUT_ICON,
     CONF_BW_TX_THROUGHPUT_ICON,
     CONF_BW_RX_TOTAL_ICON,
     CONF_BW_TX_TOTAL_ICON,
+    Any,
 )
 from .snmp import SwitchSnmpClient
 
@@ -408,7 +402,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
     env_mode = entry.options.get(CONF_ENV_MODE, ENV_MODE_ATTRIBUTES)
 
     env_power_uid = f"{entry.entry_id}-env-power"
-    env_system_power_uid = f"{entry.entry_id}-env-system-power"
 
     # Legacy unique_id formats existed before the "<entry_id>-env-*" convention.
     # When switching modes, remove both formats so we don't leave orphan sensors behind.

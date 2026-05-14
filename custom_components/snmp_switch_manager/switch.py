@@ -11,10 +11,7 @@ from homeassistant.helpers import entity_registry as er
 
 from .const import (
     DOMAIN,
-    CONF_COMMUNITY,
     CONF_LEGACY_DEVICE_ID,
-    CONF_SNMP_VERSION,
-    SNMP_VERSION_V3,
     CONF_ICON_RULES,
     CONF_INCLUDE_STARTS_WITH,
     CONF_INCLUDE_CONTAINS,
@@ -24,10 +21,7 @@ from .const import (
     CONF_EXCLUDE_ENDS_WITH,
     CONF_DISABLED_VENDOR_FILTER_RULE_IDS,
     POE_MODE_ATTRIBUTES,
-    CONF_BW_ENABLE,
-    CONF_BW_MODE,
     BW_MODE_ATTRIBUTES,
-    CONF_HIDE_IP_ON_PHYSICAL,
 )
 from .snmp import SwitchSnmpClient
 from .helpers import format_interface_name

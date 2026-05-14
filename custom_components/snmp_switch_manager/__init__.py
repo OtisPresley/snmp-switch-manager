@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re as _re
 
 from dataclasses import dataclass
 from datetime import timedelta
@@ -19,8 +20,6 @@ from .const import (
     CONF_BANDWIDTH_POLL_INTERVAL,
     DEFAULT_BANDWIDTH_POLL_INTERVAL,
     CONF_CUSTOM_OIDS,
-    CONF_OVERRIDE_COMMUNITY,
-    CONF_OVERRIDE_PORT,
     CONF_UPTIME_POLL_INTERVAL,
     DEFAULT_UPTIME_POLL_INTERVAL,
     CONF_BW_ENABLE,
@@ -67,10 +66,6 @@ SwitchManagerConfigEntry = ConfigEntry
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     await async_register_services(hass)
     return True
-
-
-import re as _re
-
 
 def _build_port_rename_rules(options: dict) -> list[tuple[str, _re.Pattern[str], str]]:
     """Build ordered (id, compiled_regex, replace) rules from config entry options.
