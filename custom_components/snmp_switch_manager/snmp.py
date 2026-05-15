@@ -2297,14 +2297,9 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                         pass
                 # ---- H3C / HP Comware Fallback (Issue #73) ----
                 if getattr(self, "_is_h3c", False):
+                    # CPU Walk
                     try:
                         h3c_cpus: list[float] = []
-                        h3c_mems: list[float] = []
-                        temps_c: dict[int, int] = {}
-                        fans_status: dict[int, int] = {}
-                        psu_status: dict[int, int] = {}
-                        
-                        # CPU Walk
                         if self.cache.get("env_cpu_5s") is None:
                             for oid, val in await self._async_walk(OID_h3c_entity_cpu_usage):
                                 n = _parse_numeric(val)
@@ -2315,8 +2310,12 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                                 self.cache["env_cpu_5s"] = avg_cpu
                                 self.cache["env_cpu_60s"] = avg_cpu
                                 self.cache["env_cpu_300s"] = avg_cpu
+                    except Exception:
+                        pass
 
-                        # Memory Walk
+                    # Memory Walk
+                    try:
+                        h3c_mems: list[float] = []
                         if self.cache.get("env_mem_total_kb") is None:
                             for oid, val in await self._async_walk(OID_h3c_entity_mem_usage):
                                 n = _parse_numeric(val)
@@ -2327,8 +2326,12 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                                 # Scale to 1,000,000 kB (1 GB) so the UI doesn't look ridiculous
                                 self.cache["env_mem_total_kb"] = 1000000
                                 self.cache["env_mem_free_kb"] = int(1000000.0 * (100.0 - avg_mem) / 100.0)
+                    except Exception:
+                        pass
                                 
-                        # Temperature Walk
+                    # Temperature Walk
+                    try:
+                        temps_c: dict[int, int] = {}
                         if self.cache.get("env_temps_c") in (None, {}):
                             for oid, val in await self._async_walk(OID_h3c_entity_temp):
                                 try:
@@ -2350,13 +2353,31 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                                     except Exception:
                                         pass
                                     self.cache.setdefault("env_temps_c", {})[idx] = temps_c[idx]
+                    except Exception:
+                        pass
 
-                        # Fans & PSUs Walk via ErrorStatus and PhysicalName (since Class is missing in some MIBs)
+                    # Fans & PSUs Walk via ErrorStatus and PhysicalName (since Class is missing in some MIBs)
+                    try:
+                        fans_status: dict[int, int] = {}
+                        psu_status: dict[int, int] = {}
                         if self.cache.get("env_fans_status") in (None, {}) or self.cache.get("env_psu_status") in (None, {}):
                             for oid, val in await self._async_walk(OID_entPhysicalName):
                                 try:
                                     idx = int(str(oid).split(".")[-1])
-                                    name_lower = str(val).lower()
+                                    
+                                    # PySNMP OctetString safe extraction (prevents hex decoding of trailing null bytes)
+                                    name_str = ""
+                                    try:
+                                        if hasattr(val, "asOctets"):
+                                            name_str = val.asOctets().decode("utf-8", "ignore")
+                                        elif hasattr(val, "prettyPrint"):
+                                            name_str = val.prettyPrint()
+                                        else:
+                                            name_str = str(val)
+                                    except Exception:
+                                        name_str = str(val)
+                                        
+                                    name_lower = name_str.lower()
                                     is_fan = "fan" in name_lower
                                     is_psu = "power" in name_lower or "psu" in name_lower
                                     
@@ -2375,7 +2396,6 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                                 self.cache["env_fans_status"] = fans_status
                             if psu_status and self.cache.get("env_psu_status") in (None, {}):
                                 self.cache["env_psu_status"] = psu_status
-
                     except Exception:
                         pass
 
