@@ -7,19 +7,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[0.5.2-beta.2\] - 2026-05-13
-
-### Fixed
-
-* 🚧 **H3C Environmentals:** Attempt to fix display of CPU, Mem, Temperature display for H3C devices
-
-## \[0.5.2-beta.1\] - 2026-05-13
+## \[5.2.0\] - 2026-05-14
 
 ### Fixed
 
 * 🚧 **Jt-Com / Goodtop Port Speeds:** Restored correct port speed calculation and display formatting for specialty hardware
 * 🚧 **Device Registry Stability:** Fixed a regression causing duplicate switch devices by restoring consistent unique_id anchoring
 * 🚧 **Plugin UI Data:** Restored missing port status and speed attributes required for the custom Lovelace card and plugin webpage
+* 🚧 **H3C Environmentals:** Attempt to fix display of CPU, Mem, Temperature display for H3C devices
 
 ## \[0.5.1\] - 2026-04-10
 

@@ -40,6 +40,7 @@ SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [H
 - 📶 Optional per-port bandwidth monitoring (RX / TX throughput & totals) with support for attributes or dedicated sensors
 - 🌡️ **Environment monitoring** (CPU, memory, system/chassis temperature) with support for attributes or dedicated sensors
 - ⚡ **Power over Ethernet (PoE) monitoring** (used and remaining power budget) with support for attributes or dedicated sensors
+- 🏎️ **Highly optimized Asyncio polling** using PySNMP 7.x, fully compliant with Home Assistant's strict event loop policies with zero blocking I/O
 
 ---
 
@@ -134,36 +135,6 @@ The state of each port entity reflects the interface's administrative status. Tu
 ---
 
 ## Troubleshooting
-
-### ⚠️ Startup Warning Messages (pysnmp)
-
-During Home Assistant startup, you may see one or two warning messages similar to:
-```
-Detected blocking call to listdir/open inside the event loop by custom integration 'snmp_switch_manager'
-```
-
-#### What this means
-These warnings originate from **pysnmp**, the upstream SNMP library used by this integration.  
-On first use, pysnmp lazily loads a small number of internal MIB files from disk, which Home Assistant flags as a potential blocking operation.
-
-#### Impact
-- ✔️ **No functional impact**
-- ✔️ **No data loss**
-- ✔️ **No performance degradation during normal operation**
-- ✔️ Typically occurs **only once at startup**
-
-The integration continues to operate asynchronously and efficiently after initialization.
-
-#### Why this is not suppressed
-Suppressing these warnings would require moving all SNMP operations into background threads, which significantly increases startup time and slows down option changes on large switches. To preserve performance and responsiveness, the integration intentionally keeps the fast async execution path.
-
-#### Summary
-If you see these warnings:
-- They are **expected**
-- They are **safe to ignore**
-- No action is required
-
-This behavior is tracked upstream in pysnmp and Home Assistant.
 
 ### Common Issues
 
