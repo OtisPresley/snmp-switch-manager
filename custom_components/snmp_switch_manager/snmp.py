@@ -55,7 +55,6 @@ from .const import (
     OID_entPhysicalSoftwareRev_CBS350,
     OID_entPhysicalDescr,
     OID_entPhysicalName,
-    OID_entPhysicalClass,
     OID_hwEntityTemperature,
     OID_mikrotik_software_version,
     OID_mikrotik_model,
@@ -2303,7 +2302,7 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                         h3c_mems: list[float] = []
                         temps_c: dict[int, int] = {}
                         fans_status: dict[int, int] = {}
-                        psus_status: dict[int, int] = {}
+                        psu_status: dict[int, int] = {}
                         
                         # CPU Walk
                         if self.cache.get("env_cpu_5s") is None:
@@ -2325,8 +2324,9 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                                     h3c_mems.append(float(n))
                             if h3c_mems:
                                 avg_mem = sum(h3c_mems) / float(len(h3c_mems))
-                                self.cache["env_mem_total_kb"] = 100
-                                self.cache["env_mem_free_kb"] = 100.0 - avg_mem
+                                # Scale to 1,000,000 kB (1 GB) so the UI doesn't look ridiculous
+                                self.cache["env_mem_total_kb"] = 1000000
+                                self.cache["env_mem_free_kb"] = int(1000000.0 * (100.0 - avg_mem) / 100.0)
                                 
                         # Temperature Walk
                         if self.cache.get("env_temps_c") in (None, {}):
@@ -2341,34 +2341,40 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                             
                             if temps_c:
                                 for idx in temps_c.keys():
-                                    nm = await self._async_get_one(f"{OID_entPhysicalName}.{idx}")
-                                    ds = await self._async_get_one(f"{OID_entPhysicalDescr}.{idx}")
-                                    label = (nm or "").strip() or (ds or "").strip()
-                                    if label:
-                                        self.cache.setdefault("env_temp_labels", {})[idx] = label
+                                    try:
+                                        nm = await self._async_get_one(f"{OID_entPhysicalName}.{idx}")
+                                        ds = await self._async_get_one(f"{OID_entPhysicalDescr}.{idx}")
+                                        label = (nm or "").strip() or (ds or "").strip()
+                                        if label:
+                                            self.cache.setdefault("env_temp_labels", {})[idx] = label
+                                    except Exception:
+                                        pass
                                     self.cache.setdefault("env_temps_c", {})[idx] = temps_c[idx]
 
-                        # Fans & PSUs Walk via ErrorStatus and PhysicalClass
-                        if self.cache.get("env_fans_status") in (None, {}) or self.cache.get("env_psus_status") in (None, {}):
-                            for oid, val in await self._async_walk(OID_entPhysicalClass):
+                        # Fans & PSUs Walk via ErrorStatus and PhysicalName (since Class is missing in some MIBs)
+                        if self.cache.get("env_fans_status") in (None, {}) or self.cache.get("env_psu_status") in (None, {}):
+                            for oid, val in await self._async_walk(OID_entPhysicalName):
                                 try:
                                     idx = int(str(oid).split(".")[-1])
-                                    cls = _parse_numeric(val)
-                                    if cls in (6, 7):
+                                    name_lower = str(val).lower()
+                                    is_fan = "fan" in name_lower
+                                    is_psu = "power" in name_lower or "psu" in name_lower
+                                    
+                                    if is_fan or is_psu:
                                         err_st_val = await self._async_get_one(f"{OID_h3c_entity_error_status}.{idx}")
                                         st_n = _parse_numeric(err_st_val)
                                         if st_n is not None:
-                                            if cls == 7:
+                                            if is_fan:
                                                 fans_status[idx] = int(st_n)
-                                            elif cls == 6:
-                                                psus_status[idx] = int(st_n)
+                                            elif is_psu:
+                                                psu_status[idx] = int(st_n)
                                 except Exception:
                                     continue
                                     
                             if fans_status and self.cache.get("env_fans_status") in (None, {}):
                                 self.cache["env_fans_status"] = fans_status
-                            if psus_status and self.cache.get("env_psus_status") in (None, {}):
-                                self.cache["env_psus_status"] = psus_status
+                            if psu_status and self.cache.get("env_psu_status") in (None, {}):
+                                self.cache["env_psu_status"] = psu_status
 
                     except Exception:
                         pass
