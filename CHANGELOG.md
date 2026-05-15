@@ -7,14 +7,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[5.2.0\] - 2026-05-14
+## \[5.2.0\] - 2026-05-15
+
+### Added
+
+* 🚀 **PySNMP v7 Optimizations:** Fixed event-loop blocking issues by aggressively pre-warming PySNMP engine caches and forcing dictionary injection, entirely eliminating Home Assistant `asyncio` blocking `listdir` warnings on startup.
+* 🌡️ **H3C Full Environmental Support:** Added full table-walking support for H3C and HP Comware switches, properly discovering and polling CPU, Memory, Temperature, Fans, and Power Supply health.
 
 ### Fixed
 
-* 🚧 **Jt-Com / Goodtop Port Speeds:** Restored correct port speed calculation and display formatting for specialty hardware
-* 🚧 **Device Registry Stability:** Fixed a regression causing duplicate switch devices by restoring consistent unique_id anchoring
-* 🚧 **Plugin UI Data:** Restored missing port status and speed attributes required for the custom Lovelace card and plugin webpage
-* 🚧 **H3C Environmentals:** Attempt to fix display of CPU, Mem, Temperature display for H3C devices
+* 🚧 **Jt-Com / Goodtop Port Speeds:** Restored correct port speed calculation and display formatting for specialty hardware.
+* 🚧 **Device Registry Stability:** Fixed a regression causing duplicate switch devices by restoring consistent unique_id anchoring.
+* 🚧 **Plugin UI Data:** Restored missing port status and speed attributes required for the custom Lovelace card and plugin webpage.
 
 ## \[0.5.1\] - 2026-04-10
 
