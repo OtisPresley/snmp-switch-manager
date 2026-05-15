@@ -32,6 +32,7 @@ OID_entPhysicalModelName = "1.3.6.1.2.1.47.1.1.1.1.13"
 OID_entPhysicalSoftwareRev = "1.3.6.1.2.1.47.1.1.1.1.10"
 OID_entPhysicalSerialNum = "1.3.6.1.2.1.47.1.1.1.1.11"
 OID_entPhysicalDescr = "1.3.6.1.2.1.47.1.1.1.1.2"
+OID_entPhysicalClass = "1.3.6.1.2.1.47.1.1.1.1.5"
 OID_entPhysicalName = "1.3.6.1.2.1.47.1.1.1.1.7"
 
 # Zyxel specific
@@ -93,6 +94,7 @@ OID_ipAdEntNetMask = "1.3.6.1.2.1.4.20.1.3"
 OID_h3c_entity_cpu_usage = "1.3.6.1.4.1.25506.2.6.1.1.1.1.6"
 OID_h3c_entity_mem_usage = "1.3.6.1.4.1.25506.2.6.1.1.1.1.8"
 OID_h3c_entity_temp = "1.3.6.1.4.1.25506.2.6.1.1.1.1.12"
+OID_h3c_entity_error_status = "1.3.6.1.4.1.25506.2.6.1.1.1.1.19"
 
 # ---------------------------
 # Options / device overrides

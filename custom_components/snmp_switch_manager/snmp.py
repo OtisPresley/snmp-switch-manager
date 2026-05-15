@@ -55,6 +55,7 @@ from .const import (
     OID_entPhysicalSoftwareRev_CBS350,
     OID_entPhysicalDescr,
     OID_entPhysicalName,
+    OID_entPhysicalClass,
     OID_hwEntityTemperature,
     OID_mikrotik_software_version,
     OID_mikrotik_model,
@@ -67,6 +68,7 @@ from .const import (
     OID_h3c_entity_cpu_usage,
     OID_h3c_entity_mem_usage,
     OID_h3c_entity_temp,
+    OID_h3c_entity_error_status,
     CONF_BW_ENABLE,
     CONF_BW_INCLUDE_STARTS_WITH,
     CONF_BW_INCLUDE_CONTAINS,
@@ -2297,27 +2299,77 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 # ---- H3C / HP Comware Fallback (Issue #73) ----
                 if getattr(self, "_is_h3c", False):
                     try:
-                        # Attempt to poll the first instance (index .1)
-                        h_cpu, h_mem, h_temp = await asyncio.gather(
-                            self._async_get_one(f"{OID_h3c_entity_cpu_usage}.1"),
-                            self._async_get_one(f"{OID_h3c_entity_mem_usage}.1"),
-                            self._async_get_one(f"{OID_h3c_entity_temp}.1"),
-                        )
+                        h3c_cpus: list[float] = []
+                        h3c_mems: list[float] = []
+                        temps_c: dict[int, int] = {}
+                        fans_status: dict[int, int] = {}
+                        psus_status: dict[int, int] = {}
                         
-                        if h_cpu is not None:
-                            self.cache["env_cpu_5s"] = float(h_cpu)
-                            self.cache["env_cpu_60s"] = float(h_cpu)
-                            self.cache["env_cpu_300s"] = float(h_cpu)
-                        
-                        if h_mem is not None:
-                            # H3C reports memory usage as a percentage (%) directly
-                            # Simulate total/available fields to satisfy sensor.py logic
-                            self.cache["env_mem_total_kb"] = 100
-                            self.cache["env_mem_free_kb"] = 100 - float(h_mem)
+                        # CPU Walk
+                        if self.cache.get("env_cpu_5s") is None:
+                            for oid, val in await self._async_walk(OID_h3c_entity_cpu_usage):
+                                n = _parse_numeric(val)
+                                if n is not None and 0 <= n <= 100:
+                                    h3c_cpus.append(float(n))
+                            if h3c_cpus:
+                                avg_cpu = sum(h3c_cpus) / float(len(h3c_cpus))
+                                self.cache["env_cpu_5s"] = avg_cpu
+                                self.cache["env_cpu_60s"] = avg_cpu
+                                self.cache["env_cpu_300s"] = avg_cpu
+
+                        # Memory Walk
+                        if self.cache.get("env_mem_total_kb") is None:
+                            for oid, val in await self._async_walk(OID_h3c_entity_mem_usage):
+                                n = _parse_numeric(val)
+                                if n is not None and 0 <= n <= 100:
+                                    h3c_mems.append(float(n))
+                            if h3c_mems:
+                                avg_mem = sum(h3c_mems) / float(len(h3c_mems))
+                                self.cache["env_mem_total_kb"] = 100
+                                self.cache["env_mem_free_kb"] = 100.0 - avg_mem
+                                
+                        # Temperature Walk
+                        if self.cache.get("env_temps_c") in (None, {}):
+                            for oid, val in await self._async_walk(OID_h3c_entity_temp):
+                                try:
+                                    idx = int(str(oid).split(".")[-1])
+                                    n = _parse_numeric(val)
+                                    if n is not None and n != 65535 and -50 <= n <= 200:
+                                        temps_c[idx] = int(n)
+                                except Exception:
+                                    continue
                             
-                        if h_temp is not None:
-                            self.cache.setdefault("env_temps_c", {})[1] = int(h_temp)
-                            self.cache.setdefault("env_temp_labels", {})[1] = "System"
+                            if temps_c:
+                                for idx in temps_c.keys():
+                                    nm = await self._async_get_one(f"{OID_entPhysicalName}.{idx}")
+                                    ds = await self._async_get_one(f"{OID_entPhysicalDescr}.{idx}")
+                                    label = (nm or "").strip() or (ds or "").strip()
+                                    if label:
+                                        self.cache.setdefault("env_temp_labels", {})[idx] = label
+                                    self.cache.setdefault("env_temps_c", {})[idx] = temps_c[idx]
+
+                        # Fans & PSUs Walk via ErrorStatus and PhysicalClass
+                        if self.cache.get("env_fans_status") in (None, {}) or self.cache.get("env_psus_status") in (None, {}):
+                            for oid, val in await self._async_walk(OID_entPhysicalClass):
+                                try:
+                                    idx = int(str(oid).split(".")[-1])
+                                    cls = _parse_numeric(val)
+                                    if cls in (6, 7):
+                                        err_st_val = await self._async_get_one(f"{OID_h3c_entity_error_status}.{idx}")
+                                        st_n = _parse_numeric(err_st_val)
+                                        if st_n is not None:
+                                            if cls == 7:
+                                                fans_status[idx] = int(st_n)
+                                            elif cls == 6:
+                                                psus_status[idx] = int(st_n)
+                                except Exception:
+                                    continue
+                                    
+                            if fans_status and self.cache.get("env_fans_status") in (None, {}):
+                                self.cache["env_fans_status"] = fans_status
+                            if psus_status and self.cache.get("env_psus_status") in (None, {}):
+                                self.cache["env_psus_status"] = psus_status
+
                     except Exception:
                         pass
 
