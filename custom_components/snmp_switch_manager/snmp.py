@@ -193,6 +193,7 @@ class SnmpAuthError(Exception):
 
 
 async def _do_get_one(engine, community, target, context, oid: str) -> Optional[str]:
+    vc = getattr(engine, "_vc", None)
     err_ind, err_stat, err_idx, vbs = await get_cmd(
         engine,
         community,
@@ -200,6 +201,7 @@ async def _do_get_one(engine, community, target, context, oid: str) -> Optional[
         context,
         ObjectType(ObjectIdentity(oid)),
         lookupMib=False,  # <<< prevent FS MIB access
+        **({"mibViewController": getattr(engine, "_vc", None)} if vc else {})
     )
     if _is_auth_error(err_ind):
         raise SnmpAuthError(str(err_ind))
@@ -293,6 +295,7 @@ async def _do_next_walk(
             ObjectType(ObjectIdentity(base_oid)),
             lexicographicMode=False,
             lookupMib=False,
+            **({"mibViewController": getattr(engine, "_vc", None)} if getattr(engine, "_vc", None) else {})
         ):
             if err_ind or err_stat:
                 # Device doesn't support GETBULK (e.g. SNMPv1) — fall through
@@ -315,6 +318,7 @@ async def _do_next_walk(
     # --- GETNEXT fallback (SNMPv1 or bulk_walk_cmd unavailable) ----------
     current_oid = base_oid
     while True:
+        vc = getattr(engine, "_vc", None)
         err_ind, err_stat, err_idx, vbs = await next_cmd(
             engine,
             community,
@@ -323,6 +327,7 @@ async def _do_next_walk(
             ObjectType(ObjectIdentity(current_oid)),
             lexicographicMode=False,
             lookupMib=False,
+            **({"mibViewController": getattr(engine, "_vc", None)} if vc else {})
         )
         if err_ind or err_stat or not vbs:
             break
@@ -539,7 +544,17 @@ class SwitchSnmpClient:
         def _build_engine_and_preload_mibs():
             eng = SnmpEngine()
             try:
-                mib_builder = eng.getMibBuilder()
+                if hasattr(eng, "get_mib_builder"):
+                    mib_builder = eng.get_mib_builder()
+                elif hasattr(eng, "getMibBuilder"):
+                    mib_builder = eng.getMibBuilder()
+                elif hasattr(eng, "mibBuilder"):
+                    mib_builder = eng.mibBuilder
+                elif hasattr(eng, "msgAndPduDsp"):
+                    mib_builder = eng.msgAndPduDsp.mibInstrumController.mibBuilder
+                else:
+                    raise RuntimeError("Could not extract MibBuilder from SnmpEngine")
+                
                 # Pre-load ALL MIB modules used by this integration off the event loop.
                 # Home Assistant flags synchronous FS access (os.listdir/open) from pysnmp's
                 # MIB loader when it occurs on the asyncio loop thread. Preloading here
@@ -551,19 +566,24 @@ class SwitchSnmpClient:
                 #   - IF-MIB types (OctetString counters, ifType enumerations)
                 #   - ENTITY-MIB, HOST-RESOURCES-MIB, BRIDGE-MIB, Q-BRIDGE-MIB
                 #   - IP-MIB, POWER-ETHERNET-MIB
-                mib_builder.loadModules(
+                mibs_to_load = [
                     # Core / SMI
                     "SNMPv2-SMI",
                     "SNMPv2-TC",
                     "SNMPv2-CONF",
                     "SNMPv2-MIB",
                     "__SNMPv2-MIB",
+                    "instances.__SNMPv2-MIB",
                     # SNMPv3
                     "SNMP-FRAMEWORK-MIB",
                     "SNMP-COMMUNITY-MIB",
                     "SNMP-TARGET-MIB",
                     "SNMP-NOTIFICATION-MIB",
+                    "SNMP-USER-BASED-SM-MIB",
+                    "SNMP-VIEW-BASED-ACM-MIB",
                     "SNMPv2-TM",
+                    "PYSNMP-USM-MIB",
+                    "PYSNMP-MPD-MIB",
                     "PYSNMP-SOURCE-MIB",
                     # Interface MIBs
                     "IF-MIB",
@@ -580,19 +600,46 @@ class SwitchSnmpClient:
                     "HOST-RESOURCES-TYPES",
                     # PoE
                     "POWER-ETHERNET-MIB",
-                )
-            except Exception:
-                # loadModules is best-effort; some MIBs may not ship with the installed
-                # pysnmp version. Any that were loaded are already cached; missing ones
-                # will trigger a one-time lazy load but that is a minor fallback.
-                pass
+                ]
+                
+                for mib in mibs_to_load:
+                    try:
+                        if hasattr(mib_builder, "load_modules"):
+                            mib_builder.load_modules(mib)
+                        else:
+                            mib_builder.loadModules(mib)
+                    except Exception as e:
+                        import logging
+                        logging.getLogger(__name__).debug("Failed to preload MIB %s: %s", mib, e)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error("Fatal error during PySNMP preload initialization: %s", e)
 
-            # Disable all MIB source search paths after preloading so that pysnmp
-            # cannot fall back to filesystem access during async event-loop operations.
+            # Force PySNMP to evaluate and cache the internal instances required by the protocol engine.
+            # If these are not explicitly imported here, the protocol engine (rfc3412/USM) will lazily 
+            # trigger import_symbols on the very first received packet, hitting the filesystem during the event loop.
             try:
-                mib_builder.setMibSources()  # empty → no further FS searches
-            except Exception:
-                pass
+                if hasattr(mib_builder, "import_symbols"):
+                    mib_builder.import_symbols('SNMPv2-SMI', 'iso', 'zeroDotZero', 'snmpModules')
+                    mib_builder.import_symbols('SNMPv2-MIB', 'snmpInPkts', 'snmpInBadVersions', 'snmpInBadCommunityNames', 'snmpInBadCommunityUses', 'snmpInASNParseErrs', 'snmpSilentDrops', 'snmpProxyDrops')
+                    mib_builder.import_symbols('__PYSNMP-USM-MIB', 'pysnmpUsmKeyType')
+                else:
+                    mib_builder.importSymbols('SNMPv2-SMI', 'iso', 'zeroDotZero', 'snmpModules')
+                    mib_builder.importSymbols('SNMPv2-MIB', 'snmpInPkts', 'snmpInBadVersions', 'snmpInBadCommunityNames', 'snmpInBadCommunityUses', 'snmpInASNParseErrs', 'snmpSilentDrops', 'snmpProxyDrops')
+                    mib_builder.importSymbols('__PYSNMP-USM-MIB', 'pysnmpUsmKeyType')
+
+                from pysnmp.smi.view import MibViewController
+                vc = MibViewController(mib_builder)
+                eng._vc = vc  # cache MibViewController on engine immediately!
+                eng.cache["mibViewController"] = vc  # PySNMP v7 requires it in the internal cache dictionary
+
+                if hasattr(ObjectIdentity("1.3.6.1.2.1.1.1.0"), "resolve_with_mib"):
+                    ObjectIdentity("1.3.6.1.2.1.1.1.0").resolve_with_mib(vc)
+                else:
+                    ObjectIdentity("1.3.6.1.2.1.1.1.0").resolveWithMib(vc)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning("PySNMP warmup failed (this is harmless but may cause FS logs): %s", e)
 
             return eng
 
