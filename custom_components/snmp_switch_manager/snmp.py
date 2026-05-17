@@ -2329,6 +2329,27 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                     except Exception:
                         pass
                                 
+                    # Pre-walk Physical Names to avoid individual GET requests (Issue #73)
+                    physical_names: dict[int, str] = {}
+                    try:
+                        for oid, val in await self._async_walk(OID_entPhysicalName):
+                            try:
+                                idx = int(str(oid).split(".")[-1])
+                                # PySNMP OctetString safe extraction
+                                name_str = ""
+                                if hasattr(val, "asOctets"):
+                                    name_str = val.asOctets().decode("utf-8", "ignore")
+                                elif hasattr(val, "prettyPrint"):
+                                    name_str = val.prettyPrint()
+                                else:
+                                    name_str = str(val)
+                                if name_str:
+                                    physical_names[idx] = name_str.strip()
+                            except Exception:
+                                continue
+                    except Exception:
+                        pass
+
                     # Temperature Walk
                     try:
                         temps_c: dict[int, int] = {}
@@ -2343,52 +2364,33 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                                     continue
                             
                             if temps_c:
-                                for idx in temps_c.keys():
-                                    try:
-                                        nm = await self._async_get_one(f"{OID_entPhysicalName}.{idx}")
-                                        ds = await self._async_get_one(f"{OID_entPhysicalDescr}.{idx}")
-                                        label = (nm or "").strip() or (ds or "").strip()
-                                        if label:
-                                            self.cache.setdefault("env_temp_labels", {})[idx] = label
-                                    except Exception:
-                                        pass
-                                    self.cache.setdefault("env_temps_c", {})[idx] = temps_c[idx]
+                                for idx, temp_val in temps_c.items():
+                                    label = physical_names.get(idx)
+                                    if label:
+                                        self.cache.setdefault("env_temp_labels", {})[idx] = label
+                                    self.cache.setdefault("env_temps_c", {})[idx] = temp_val
                     except Exception:
                         pass
 
-                    # Fans & PSUs Walk via ErrorStatus and PhysicalName (since Class is missing in some MIBs)
+                    # Fans & PSUs Walk via ErrorStatus
                     try:
                         fans_status: dict[int, int] = {}
                         psu_status: dict[int, int] = {}
                         if self.cache.get("env_fans_status") in (None, {}) or self.cache.get("env_psu_status") in (None, {}):
-                            for oid, val in await self._async_walk(OID_entPhysicalName):
+                            for oid, val in await self._async_walk(OID_h3c_entity_error_status):
                                 try:
                                     idx = int(str(oid).split(".")[-1])
-                                    
-                                    # PySNMP OctetString safe extraction (prevents hex decoding of trailing null bytes)
-                                    name_str = ""
-                                    try:
-                                        if hasattr(val, "asOctets"):
-                                            name_str = val.asOctets().decode("utf-8", "ignore")
-                                        elif hasattr(val, "prettyPrint"):
-                                            name_str = val.prettyPrint()
-                                        else:
-                                            name_str = str(val)
-                                    except Exception:
-                                        name_str = str(val)
+                                    st_n = _parse_numeric(val)
+                                    if st_n is not None:
+                                        name_str = physical_names.get(idx, "")
+                                        name_lower = name_str.lower()
+                                        is_fan = "fan" in name_lower
+                                        is_psu = "power" in name_lower or "psu" in name_lower
                                         
-                                    name_lower = name_str.lower()
-                                    is_fan = "fan" in name_lower
-                                    is_psu = "power" in name_lower or "psu" in name_lower
-                                    
-                                    if is_fan or is_psu:
-                                        err_st_val = await self._async_get_one(f"{OID_h3c_entity_error_status}.{idx}")
-                                        st_n = _parse_numeric(err_st_val)
-                                        if st_n is not None:
-                                            if is_fan:
-                                                fans_status[idx] = int(st_n)
-                                            elif is_psu:
-                                                psu_status[idx] = int(st_n)
+                                        if is_fan:
+                                            fans_status[idx] = int(st_n)
+                                        elif is_psu:
+                                            psu_status[idx] = int(st_n)
                                 except Exception:
                                     continue
                                     

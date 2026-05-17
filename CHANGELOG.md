@@ -7,6 +7,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[0.5.3-beta.3\] - 2026-05-17
+
+### Fixed
+
+* ⚡ **H3C Optimizations:** Refactored sensor discovery to pre-walk physical names and read status tables directly, eliminating slow individual `GET` requests that were causing timeouts and missing sensors.
+
 ## \[0.5.3-beta.2\] - 2026-05-15
 
 ### Fixed
