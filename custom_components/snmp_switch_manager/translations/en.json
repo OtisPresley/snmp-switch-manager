@@ -108,7 +108,8 @@
       "invalid_regex": "Invalid regex pattern",
       "invalid_uptime_interval": "Invalid uptime refresh interval",
       "required": "Required",
-      "invalid_password_length": "Password must be 8–31 characters"
+      "invalid_password_length": "Password must be 8–31 characters",
+      "required_attestation": "You must attest that you have tested the OID"
     },
     "step": {
       "bandwidth_enable": {
@@ -212,6 +213,77 @@
         "description": "Override diagnostic sensor OIDs for this device only. Leave blank to use automatic detection.",
         "title": "Custom Diagnostic OIDs"
       },
+      "feature_overrides": {
+        "description": "Manage custom OID overrides for specific features.",
+        "menu_options": {
+          "back": "Back",
+          "override_cpu": "Override CPU",
+          "override_memory": "Override Memory",
+          "override_fans": "Override Fans",
+          "override_psu": "Override PSU",
+          "override_temperature": "Override Temperature"
+        },
+        "title": "Feature OID Overrides"
+      },
+      "override_cpu": {
+        "data": {
+          "oid": "CPU OID",
+          "vendor": "Vendor (Brand)",
+          "method": "Method",
+          "scale": "Scale",
+          "unit": "Unit",
+          "description": "Description",
+          "attestation": "I attest that I have tested and verified that this OID works as expected."
+        },
+        "description": "Override the CPU OID for this device.",
+        "title": "Override CPU"
+      },
+      "override_memory": {
+        "data": {
+          "oid_free": "Free Memory OID",
+          "oid_total": "Total Memory OID",
+          "vendor": "Vendor (Brand)",
+          "method": "Method",
+          "attestation": "I attest that I have tested and verified that these OIDs work as expected."
+        },
+        "description": "Override the Memory OIDs for this device.",
+        "title": "Override Memory"
+      },
+      "override_fans": {
+        "data": {
+          "oid_rpm": "Fan RPM OID (optional)",
+          "oid_status": "Fan Status OID (optional)",
+          "vendor": "Vendor (Brand)",
+          "method": "Method",
+          "attestation": "I attest that I have tested and verified that these OIDs work as expected."
+        },
+        "description": "Override the Fan OIDs for this device.",
+        "title": "Override Fans"
+      },
+      "override_psu": {
+        "data": {
+          "oid_status": "PSU Status OID",
+          "vendor": "Vendor (Brand)",
+          "method": "Method",
+          "oid_label": "Label OID (optional)",
+          "filter": "Filter (optional)",
+          "attestation": "I attest that I have tested and verified that these OIDs work as expected."
+        },
+        "description": "Override the PSU OIDs for this device.",
+        "title": "Override PSU"
+      },
+      "override_temperature": {
+        "data": {
+          "oid": "Temperature OID",
+          "vendor": "Vendor (Brand)",
+          "method": "Method",
+          "oid_state": "State OID (optional)",
+          "oid_label": "Label OID (optional)",
+          "attestation": "I attest that I have tested and verified that these OIDs work as expected."
+        },
+        "description": "Override the Temperature OIDs for this device.",
+        "title": "Override Temperature"
+      },
       "device_options": {
         "description": "Manage per-device overrides and advanced settings.",
         "menu_options": {
@@ -219,6 +291,7 @@
           "connection_and_naming_overrides": "Connection & Name",
           "custom_oids": "Custom Diagnostic OIDs",
           "environmental_sensors": "Environmental Sensors",
+          "feature_overrides": "Feature OID Overrides",
           "manage_interfaces": "Manage Interfaces"
         },
         "title": "Device Options"

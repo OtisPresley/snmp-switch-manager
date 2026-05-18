@@ -16,6 +16,7 @@ from .const import (
     CONF_CUSTOM_OIDS,
     CONF_ENABLE_CUSTOM_OIDS,
     CONF_RESET_CUSTOM_OIDS,
+    CONF_FEATURE_OVERRIDES,
     CONF_OVERRIDE_COMMUNITY,
     CONF_OVERRIDE_PORT,
     CONF_UPTIME_POLL_INTERVAL,
@@ -353,6 +354,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 "bandwidth_sensors",
                 "environmental_sensors",
                 "custom_oids",
+                "feature_overrides",
             ],
         )
 
@@ -606,12 +608,437 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 schema_dict[
                     vol.Optional(f"{key}_oid", default=str(custom_oids.get(key, "")))
                 ] = str
-    
             return self.async_show_form(
                 step_id="custom_oids",
                 data_schema=vol.Schema(schema_dict),
                 errors=errors,
             )
+
+    async def async_step_feature_overrides(self, user_input=None) -> FlowResult:
+        """Manage feature OID overrides."""
+        return self.async_show_menu(
+            step_id="feature_overrides",
+            menu_options=[
+                "override_cpu",
+                "override_memory",
+                "override_fans",
+                "override_psu",
+                "override_temperature",
+                "back",
+            ],
+        )
+
+    async def async_step_override_cpu(self, user_input=None) -> FlowResult:
+        """Override CPU OID."""
+        errors: dict[str, str] = {}
+        
+        if user_input is not None:
+            oid = user_input.get("oid", "").strip()
+            vendor = user_input.get("vendor", "").strip()
+            method = user_input.get("method", "get")
+            scale = user_input.get("scale", 1.0)
+            unit = user_input.get("unit", "%")
+            description = user_input.get("description", "")
+            attestation = user_input.get("attestation", False)
+            
+            if not oid:
+                errors["oid"] = "required"
+            elif not _is_valid_numeric_oid(oid):
+                errors["oid"] = "invalid_oid"
+                
+            if not vendor:
+                errors["vendor"] = "required"
+                
+            if not attestation:
+                errors["attestation"] = "required_attestation"
+                
+            if not errors:
+                overrides = dict(self._options.get(CONF_FEATURE_OVERRIDES, {}) or {})
+                overrides["cpu"] = {
+                    "oid": _normalize_oid(oid),
+                    "vendor": vendor,
+                    "method": method,
+                    "scale": float(scale),
+                    "unit": unit,
+                    "description": description,
+                }
+                self._options[CONF_FEATURE_OVERRIDES] = overrides
+                self._apply_options()
+                self._last_override_feature = "cpu"
+                return await self.async_step_ask_pr()
+                
+        schema = vol.Schema(
+            {
+                vol.Required("oid"): str,
+                vol.Required("vendor"): str,
+                vol.Required("method", default="get"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="get", label="GET"),
+                            selector.SelectOptionDict(value="walk", label="WALK"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional("scale", default=1.0): float,
+                vol.Optional("unit", default="%"): str,
+                vol.Optional("description", default=""): str,
+                vol.Required("attestation", default=False): bool,
+            }
+        )
+        
+        return self.async_show_form(
+            step_id="override_cpu",
+            data_schema=schema,
+            errors=errors,
+        )
+
+    async def async_step_override_memory(self, user_input=None) -> FlowResult:
+        """Override Memory OIDs."""
+        errors: dict[str, str] = {}
+        
+        if user_input is not None:
+            oid_free = user_input.get("oid_free", "").strip()
+            oid_total = user_input.get("oid_total", "").strip()
+            vendor = user_input.get("vendor", "").strip()
+            method = user_input.get("method", "get")
+            attestation = user_input.get("attestation", False)
+            
+            if not oid_free:
+                errors["oid_free"] = "required"
+            elif not _is_valid_numeric_oid(oid_free):
+                errors["oid_free"] = "invalid_oid"
+                
+            if not oid_total:
+                errors["oid_total"] = "required"
+            elif not _is_valid_numeric_oid(oid_total):
+                errors["oid_total"] = "invalid_oid"
+                
+            if not vendor:
+                errors["vendor"] = "required"
+                
+            if not attestation:
+                errors["attestation"] = "required_attestation"
+                
+            if not errors:
+                overrides = dict(self._options.get(CONF_FEATURE_OVERRIDES, {}) or {})
+                overrides["memory"] = {
+                    "type": "free_total",
+                    "oid_free": _normalize_oid(oid_free),
+                    "oid_total": _normalize_oid(oid_total),
+                    "vendor": vendor,
+                    "method": method,
+                }
+                self._options[CONF_FEATURE_OVERRIDES] = overrides
+                self._apply_options()
+                self._last_override_feature = "memory"
+                return await self.async_step_ask_pr()
+                
+        schema = vol.Schema(
+            {
+                vol.Required("oid_free"): str,
+                vol.Required("oid_total"): str,
+                vol.Required("vendor"): str,
+                vol.Required("method", default="get"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="get", label="GET"),
+                            selector.SelectOptionDict(value="walk", label="WALK"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Required("attestation", default=False): bool,
+            }
+        )
+        
+        return self.async_show_form(
+            step_id="override_memory",
+            data_schema=schema,
+            errors=errors,
+        )
+
+    async def async_step_override_fans(self, user_input=None) -> FlowResult:
+        """Override Fans OIDs."""
+        errors: dict[str, str] = {}
+        
+        if user_input is not None:
+            oid_rpm = user_input.get("oid_rpm", "").strip()
+            oid_status = user_input.get("oid_status", "").strip()
+            vendor = user_input.get("vendor", "").strip()
+            method = user_input.get("method", "walk")
+            attestation = user_input.get("attestation", False)
+            
+            if oid_rpm and not _is_valid_numeric_oid(oid_rpm):
+                errors["oid_rpm"] = "invalid_oid"
+                
+            if oid_status and not _is_valid_numeric_oid(oid_status):
+                errors["oid_status"] = "invalid_oid"
+                
+            if not vendor:
+                errors["vendor"] = "required"
+                
+            if not attestation:
+                errors["attestation"] = "required_attestation"
+                
+            if not errors:
+                overrides = dict(self._options.get(CONF_FEATURE_OVERRIDES, {}) or {})
+                overrides["fans"] = {
+                    "oid_rpm": _normalize_oid(oid_rpm),
+                    "oid_status": _normalize_oid(oid_status),
+                    "vendor": vendor,
+                    "method": method,
+                }
+                self._options[CONF_FEATURE_OVERRIDES] = overrides
+                self._apply_options()
+                self._last_override_feature = "fans"
+                return await self.async_step_ask_pr()
+                
+        schema = vol.Schema(
+            {
+                vol.Optional("oid_rpm", default=""): str,
+                vol.Optional("oid_status", default=""): str,
+                vol.Required("vendor"): str,
+                vol.Required("method", default="walk"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="get", label="GET"),
+                            selector.SelectOptionDict(value="walk", label="WALK"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Required("attestation", default=False): bool,
+            }
+        )
+        
+        return self.async_show_form(
+            step_id="override_fans",
+            data_schema=schema,
+            errors=errors,
+        )
+
+    async def async_step_override_psu(self, user_input=None) -> FlowResult:
+        """Override PSU OIDs."""
+        errors: dict[str, str] = {}
+        
+        if user_input is not None:
+            oid_status = user_input.get("oid_status", "").strip()
+            vendor = user_input.get("vendor", "").strip()
+            method = user_input.get("method", "walk")
+            oid_label = user_input.get("oid_label", "").strip()
+            filter_str = user_input.get("filter", "").strip()
+            attestation = user_input.get("attestation", False)
+            
+            if oid_status and not _is_valid_numeric_oid(oid_status):
+                errors["oid_status"] = "invalid_oid"
+                
+            if oid_label and not _is_valid_numeric_oid(oid_label):
+                errors["oid_label"] = "invalid_oid"
+                
+            if not vendor:
+                errors["vendor"] = "required"
+                
+            if not attestation:
+                errors["attestation"] = "required_attestation"
+                
+            if not errors:
+                overrides = dict(self._options.get(CONF_FEATURE_OVERRIDES, {}) or {})
+                overrides["psu"] = {
+                    "oid_status": _normalize_oid(oid_status),
+                    "vendor": vendor,
+                    "method": method,
+                }
+                if oid_label:
+                    overrides["psu"]["oid_label"] = _normalize_oid(oid_label)
+                if filter_str:
+                    overrides["psu"]["filter"] = filter_str
+                    
+                self._options[CONF_FEATURE_OVERRIDES] = overrides
+                self._apply_options()
+                self._last_override_feature = "psu"
+                return await self.async_step_ask_pr()
+                
+        schema = vol.Schema(
+            {
+                vol.Required("oid_status"): str,
+                vol.Required("vendor"): str,
+                vol.Required("method", default="walk"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="get", label="GET"),
+                            selector.SelectOptionDict(value="walk", label="WALK"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional("oid_label", default=""): str,
+                vol.Optional("filter", default=""): str,
+                vol.Required("attestation", default=False): bool,
+            }
+        )
+        
+        return self.async_show_form(
+            step_id="override_psu",
+            data_schema=schema,
+            errors=errors,
+        )
+
+    async def async_step_override_temperature(self, user_input=None) -> FlowResult:
+        """Override Temperature OIDs."""
+        errors: dict[str, str] = {}
+        
+        if user_input is not None:
+            oid = user_input.get("oid", "").strip()
+            vendor = user_input.get("vendor", "").strip()
+            method = user_input.get("method", "walk")
+            oid_state = user_input.get("oid_state", "").strip()
+            oid_label = user_input.get("oid_label", "").strip()
+            attestation = user_input.get("attestation", False)
+            
+            if oid and not _is_valid_numeric_oid(oid):
+                errors["oid"] = "invalid_oid"
+                
+            if oid_state and not _is_valid_numeric_oid(oid_state):
+                errors["oid_state"] = "invalid_oid"
+                
+            if oid_label and not _is_valid_numeric_oid(oid_label):
+                errors["oid_label"] = "invalid_oid"
+                
+            if not vendor:
+                errors["vendor"] = "required"
+                
+            if not attestation:
+                errors["attestation"] = "required_attestation"
+                
+            if not errors:
+                overrides = dict(self._options.get(CONF_FEATURE_OVERRIDES, {}) or {})
+                overrides["temperature"] = {
+                    "oid": _normalize_oid(oid),
+                    "vendor": vendor,
+                    "method": method,
+                }
+                if oid_state:
+                    overrides["temperature"]["oid_state"] = _normalize_oid(oid_state)
+                if oid_label:
+                    overrides["temperature"]["oid_label"] = _normalize_oid(oid_label)
+                    
+                self._options[CONF_FEATURE_OVERRIDES] = overrides
+                self._apply_options()
+                self._last_override_feature = "temperature"
+                return await self.async_step_ask_pr()
+                
+        schema = vol.Schema(
+            {
+                vol.Required("oid"): str,
+                vol.Required("vendor"): str,
+                vol.Required("method", default="walk"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="get", label="GET"),
+                            selector.SelectOptionDict(value="walk", label="WALK"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional("oid_state", default=""): str,
+                vol.Optional("oid_label", default=""): str,
+                vol.Required("attestation", default=False): bool,
+            }
+        )
+        
+        return self.async_show_form(
+            step_id="override_temperature",
+            data_schema=schema,
+            errors=errors,
+        )
+
+    async def async_step_ask_pr(self, user_input=None) -> FlowResult:
+        """Ask if user wants to submit PR."""
+        if user_input is not None:
+            if user_input.get("submit"):
+                return await self.async_step_submit_pr()
+            return await self.async_step_feature_overrides()
+            
+        return self.async_show_form(
+            step_id="ask_pr",
+            data_schema=vol.Schema({vol.Required("submit", default=True): bool}),
+        )
+
+    async def async_step_submit_pr(self, user_input=None) -> FlowResult:
+        """Submit override as PR."""
+        errors: dict[str, str] = {}
+        
+        if user_input is not None:
+            from .github import poll_for_token, GITHUB_CLIENT_ID
+            token = await poll_for_token(GITHUB_CLIENT_ID, getattr(self, "_device_code", ""), interval=1)
+            if token:
+                self._github_token = token
+                return await self.async_step_create_pr()
+            else:
+                errors["base"] = "authorization_pending"
+                
+        if not hasattr(self, "_device_code"):
+            from .github import request_device_code, GITHUB_CLIENT_ID
+            data = await request_device_code(GITHUB_CLIENT_ID)
+            if data:
+                self._device_code = data.get("device_code")
+                self._user_code = data.get("user_code")
+                self._verification_uri = data.get("verification_uri")
+            else:
+                errors["base"] = "github_error"
+                
+        if "base" not in errors:
+            return self.async_show_form(
+                step_id="submit_pr",
+                data_schema=vol.Schema({}),
+                description_placeholders={
+                    "code": self._user_code,
+                    "url": self._verification_uri,
+                },
+                errors=errors,
+            )
+            
+        return self.async_show_form(
+            step_id="submit_pr",
+            data_schema=vol.Schema({}),
+            errors=errors,
+        )
+
+    async def async_step_create_pr(self, user_input=None) -> FlowResult:
+        """Create PR."""
+        
+        feature = getattr(self, "_last_override_feature", None)
+        token = getattr(self, "_github_token", None)
+        
+        if not feature or not token:
+            return self.async_show_form(
+                step_id="create_pr",
+                data_schema=vol.Schema({}),
+                description_placeholders={"status": "Missing feature or token!"},
+            )
+            
+        overrides = self._options.get(CONF_FEATURE_OVERRIDES, {}).get(feature)
+        if not overrides:
+            return self.async_show_form(
+                step_id="create_pr",
+                data_schema=vol.Schema({}),
+                description_placeholders={"status": "No override data found for feature!"},
+            )
+            
+        from .github import submit_override
+        success = await submit_override(token, feature, overrides)
+        
+        if success:
+            status = "Successfully created Pull Request on GitHub!"
+        else:
+            status = "Failed to create Pull Request. Check logs for details."
+            
+        return self.async_show_form(
+            step_id="create_pr",
+            data_schema=vol.Schema({}),
+            description_placeholders={"status": status},
+        )
 
 
 

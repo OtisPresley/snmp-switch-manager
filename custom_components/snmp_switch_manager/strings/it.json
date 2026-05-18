@@ -108,7 +108,10 @@
       "invalid_regex": "Pattern regex non valido",
       "invalid_uptime_interval": "Intervallo di aggiornamento uptime non valido",
       "required": "Obbligatorio",
-      "invalid_password_length": "La password deve essere di 8–31 caratteri"
+      "invalid_password_length": "La password deve essere di 8–31 caratteri",
+      "required_attestation": "Devi attestare di aver testato l'OID",
+      "authorization_pending": "Autorizzazione in attesa. Inserisci il codice su GitHub e riprova.",
+      "github_error": "Comunicazione con GitHub fallita. Riprova più tardi."
     },
     "step": {
       "bandwidth_enable": {
@@ -212,6 +215,92 @@
         "description": "Sovrascrivi gli OID dei sensori diagnostici solo per questo dispositivo. Lascia vuoto per usare il rilevamento automatico.",
         "title": "OID diagnostici personalizzati"
       },
+      "feature_overrides": {
+        "description": "Gestisci gli override degli OID personalizzati per funzionalità specifiche.",
+        "menu_options": {
+          "back": "Indietro",
+          "override_cpu": "Sovrascrivi CPU",
+          "override_memory": "Sovrascrivi memoria",
+          "override_fans": "Sovrascrivi ventilatori",
+          "override_psu": "Sovrascrivi alimentatore",
+          "override_temperature": "Sovrascrivi temperatura"
+        },
+        "title": "Override OID funzionalità"
+      },
+      "override_cpu": {
+        "data": {
+          "oid": "OID CPU",
+          "vendor": "Fornitore (Marca)",
+          "method": "Metodo",
+          "scale": "Scala",
+          "unit": "Unità",
+          "description": "Descrizione",
+          "attestation": "Attesto di aver testato e verificato che questo OID funziona come previsto."
+        },
+        "description": "Sovrascrivi l'OID della CPU per questo dispositivo.",
+        "title": "Sovrascrivi CPU"
+      },
+      "override_memory": {
+        "data": {
+          "oid_free": "OID memoria libera",
+          "oid_total": "OID memoria totale",
+          "vendor": "Fornitore (Marca)",
+          "method": "Metodo",
+          "attestation": "Attesto di aver testato e verificato che questi OID funzionano come previsto."
+        },
+        "description": "Sovrascrivi gli OID della memoria per questo dispositivo.",
+        "title": "Sovrascrivi memoria"
+      },
+      "override_fans": {
+        "data": {
+          "oid_rpm": "OID RPM ventilatore (opzionale)",
+          "oid_status": "OID stato ventilatore (opzionale)",
+          "vendor": "Fornitore (Marca)",
+          "method": "Metodo",
+          "attestation": "Attesto di aver testato e verificato che questi OID funzionano come previsto."
+        },
+        "description": "Sovrascrivi gli OID dei ventilatori per questo dispositivo.",
+        "title": "Sovrascrivi ventilatori"
+      },
+      "override_psu": {
+        "data": {
+          "oid_status": "OID stato alimentatore",
+          "vendor": "Fornitore (Marca)",
+          "method": "Metodo",
+          "oid_label": "OID etichetta (opzionale)",
+          "filter": "Filtro (opzionale)",
+          "attestation": "Attesto di aver testato e verificato che questi OID funzionano come previsto."
+        },
+        "description": "Sovrascrivi gli OID dell'alimentatore per questo dispositivo.",
+        "title": "Sovrascrivi alimentatore"
+      },
+      "override_temperature": {
+        "data": {
+          "oid": "OID temperatura",
+          "vendor": "Fornitore (Marca)",
+          "method": "Metodo",
+          "oid_state": "OID stato (opzionale)",
+          "oid_label": "OID etichetta (opzionale)",
+          "attestation": "Attesto di aver testato e verificato che questi OID funzionano come previsto."
+        },
+        "description": "Sovrascrivi gli OID della temperatura per questo dispositivo.",
+        "title": "Sovrascrivi temperatura"
+      },
+      "ask_pr": {
+        "data": {
+          "submit": "Invia override a GitHub"
+        },
+        "description": "Vuoi inviare questo override al repository per aiutare altri utenti ?",
+        "title": "Inviare a GitHub ?"
+      },
+      "submit_pr": {
+        "description": "Per inviare il tuo override, autenticati su GitHub :\n\n1. Vai su {url}\n2. Inserisci il codice : **{code}**\n3. Fai clic su Verifica al termine.",
+        "title": "Autenticati su GitHub"
+      },
+      "create_pr": {
+        "description": "{status}",
+        "title": "Stato della PR"
+      },
       "device_options": {
         "description": "Gestisci override per dispositivo e impostazioni avanzate.",
         "menu_options": {
@@ -219,6 +308,7 @@
           "connection_and_naming_overrides": "Connessione e nome",
           "custom_oids": "OID diagnostici personalizzati",
           "environmental_sensors": "Sensori ambientali",
+          "feature_overrides": "Override OID funzionalità",
           "manage_interfaces": "Gestisci interfacce"
         },
         "title": "Opzioni dispositivo"

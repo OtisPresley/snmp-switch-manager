@@ -108,7 +108,10 @@
       "invalid_regex": "Motif regex invalide",
       "invalid_uptime_interval": "Intervalle de rafraîchissement d’uptime invalide",
       "required": "Requis",
-      "invalid_password_length": "Le mot de passe doit comporter 8 à 31 caractères"
+      "invalid_password_length": "Le mot de passe doit comporter 8 à 31 caractères",
+      "required_attestation": "Vous devez attester que vous avez testé l'OID",
+      "authorization_pending": "Autorisation en attente. Veuillez entrer le code sur GitHub et réessayer.",
+      "github_error": "Échec de la communication avec GitHub. Veuillez réessayer plus tard."
     },
     "step": {
       "bandwidth_enable": {
@@ -212,6 +215,92 @@
         "description": "Surcharger les OID des capteurs de diagnostic uniquement pour cet appareil. Laissez vide pour utiliser la détection automatique.",
         "title": "OID de diagnostic personnalisés"
       },
+      "feature_overrides": {
+        "description": "Gérer les remplacements d'OID personnalisés pour des fonctionnalités spécifiques.",
+        "menu_options": {
+          "back": "Retour",
+          "override_cpu": "Remplacer le processeur",
+          "override_memory": "Remplacer la mémoire",
+          "override_fans": "Remplacer les ventilateurs",
+          "override_psu": "Remplacer le bloc d'alimentation",
+          "override_temperature": "Remplacer la température"
+        },
+        "title": "Remplacements d'OID de fonctionnalité"
+      },
+      "override_cpu": {
+        "data": {
+          "oid": "OID du processeur",
+          "vendor": "Vendeur (Marque)",
+          "method": "Méthode",
+          "scale": "Échelle",
+          "unit": "Unité",
+          "description": "Description",
+          "attestation": "J'atteste que j'ai testé et vérifié que cet OID fonctionne comme prévu."
+        },
+        "description": "Remplacer l'OID du processeur pour cet appareil.",
+        "title": "Remplacer le processeur"
+      },
+      "override_memory": {
+        "data": {
+          "oid_free": "OID de mémoire libre",
+          "oid_total": "OID de mémoire totale",
+          "vendor": "Vendeur (Marque)",
+          "method": "Méthode",
+          "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu."
+        },
+        "description": "Remplacer les OID de mémoire pour cet appareil.",
+        "title": "Remplacer la mémoire"
+      },
+      "override_fans": {
+        "data": {
+          "oid_rpm": "OID de RPM du ventilateur (facultatif)",
+          "oid_status": "OID d'état du ventilateur (facultatif)",
+          "vendor": "Vendeur (Marque)",
+          "method": "Méthode",
+          "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu."
+        },
+        "description": "Remplacer les OID de ventilateur pour cet appareil.",
+        "title": "Remplacer les ventilateurs"
+      },
+      "override_psu": {
+        "data": {
+          "oid_status": "OID d'état du bloc d'alimentation",
+          "vendor": "Vendeur (Marque)",
+          "method": "Méthode",
+          "oid_label": "OID d'étiquette (facultatif)",
+          "filter": "Filtre (facultatif)",
+          "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu."
+        },
+        "description": "Remplacer les OID de bloc d'alimentation pour cet appareil.",
+        "title": "Remplacer le bloc d'alimentation"
+      },
+      "override_temperature": {
+        "data": {
+          "oid": "OID de température",
+          "vendor": "Vendeur (Marque)",
+          "method": "Méthode",
+          "oid_state": "OID d'état (facultatif)",
+          "oid_label": "OID d'étiquette (facultatif)",
+          "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu."
+        },
+        "description": "Remplacer les OID de température pour cet appareil.",
+        "title": "Remplacer la température"
+      },
+      "ask_pr": {
+        "data": {
+          "submit": "Soumettre le remplacement à GitHub"
+        },
+        "description": "Voulez-vous soumettre ce remplacement au dépôt pour aider d'autres utilisateurs ?",
+        "title": "Soumettre à GitHub ?"
+      },
+      "submit_pr": {
+        "description": "Pour soumettre votre remplacement, veuillez vous authentifier auprès de GitHub :\n\n1. Allez sur {url}\n2. Entrez le code : **{code}**\n3. Cliquez sur Vérifier une fois terminé.",
+        "title": "S'authentifier auprès de GitHub"
+      },
+      "create_pr": {
+        "description": "{status}",
+        "title": "Statut de la PR"
+      },
       "device_options": {
         "description": "Gérer les substitutions par appareil et les paramètres avancés.",
         "menu_options": {
@@ -219,6 +308,7 @@
           "connection_and_naming_overrides": "Connexion et nom",
           "custom_oids": "OID de diagnostic personnalisés",
           "environmental_sensors": "Capteurs environnementaux",
+          "feature_overrides": "Remplacements d'OID de fonctionnalité",
           "manage_interfaces": "Gérer les interfaces"
         },
         "title": "Options de l’appareil"

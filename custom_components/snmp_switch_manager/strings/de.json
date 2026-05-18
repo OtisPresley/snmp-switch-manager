@@ -108,7 +108,10 @@
       "invalid_regex": "Ungültiges Regex-Muster",
       "invalid_uptime_interval": "Ungültiges Aktualisierungsintervall für Uptime",
       "required": "Erforderlich",
-      "invalid_password_length": "Passwort muss 8–31 Zeichen lang sein"
+      "invalid_password_length": "Passwort muss 8–31 Zeichen lang sein",
+      "required_attestation": "Sie müssen bestätigen, dass Sie die OID getestet haben",
+      "authorization_pending": "Autorisierung ausstehend. Bitte geben Sie den Code auf GitHub ein und versuchen Sie es erneut.",
+      "github_error": "Kommunikation mit GitHub fehlgeschlagen. Bitte versuchen Sie es später noch einmal."
     },
     "step": {
       "bandwidth_enable": {
@@ -212,6 +215,92 @@
         "description": "Diagnose-Sensor-OIDs nur für dieses Gerät überschreiben. Leer lassen, um automatische Erkennung zu verwenden.",
         "title": "Benutzerdefinierte Diagnose-OIDs"
       },
+      "feature_overrides": {
+        "description": "Benutzerdefinierte OID-Überschreibungen für bestimmte Funktionen verwalten.",
+        "menu_options": {
+          "back": "Zurück",
+          "override_cpu": "CPU überschreiben",
+          "override_memory": "Speicher überschreiben",
+          "override_fans": "Lüfter überschreiben",
+          "override_psu": "Netzteil überschreiben",
+          "override_temperature": "Temperatur überschreiben"
+        },
+        "title": "Feature-OID-Überschreibungen"
+      },
+      "override_cpu": {
+        "data": {
+          "oid": "CPU-OID",
+          "vendor": "Hersteller (Marke)",
+          "method": "Methode",
+          "scale": "Skalierung",
+          "unit": "Einheit",
+          "description": "Beschreibung",
+          "attestation": "Ich bestätige, dass ich diese OID getestet und überprüft habe und sie wie erwartet funktioniert."
+        },
+        "description": "Die CPU-OID für dieses Gerät überschreiben.",
+        "title": "CPU überschreiben"
+      },
+      "override_memory": {
+        "data": {
+          "oid_free": "Freier Speicher OID",
+          "oid_total": "Gesamtspeicher OID",
+          "vendor": "Hersteller (Marke)",
+          "method": "Methode",
+          "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren."
+        },
+        "description": "Die Speicher-OIDs für dieses Gerät überschreiben.",
+        "title": "Speicher überschreiben"
+      },
+      "override_fans": {
+        "data": {
+          "oid_rpm": "Lüfter-RPM-OID (optional)",
+          "oid_status": "Lüfter-Status-OID (optional)",
+          "vendor": "Hersteller (Marke)",
+          "method": "Methode",
+          "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren."
+        },
+        "description": "Die Lüfter-OIDs für dieses Gerät überschreiben.",
+        "title": "Lüfter überschreiben"
+      },
+      "override_psu": {
+        "data": {
+          "oid_status": "Netzteil-Status-OID",
+          "vendor": "Hersteller (Marke)",
+          "method": "Methode",
+          "oid_label": "Bezeichnungs-OID (optional)",
+          "filter": "Filter (optional)",
+          "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren."
+        },
+        "description": "Die Netzteil-OIDs für dieses Gerät überschreiben.",
+        "title": "Netzteil überschreiben"
+      },
+      "override_temperature": {
+        "data": {
+          "oid": "Temperatur-OID",
+          "vendor": "Hersteller (Marke)",
+          "method": "Methode",
+          "oid_state": "Status-OID (optional)",
+          "oid_label": "Bezeichnungs-OID (optional)",
+          "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren."
+        },
+        "description": "Die Temperatur-OIDs für dieses Gerät überschreiben.",
+        "title": "Temperatur überschreiben"
+      },
+      "ask_pr": {
+        "data": {
+          "submit": "Überschreibung an GitHub senden"
+        },
+        "description": "Möchten Sie diese Überschreibung an das Repository senden, um anderen Benutzern zu helfen?",
+        "title": "An GitHub senden?"
+      },
+      "submit_pr": {
+        "description": "Um Ihre Überschreibung zu senden, authentifizieren Sie sich bitte bei GitHub:\n\n1. Gehen Sie zu {url}\n2. Geben Sie den Code ein: **{code}**\n3. Klicken Sie auf Prüfen, wenn Sie fertig sind.",
+        "title": "Mit GitHub authentifizieren"
+      },
+      "create_pr": {
+        "description": "{status}",
+        "title": "PR-Status"
+      },
       "device_options": {
         "description": "Gerätespezifische Overrides und erweiterte Einstellungen verwalten.",
         "menu_options": {
@@ -219,6 +308,7 @@
           "connection_and_naming_overrides": "Verbindung & Name",
           "custom_oids": "Benutzerdefinierte Diagnose-OIDs",
           "environmental_sensors": "Umweltsensoren",
+          "feature_overrides": "Feature-OID-Überschreibungen",
           "manage_interfaces": "Schnittstellen verwalten"
         },
         "title": "Geräteoptionen"

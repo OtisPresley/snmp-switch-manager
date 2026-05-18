@@ -108,7 +108,10 @@
       "invalid_regex": "Patrón regex no válido",
       "invalid_uptime_interval": "Intervalo de actualización de tiempo de actividad no válido",
       "required": "Obligatorio",
-      "invalid_password_length": "La contraseña debe tener 8–31 caracteres"
+      "invalid_password_length": "La contraseña debe tener 8–31 caracteres",
+      "required_attestation": "Debes certificar que has probado el OID",
+      "authorization_pending": "Autorización pendiente. Introduce el código en GitHub e inténtalo de nuevo.",
+      "github_error": "Error de comunicación con GitHub. Inténtalo de nuevo más tarde."
     },
     "step": {
       "bandwidth_enable": {
@@ -212,6 +215,92 @@
         "description": "Sobrescribe los OIDs de sensores de diagnóstico solo para este dispositivo. Deja en blanco para usar la detección automática.",
         "title": "OIDs de diagnóstico personalizados"
       },
+      "feature_overrides": {
+        "description": "Gestiona anulaciones de OID personalizadas para funciones específicas.",
+        "menu_options": {
+          "back": "Atrás",
+          "override_cpu": "Anular CPU",
+          "override_memory": "Anular memoria",
+          "override_fans": "Anular ventiladores",
+          "override_psu": "Anular fuente de alimentación",
+          "override_temperature": "Anular temperatura"
+        },
+        "title": "Anulaciones de OID de función"
+      },
+      "override_cpu": {
+        "data": {
+          "oid": "OID de CPU",
+          "vendor": "Proveedor (Marca)",
+          "method": "Método",
+          "scale": "Escala",
+          "unit": "Unidad",
+          "description": "Descripción",
+          "attestation": "Certifico que he probado y verificado que este OID funciona como se esperaba."
+        },
+        "description": "Anular el OID de CPU para este dispositivo.",
+        "title": "Anular CPU"
+      },
+      "override_memory": {
+        "data": {
+          "oid_free": "OID de memoria libre",
+          "oid_total": "OID de memoria total",
+          "vendor": "Proveedor (Marca)",
+          "method": "Método",
+          "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba."
+        },
+        "description": "Anular los OIDs de memoria para este dispositivo.",
+        "title": "Anular memoria"
+      },
+      "override_fans": {
+        "data": {
+          "oid_rpm": "OID de RPM de ventilador (opcional)",
+          "oid_status": "OID de estado de ventilador (opcional)",
+          "vendor": "Proveedor (Marca)",
+          "method": "Método",
+          "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba."
+        },
+        "description": "Anular los OIDs de ventilador para este dispositivo.",
+        "title": "Anular ventiladores"
+      },
+      "override_psu": {
+        "data": {
+          "oid_status": "OID de estado de fuente de alimentación",
+          "vendor": "Proveedor (Marca)",
+          "method": "Método",
+          "oid_label": "OID de etiqueta (opcional)",
+          "filter": "Filtro (opcional)",
+          "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba."
+        },
+        "description": "Anular los OIDs de fuente de alimentación para este dispositivo.",
+        "title": "Anular fuente de alimentación"
+      },
+      "override_temperature": {
+        "data": {
+          "oid": "OID de temperatura",
+          "vendor": "Proveedor (Marca)",
+          "method": "Método",
+          "oid_state": "OID de estado (opcional)",
+          "oid_label": "OID de etiqueta (opcional)",
+          "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba."
+        },
+        "description": "Anular los OIDs de temperatura para este dispositivo.",
+        "title": "Anular temperatura"
+      },
+      "ask_pr": {
+        "data": {
+          "submit": "Enviar anulación a GitHub"
+        },
+        "description": "¿Quieres enviar esta anulación al repositorio para ayudar a otros usuarios?",
+        "title": "¿Enviar a GitHub?"
+      },
+      "submit_pr": {
+        "description": "Para enviar tu anulación, autentícate en GitHub:\n\n1. Ve a {url}\n2. Introduce el código: **{code}**\n3. Haz clic en Verificar cuando hayas terminado.",
+        "title": "Autenticarse en GitHub"
+      },
+      "create_pr": {
+        "description": "{status}",
+        "title": "Estado de la PR"
+      },
       "device_options": {
         "description": "Gestiona anulaciones por dispositivo y ajustes avanzados.",
         "menu_options": {
@@ -219,6 +308,7 @@
           "connection_and_naming_overrides": "Conexión y nombre",
           "custom_oids": "OIDs de diagnóstico personalizados",
           "environmental_sensors": "Sensores ambientales",
+          "feature_overrides": "Anulaciones de OID de función",
           "manage_interfaces": "Gestionar interfaces"
         },
         "title": "Opciones del dispositivo"

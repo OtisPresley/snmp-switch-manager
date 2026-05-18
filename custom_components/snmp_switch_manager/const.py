@@ -23,6 +23,7 @@ PLATFORMS = ["sensor", "switch"]
 # --- Diagnostic OIDs (built-in defaults) ---
 # Standard SNMP system OIDs
 OID_sysDescr = "1.3.6.1.2.1.1.1.0"
+OID_sysObjectID = "1.3.6.1.2.1.1.2.0"
 OID_sysUpTime = "1.3.6.1.2.1.1.3.0"
 OID_sysName = "1.3.6.1.2.1.1.5.0"
 
@@ -35,18 +36,12 @@ OID_entPhysicalDescr = "1.3.6.1.2.1.47.1.1.1.1.2"
 OID_entPhysicalClass = "1.3.6.1.2.1.47.1.1.1.1.5"
 OID_entPhysicalName = "1.3.6.1.2.1.47.1.1.1.1.7"
 
-# Zyxel specific
-OID_entPhysicalMfgName_Zyxel = "1.3.6.1.2.1.47.1.1.1.1.12.67108992"
-OID_zyxel_firmware_version = "1.3.6.1.4.1.890.1.15.3.1.6.0"
+
 OID_pethPsePortActualPower = "1.3.6.1.2.1.105.1.1.1.1.15"
 
-# MikroTik RouterOS (MIKROTIK-MIB)
-OID_mikrotik_software_version = "1.3.6.1.4.1.14988.1.1.7.4.0"
-OID_mikrotik_model = "1.3.6.1.4.1.14988.1.1.7.8.0"
 
-# This is entPhysicalSoftwareRev with entPhysicalIndex 67109120
-OID_entPhysicalSoftwareRev_CBS350 = "1.3.6.1.2.1.47.1.1.1.1.10.67109120"
-OID_hwEntityTemperature = "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.11"
+
+
 
 # --- IF-MIB base OIDs ---
 OID_ifIndex = "1.3.6.1.2.1.2.2.1.1"
@@ -81,6 +76,13 @@ OID_ifHCOutOctets = "1.3.6.1.2.1.31.1.1.1.10"
 
 # BRIDGE-MIB (PVID / VLAN)
 OID_dot1qPvid = "1.3.6.1.2.1.17.7.1.4.5.1.1"
+OID_dot1qVlanCurrentEgressPorts = "1.3.6.1.2.1.17.7.1.4.2.1.4"
+OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
+OID_dot1qVlanStaticEgressPorts = "1.3.6.1.2.1.17.7.1.4.3.1.2"
+OID_dot1qVlanStaticUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.3.1.4"
+OID_ipAddressIfIndex = "1.3.6.1.2.1.4.34.1.3"
+OID_ospfIfIpAddress = "1.3.6.1.2.1.14.8.1.1"
+OID_routeCol = "1.3.6.1.2.1.4.24.7.1.9"
 
 # BRIDGE-MIB (bridge port -> ifIndex mapping)
 OID_dot1dBasePortIfIndex = "1.3.6.1.2.1.17.1.4.1.2"
@@ -90,11 +92,7 @@ OID_ipAdEntAddr = "1.3.6.1.2.1.4.20.1.1"
 OID_ipAdEntIfIndex = "1.3.6.1.2.1.4.20.1.2"
 OID_ipAdEntNetMask = "1.3.6.1.2.1.4.20.1.3"
 
-# H3C specific (HH3C-ENTITY-EXT-MIB)
-OID_h3c_entity_cpu_usage = "1.3.6.1.4.1.25506.2.6.1.1.1.1.6"
-OID_h3c_entity_mem_usage = "1.3.6.1.4.1.25506.2.6.1.1.1.1.8"
-OID_h3c_entity_temp = "1.3.6.1.4.1.25506.2.6.1.1.1.1.12"
-OID_h3c_entity_error_status = "1.3.6.1.4.1.25506.2.6.1.1.1.1.19"
+
 
 # ---------------------------
 # Options / device overrides
@@ -104,6 +102,7 @@ OID_h3c_entity_error_status = "1.3.6.1.4.1.25506.2.6.1.1.1.1.19"
 CONF_CUSTOM_OIDS = "custom_oids"
 CONF_ENABLE_CUSTOM_OIDS = "enable_custom_oids"
 CONF_RESET_CUSTOM_OIDS = "reset_custom_oids"
+CONF_FEATURE_OVERRIDES = "feature_overrides"
 
 # Device options (overrides)
 CONF_UPTIME_POLL_INTERVAL = "uptime_poll_interval"

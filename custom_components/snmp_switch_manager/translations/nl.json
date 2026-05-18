@@ -108,7 +108,10 @@
       "invalid_regex": "Ongeldig regex-patroon",
       "invalid_uptime_interval": "Ongeldig uptime-verversinterval",
       "required": "Vereist",
-      "invalid_password_length": "Wachtwoord moet 8–31 tekens zijn"
+      "invalid_password_length": "Wachtwoord moet 8–31 tekens zijn",
+      "required_attestation": "Je moet verklaren dat je de OID hebt getest",
+      "authorization_pending": "Autorisatie in behandeling. Voer de code in op GitHub en probeer het opnieuw.",
+      "github_error": "Communicatie met GitHub mislukt. Probeer het later opnieuw."
     },
     "step": {
       "bandwidth_enable": {
@@ -212,6 +215,92 @@
         "description": "Diagnostische sensor-OID’s alleen voor dit apparaat overschrijven. Laat leeg om automatische detectie te gebruiken.",
         "title": "Aangepaste diagnostische OID’s"
       },
+      "feature_overrides": {
+        "description": "Beheer aangepaste OID-overschrijvingen voor specifieke functies.",
+        "menu_options": {
+          "back": "Terug",
+          "override_cpu": "CPU overschrijven",
+          "override_memory": "Geheugen overschrijven",
+          "override_fans": "Ventilatoren overschrijven",
+          "override_psu": "Voeding overschrijven",
+          "override_temperature": "Temperatuur overschrijven"
+        },
+        "title": "Functie OID-overschrijvingen"
+      },
+      "override_cpu": {
+        "data": {
+          "oid": "CPU OID",
+          "vendor": "Leverancier (Merk)",
+          "method": "Methode",
+          "scale": "Schaal",
+          "unit": "Eenheid",
+          "description": "Beschrijving",
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID werkt zoals verwacht."
+        },
+        "description": "Overschrijf de CPU OID voor dit apparaat.",
+        "title": "CPU overschrijven"
+      },
+      "override_memory": {
+        "data": {
+          "oid_free": "Vrij geheugen OID",
+          "oid_total": "Totaal geheugen OID",
+          "vendor": "Leverancier (Merk)",
+          "method": "Methode",
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht."
+        },
+        "description": "Overschrijf de geheugen OID's voor dit apparaat.",
+        "title": "Geheugen overschrijven"
+      },
+      "override_fans": {
+        "data": {
+          "oid_rpm": "Ventilator RPM OID (optioneel)",
+          "oid_status": "Ventilator status OID (optioneel)",
+          "vendor": "Leverancier (Merk)",
+          "method": "Methode",
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht."
+        },
+        "description": "Overschrijf de ventilator OID's voor dit apparaat.",
+        "title": "Ventilatoren overschrijven"
+      },
+      "override_psu": {
+        "data": {
+          "oid_status": "Voeding status OID",
+          "vendor": "Leverancier (Merk)",
+          "method": "Methode",
+          "oid_label": "Label OID (optioneel)",
+          "filter": "Filter (optioneel)",
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht."
+        },
+        "description": "Overschrijf de voeding OID's voor dit apparaat.",
+        "title": "Voeding overschrijven"
+      },
+      "override_temperature": {
+        "data": {
+          "oid": "Temperatuur OID",
+          "vendor": "Leverancier (Merk)",
+          "method": "Methode",
+          "oid_state": "Status OID (optioneel)",
+          "oid_label": "Label OID (optioneel)",
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht."
+        },
+        "description": "Overschrijf de temperatuur OID's voor dit apparaat.",
+        "title": "Temperatuur overschrijven"
+      },
+      "ask_pr": {
+        "data": {
+          "submit": "Overschrijving indienen bij GitHub"
+        },
+        "description": "Wil je deze overschrijving indienen bij de repository om andere gebruikers te helpen?",
+        "title": "Indienen bij GitHub?"
+      },
+      "submit_pr": {
+        "description": "Om je overschrijving in te dienen, authenticeer je bij GitHub:\n\n1. Ga naar {url}\n2. Voer de code in: **{code}**\n3. Klik op Verifiëren als je klaar bent.",
+        "title": "Authenticeren bij GitHub"
+      },
+      "create_pr": {
+        "description": "{status}",
+        "title": "PR-status"
+      },
       "device_options": {
         "description": "Beheer apparaat-specifieke overschrijvingen en geavanceerde instellingen.",
         "menu_options": {
@@ -219,6 +308,7 @@
           "connection_and_naming_overrides": "Verbinding en naam",
           "custom_oids": "Aangepaste diagnostische OID’s",
           "environmental_sensors": "Omgevingssensoren",
+          "feature_overrides": "Functie OID-overschrijvingen",
           "manage_interfaces": "Interfaces beheren"
         },
         "title": "Apparaatopties"

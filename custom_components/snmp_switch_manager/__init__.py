@@ -20,6 +20,7 @@ from .const import (
     CONF_BANDWIDTH_POLL_INTERVAL,
     DEFAULT_BANDWIDTH_POLL_INTERVAL,
     CONF_CUSTOM_OIDS,
+    CONF_FEATURE_OVERRIDES,
     CONF_UPTIME_POLL_INTERVAL,
     DEFAULT_UPTIME_POLL_INTERVAL,
     CONF_BW_ENABLE,
@@ -46,7 +47,8 @@ from .const import (
     CONF_HIDE_IP_ON_PHYSICAL,
     CONF_HIDE_IP_ON_PHYSICAL_INTERFACES,
 )
-from .snmp import SwitchSnmpClient, SnmpAuthError
+from .snmp import SwitchSnmpClient
+from .helpers import SnmpAuthError
 from .helpers import get_snmp_connection_settings
 
 _LOGGER = logging.getLogger(__name__)
@@ -185,6 +187,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
         bandwidth_options=bandwidth_options,
         poe_options=poe_options,
         env_options=env_options,
+        feature_overrides=entry.options.get(CONF_FEATURE_OVERRIDES) or {},
     )
     try:
         await client.async_initialize()
