@@ -111,7 +111,10 @@
       "invalid_password_length": "Le mot de passe doit comporter 8 à 31 caractères",
       "required_attestation": "Vous devez attester que vous avez testé l'OID",
       "authorization_pending": "Autorisation en attente. Veuillez entrer le code sur GitHub et réessayer.",
-      "github_error": "Échec de la communication avec GitHub. Veuillez réessayer plus tard."
+      "github_error": "Échec de la communication avec GitHub. Veuillez réessayer plus tard.",
+      "required_share": "Puisque vous avez vérifié l'OID, veuillez également sélectionner l'option de le partager avec la communauté pour aider les autres.",
+      "required_attestation_to_share": "Vous devez attester que vous avez testé l'OID avant de le partager avec la communauté.",
+      "duplicate_oid": "Cet OID existe déjà dans la base de données pour ce fournisseur."
     },
     "step": {
       "bandwidth_enable": {
@@ -124,7 +127,8 @@
       "bandwidth_enable_disable": {
         "data": {
           "bw_mode": "Données de bande passante en tant que",
-          "enable_bandwidth_sensors": "Activer la collecte de bande passante"
+          "enable_bandwidth_sensors": "Activer la collecte de bande passante",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Activer la collecte de bande passante pour cet appareil.\n\nSi vous choisissez **Attributs**, les valeurs de bande passante sont ajoutées aux entités de port (sans historique).\nSi vous choisissez **Capteurs**, des capteurs de bande passante séparés sont créés (historique).",
         "title": "Capteurs de bande passante"
@@ -145,7 +149,8 @@
           "bw_rx_throughput_icon": "Icône de débit RX",
           "bw_rx_total_icon": "Icône du total RX",
           "bw_tx_throughput_icon": "Icône de débit TX",
-          "bw_tx_total_icon": "Icône du total TX"
+          "bw_tx_total_icon": "Icône du total TX",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Surcharges d’icône optionnelles pour les capteurs de bande passante. Laissez vide pour utiliser les valeurs par défaut.",
         "title": "Icônes des capteurs de bande passante"
@@ -163,7 +168,8 @@
       },
       "bandwidth_poll_interval": {
         "data": {
-          "bandwidth_poll_interval": "Intervalle d’interrogation (secondes)"
+          "bandwidth_poll_interval": "Intervalle d’interrogation (secondes)",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Définissez l’intervalle d’interrogation des capteurs de bande passante. Des intervalles plus courts mettent à jour plus souvent mais augmentent la charge SNMP.",
         "title": "Capteurs de bande passante"
@@ -197,33 +203,24 @@
           "snmpv3_auth_protocol": "SNMP v3 — Protocole d’authentification (facultatif)",
           "snmpv3_auth_password": "SNMP v3 — Mot de passe d’authentification (facultatif)",
           "snmpv3_priv_protocol": "SNMP v3 — Protocole de confidentialité (facultatif)",
-          "snmpv3_priv_password": "SNMP v3 — Mot de passe de confidentialité (facultatif)"
+          "snmpv3_priv_password": "SNMP v3 — Mot de passe de confidentialité (facultatif)",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Substitutions optionnelles par appareil. Laissez vide pour utiliser les valeurs de la configuration initiale.\n\n### Version SNMP\nTous les champs sont toujours visibles en raison de limitations de Home Assistant. Seule la **version SNMP** sélectionnée détermine quels champs sont utilisés.\n\n### SNMP v2c\nUtilisez **surcharge de communauté SNMP** et **surcharge de port SNMP** uniquement si vous devez remplacer les valeurs de la configuration initiale.\n\n### SNMP v3\nRenseignez **nom d’utilisateur SNMPv3** ainsi que les paramètres d’authentification/de confidentialité lorsque SNMP v3 est sélectionné. De nombreux appareils exigent des mots de passe entre 8 et 31 caractères et peuvent refuser les caractères spéciaux.",
         "title": "Connexion et nom"
       },
-      "custom_oids": {
-        "data": {
-          "enable_custom_oids": "Activer les OID de diagnostic personnalisés",
-          "firmware_oid": "OID du firmware (facultatif)",
-          "hostname_oid": "OID du nom d’hôte (facultatif)",
-          "manufacturer_oid": "OID du fabricant (facultatif)",
-          "model_oid": "OID du modèle (facultatif)",
-          "reset_custom_oids": "Réinitialiser les OID personnalisés aux valeurs par défaut",
-          "uptime_oid": "OID d’uptime (facultatif)"
-        },
-        "description": "Surcharger les OID des capteurs de diagnostic uniquement pour cet appareil. Laissez vide pour utiliser la détection automatique.",
-        "title": "OID de diagnostic personnalisés"
-      },
       "feature_overrides": {
         "description": "Gérer les remplacements d'OID personnalisés pour des fonctionnalités spécifiques.",
         "menu_options": {
+          "override_power": "Remplacer l'alimentation",
           "back": "Retour",
           "override_cpu": "Remplacer le processeur",
           "override_memory": "Remplacer la mémoire",
           "override_fans": "Remplacer les ventilateurs",
           "override_psu": "Remplacer le bloc d'alimentation",
-          "override_temperature": "Remplacer la température"
+          "override_temperature": "Remplacer la température",
+          "override_poe": "Remplacer le PoE",
+          "override_device_info": "Remplacer les infos de l'appareil"
         },
         "title": "Remplacements d'OID de fonctionnalité"
       },
@@ -235,9 +232,11 @@
           "scale": "Échelle",
           "unit": "Unité",
           "description": "Description",
-          "attestation": "J'atteste que j'ai testé et vérifié que cet OID fonctionne comme prévu."
+          "attestation": "J'atteste que j'ai testé et vérifié que cet OID fonctionne comme prévu.",
+          "share_with_community": "Partager avec la communauté",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
-        "description": "Remplacer l'OID du processeur pour cet appareil.",
+        "description": "Remplacez l'OID du processeur pour cet appareil. Laissez ce champ vide pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Remplacer le processeur"
       },
       "override_memory": {
@@ -246,9 +245,11 @@
           "oid_total": "OID de mémoire totale",
           "vendor": "Vendeur (Marque)",
           "method": "Méthode",
-          "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu."
+          "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu.",
+          "share_with_community": "Partager avec la communauté",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
-        "description": "Remplacer les OID de mémoire pour cet appareil.",
+        "description": "Remplacez les OID de mémoire pour cet appareil. Laissez les deux champs vides pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Remplacer la mémoire"
       },
       "override_fans": {
@@ -257,9 +258,11 @@
           "oid_status": "OID d'état du ventilateur (facultatif)",
           "vendor": "Vendeur (Marque)",
           "method": "Méthode",
-          "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu."
+          "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu.",
+          "share_with_community": "Partager avec la communauté",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
-        "description": "Remplacer les OID de ventilateur pour cet appareil.",
+        "description": "Remplacez les OID de ventilateur pour cet appareil. Laissez les deux champs vides pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Remplacer les ventilateurs"
       },
       "override_psu": {
@@ -269,9 +272,11 @@
           "method": "Méthode",
           "oid_label": "OID d'étiquette (facultatif)",
           "filter": "Filtre (facultatif)",
-          "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu."
+          "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu.",
+          "share_with_community": "Partager avec la communauté",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
-        "description": "Remplacer les OID de bloc d'alimentation pour cet appareil.",
+        "description": "Remplacez les OID d'alimentation pour cet appareil. Laissez ce champ vide pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Remplacer le bloc d'alimentation"
       },
       "override_temperature": {
@@ -281,9 +286,11 @@
           "method": "Méthode",
           "oid_state": "OID d'état (facultatif)",
           "oid_label": "OID d'étiquette (facultatif)",
-          "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu."
+          "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu.",
+          "share_with_community": "Partager avec la communauté",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
-        "description": "Remplacer les OID de température pour cet appareil.",
+        "description": "Remplacez les OID de température pour cet appareil. Laissez le champ OID principal de température vide pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Remplacer la température"
       },
       "ask_pr": {
@@ -306,7 +313,6 @@
         "menu_options": {
           "bandwidth_sensors": "Capteurs de bande passante",
           "connection_and_naming_overrides": "Connexion et nom",
-          "custom_oids": "OID de diagnostic personnalisés",
           "environmental_sensors": "Capteurs environnementaux",
           "feature_overrides": "Remplacements d'OID de fonctionnalité",
           "manage_interfaces": "Gérer les interfaces"
@@ -319,7 +325,8 @@
           "icon_existing": "Règle existante",
           "icon_icon": "Icône (ex. mdi:ethernet)",
           "icon_match": "Type de correspondance",
-          "icon_value": "Valeur de correspondance"
+          "icon_value": "Valeur de correspondance",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Surcharger les icônes des entités d’interface en fonction de la correspondance du nom d’interface.",
         "title": "Règles d’icône d’entité"
@@ -330,14 +337,16 @@
           "env_mode": "Données environnementales en tant que",
           "poe_enabled": "Activer les statistiques PoE",
           "poe_mode": "Données PoE en tant que",
-          "poe_per_port_power": "Créer des capteurs de puissance PoE par port"
+          "poe_per_port_power": "Créer des capteurs de puissance PoE par port",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Choisissez si les données environnementales/PoE sont stockées comme attributs (sans historique) ou comme capteurs séparés (avec historique).",
         "title": "Capteurs environnementaux"
       },
       "environmental_poll_interval": {
         "data": {
-          "env_poll_interval": "Intervalle d’interrogation"
+          "env_poll_interval": "Intervalle d’interrogation",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Fréquence d’interrogation des valeurs environnementales (en secondes).",
         "title": "Intervalle d’interrogation environnementale"
@@ -389,7 +398,8 @@
       },
       "poe_poll_interval": {
         "data": {
-          "poe_poll_interval": "Intervalle d’interrogation"
+          "poe_poll_interval": "Intervalle d’interrogation",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Fréquence d’interrogation des valeurs de puissance PoE (en secondes).",
         "title": "Intervalle d’interrogation PoE"
@@ -458,10 +468,54 @@
         "title": "Affichage IP de l’interface",
         "description": "Contrôlez l’affichage des adresses IP sur les interfaces.",
         "data": {
-          "hide_ip_on_physical_interfaces": "Masquer le champ IP sur les interfaces physiques"
+          "hide_ip_on_physical_interfaces": "Masquer le champ IP sur les interfaces physiques",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "data_description": {
           "hide_ip_on_physical_interfaces": "Lorsqu’activé, les adresses IP ne seront affichées que sur les interfaces virtuelles ou logiques (telles que les interfaces VLAN ou de gestion)."
+        }
+      },
+      "override_power": {
+        "data": {
+          "oid": "OID d'alimentation",
+          "vendor": "Fournisseur (Marque)",
+          "method": "Méthode",
+          "description": "Description",
+          "attestation": "J'atteste que j'ai testé et vérifié que cet OID fonctionne comme prévu.",
+          "share_with_community": "Partager avec la communauté",
+          "back_to_menu": "Retourner (ignorer les modifications)"
+        },
+        "description": "Remplacez l'OID de puissance pour cet appareil. Laissez ce champ vide pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
+        "title": "Remplacer l'alimentation"
+      },
+      "override_poe": {
+        "title": "Remplacer le PoE",
+        "description": "Remplacez les OID Power over Ethernet (PoE) pour cet appareil. Laissez tous les champs vides pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
+        "data": {
+          "oid_budget": "OID du budget total",
+          "oid_used": "OID de puissance utilisée",
+          "oid_port_power": "OID de puissance de port",
+          "vendor": "Vendeur (Marque)",
+          "method": "Méthode",
+          "description": "Description",
+          "attestation": "J'atteste avoir testé et vérifié que ces OID fonctionnent comme prévu.",
+          "share_with_community": "Partager avec la communauté",
+          "back_to_menu": "Retourner (ignorer les modifications)"
+        }
+      },
+      "override_device_info": {
+        "title": "Remplacer les informations sur l'appareil",
+        "description": "Remplacez les OID du capteur de diagnostic pour cet appareil. Laissez tous les champs vides pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
+        "data": {
+          "manufacturer_oid": "OID du fabricant (facultatif)",
+          "model_oid": "OID du modèle (facultatif)",
+          "firmware_oid": "OID du firmware (facultatif)",
+          "hostname_oid": "OID du nom d’hôte (facultatif)",
+          "uptime_oid": "OID d’uptime (facultatif)",
+          "vendor": "Fournisseur (Marque)",
+          "back_to_menu": "Retourner (ignorer les modifications)",
+          "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu.",
+          "share_with_community": "Partager cela avec la communauté"
         }
       }
     }

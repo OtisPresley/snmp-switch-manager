@@ -248,11 +248,16 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
             )
             rec["is_bridge_port"] = is_bridge_port
 
-    for oid, val in await client._async_walk(OID_ifAdminStatus):
+    admin_rows, oper_rows = await asyncio.gather(
+        client._async_walk(OID_ifAdminStatus),
+        client._async_walk(OID_ifOperStatus),
+    )
+
+    for oid, val in admin_rows:
         idx = int(oid.split(".")[-1])
         client.cache["ifTable"].setdefault(idx, {})["admin"] = int(val)
 
-    for oid, val in await client._async_walk(OID_ifOperStatus):
+    for oid, val in oper_rows:
         idx = int(oid.split(".")[-1])
         client.cache["ifTable"].setdefault(idx, {})["oper"] = int(val)
     

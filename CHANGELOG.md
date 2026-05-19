@@ -7,6 +7,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-05-19
+
+This major release delivers extreme performance optimizations and a fully modular options flow featuring direct OID overrides and crowdsourced community sharing.
+
+### Added
+
+* 🎛️ **Advanced Feature OID Overrides:** A brand new, beautifully structured overrides panel under **Device Options**. You can now override custom OIDs for CPU, Memory, Temperature, Fans, PSUs, PoE, and Device Diagnostics, with built-in validation.
+* ⚡ **GitHub Community Submissions:** Submit your verified custom OID overrides directly to the public repository from the Home Assistant UI via simple GitHub device authentication to help others.
+* 📦 **Modular Refactored Settings:** The options flow is now fully split into responsive submenus (Interfaces, Bandwidth, Environmentals, Connection & Name, and Feature Overrides) for an incredibly fast and clean configuration experience.
+
+### Improved
+
+* 🚀 **Extreme Startup & Reload Speeds:** Optimized SNMP walks, cached engine bindings, and parallel metadata polling reduce integration loading and reload times by over 80% on high-port switches (such as 24-port and 52-port devices).
+* 🛡️ **Stack Robustness:** Resilient environmental and PoE discovery isolated on mixed-hardware stacks.
+
 ## \[0.5.3-beta.3\] - 2026-05-17
 
 ### Fixed

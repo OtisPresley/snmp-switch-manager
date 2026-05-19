@@ -111,7 +111,10 @@
       "invalid_password_length": "Wachtwoord moet 8–31 tekens zijn",
       "required_attestation": "Je moet verklaren dat je de OID hebt getest",
       "authorization_pending": "Autorisatie in behandeling. Voer de code in op GitHub en probeer het opnieuw.",
-      "github_error": "Communicatie met GitHub mislukt. Probeer het later opnieuw."
+      "github_error": "Communicatie met GitHub mislukt. Probeer het later opnieuw.",
+      "required_share": "Aangezien u de OID hebt geverifieerd, selecteert u ook de optie om deze met de community te delen om anderen te helpen.",
+      "required_attestation_to_share": "U moet verklaren dat u de OID hebt getest voordat u deze met de community deelt.",
+      "duplicate_oid": "Deze OID bestaat al in de database voor deze leverancier."
     },
     "step": {
       "bandwidth_enable": {
@@ -124,7 +127,8 @@
       "bandwidth_enable_disable": {
         "data": {
           "bw_mode": "Bandbreedtegegevens als",
-          "enable_bandwidth_sensors": "Bandbreedtemeting inschakelen"
+          "enable_bandwidth_sensors": "Bandbreedtemeting inschakelen",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Schakel bandbreedtemeting in voor dit apparaat.\n\nAls je **Attributen** kiest, worden bandbreedtewaarden toegevoegd aan poortentiteiten (geen geschiedenis).\nAls je **Sensoren** kiest, worden aparte bandbreedtesensoren gemaakt (geschiedenis).",
         "title": "Bandbreedtesensoren"
@@ -145,7 +149,8 @@
           "bw_rx_throughput_icon": "RX-doorvoer pictogram",
           "bw_rx_total_icon": "RX-totaal pictogram",
           "bw_tx_throughput_icon": "TX-doorvoer pictogram",
-          "bw_tx_total_icon": "TX-totaal pictogram"
+          "bw_tx_total_icon": "TX-totaal pictogram",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Optionele pictogram-overschrijvingen voor bandbreedtesensoren. Laat leeg om de standaardwaarden te gebruiken.",
         "title": "Pictogrammen voor bandbreedtesensoren"
@@ -163,7 +168,8 @@
       },
       "bandwidth_poll_interval": {
         "data": {
-          "bandwidth_poll_interval": "Poll-interval (seconden)"
+          "bandwidth_poll_interval": "Poll-interval (seconden)",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Stel het poll-interval voor bandbreedtesensoren in. Lagere intervallen werken vaker bij, maar verhogen de SNMP-belasting.",
         "title": "Bandbreedtesensoren"
@@ -197,33 +203,24 @@
           "snmpv3_auth_protocol": "SNMP v3 — Authenticatieprotocol (optioneel)",
           "snmpv3_auth_password": "SNMP v3 — Authenticatiewachtwoord (optioneel)",
           "snmpv3_priv_protocol": "SNMP v3 — Privacyprotocol (optioneel)",
-          "snmpv3_priv_password": "SNMP v3 — Privacywachtwoord (optioneel)"
+          "snmpv3_priv_password": "SNMP v3 — Privacywachtwoord (optioneel)",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Optionele overschrijvingen per apparaat. Laat leeg om waarden uit de initiële setup te gebruiken.\n\n### SNMP-versie\nAlle velden zijn altijd zichtbaar door beperkingen van Home Assistant. Alleen de geselecteerde **SNMP-versie** bepaalt welke velden worden gebruikt.\n\n### SNMP v2c\nGebruik **SNMP community-overschrijving** en **SNMP poort-overschrijving** alleen als je waarden uit de initiële setup moet overschrijven.\n\n### SNMP v3\nVul **SNMPv3 gebruikersnaam** en authenticatie-/privacy-instellingen in wanneer SNMP v3 is geselecteerd. Veel apparaten vereisen wachtwoorden tussen 8 en 31 tekens en kunnen speciale tekens weigeren.",
         "title": "Verbinding en naam"
       },
-      "custom_oids": {
-        "data": {
-          "enable_custom_oids": "Aangepaste diagnostische OID’s inschakelen",
-          "firmware_oid": "Firmware-OID (optioneel)",
-          "hostname_oid": "Hostname-OID (optioneel)",
-          "manufacturer_oid": "Fabrikant-OID (optioneel)",
-          "model_oid": "Model-OID (optioneel)",
-          "reset_custom_oids": "Aangepaste OID’s terugzetten naar standaard",
-          "uptime_oid": "Uptime-OID (optioneel)"
-        },
-        "description": "Diagnostische sensor-OID’s alleen voor dit apparaat overschrijven. Laat leeg om automatische detectie te gebruiken.",
-        "title": "Aangepaste diagnostische OID’s"
-      },
       "feature_overrides": {
         "description": "Beheer aangepaste OID-overschrijvingen voor specifieke functies.",
         "menu_options": {
+          "override_power": "Power overschrijven",
           "back": "Terug",
           "override_cpu": "CPU overschrijven",
           "override_memory": "Geheugen overschrijven",
           "override_fans": "Ventilatoren overschrijven",
           "override_psu": "Voeding overschrijven",
-          "override_temperature": "Temperatuur overschrijven"
+          "override_temperature": "Temperatuur overschrijven",
+          "override_poe": "PoE overschrijven",
+          "override_device_info": "Apparaatinfo overschrijven"
         },
         "title": "Functie OID-overschrijvingen"
       },
@@ -235,9 +232,11 @@
           "scale": "Schaal",
           "unit": "Eenheid",
           "description": "Beschrijving",
-          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID werkt zoals verwacht."
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID werkt zoals verwacht.",
+          "share_with_community": "Deel dit met de community",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
-        "description": "Overschrijf de CPU OID voor dit apparaat.",
+        "description": "Overschrijf de CPU OID voor dit apparaat. Laat dit veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "CPU overschrijven"
       },
       "override_memory": {
@@ -246,9 +245,11 @@
           "oid_total": "Totaal geheugen OID",
           "vendor": "Leverancier (Merk)",
           "method": "Methode",
-          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht."
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht.",
+          "share_with_community": "Deel dit met de community",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
-        "description": "Overschrijf de geheugen OID's voor dit apparaat.",
+        "description": "Overschrijf de Geheugen OID’s voor dit apparaat. Laat beide velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Geheugen overschrijven"
       },
       "override_fans": {
@@ -257,9 +258,11 @@
           "oid_status": "Ventilator status OID (optioneel)",
           "vendor": "Leverancier (Merk)",
           "method": "Methode",
-          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht."
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht.",
+          "share_with_community": "Deel dit met de community",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
-        "description": "Overschrijf de ventilator OID's voor dit apparaat.",
+        "description": "Overschrijf de Ventilator OID’s voor dit apparaat. Laat beide velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Ventilatoren overschrijven"
       },
       "override_psu": {
@@ -269,9 +272,11 @@
           "method": "Methode",
           "oid_label": "Label OID (optioneel)",
           "filter": "Filter (optioneel)",
-          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht."
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht.",
+          "share_with_community": "Deel dit met de community",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
-        "description": "Overschrijf de voeding OID's voor dit apparaat.",
+        "description": "Overschrijf de PSU OID’s voor dit apparaat. Laat dit veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Voeding overschrijven"
       },
       "override_temperature": {
@@ -281,9 +286,11 @@
           "method": "Methode",
           "oid_state": "Status OID (optioneel)",
           "oid_label": "Label OID (optioneel)",
-          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht."
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht.",
+          "share_with_community": "Deel dit met de community",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
-        "description": "Overschrijf de temperatuur OID's voor dit apparaat.",
+        "description": "Overschrijf de Temperatuur OID’s voor dit apparaat. Laat het hoofd-temperatuur OID veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Temperatuur overschrijven"
       },
       "ask_pr": {
@@ -306,7 +313,6 @@
         "menu_options": {
           "bandwidth_sensors": "Bandbreedtesensoren",
           "connection_and_naming_overrides": "Verbinding en naam",
-          "custom_oids": "Aangepaste diagnostische OID’s",
           "environmental_sensors": "Omgevingssensoren",
           "feature_overrides": "Functie OID-overschrijvingen",
           "manage_interfaces": "Interfaces beheren"
@@ -319,7 +325,8 @@
           "icon_existing": "Bestaande regel",
           "icon_icon": "Pictogram (bijv. mdi:ethernet)",
           "icon_match": "Matchtype",
-          "icon_value": "Matchwaarde"
+          "icon_value": "Matchwaarde",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Interface-entiteitspictogrammen overschrijven op basis van interfacenaam-matching.",
         "title": "Entiteitspictogramregels"
@@ -330,14 +337,16 @@
           "env_mode": "Omgevingsgegevens als",
           "poe_enabled": "PoE-statistieken inschakelen",
           "poe_mode": "PoE-gegevens als",
-          "poe_per_port_power": "PoE-vermogen sensoren per poort maken"
+          "poe_per_port_power": "PoE-vermogen sensoren per poort maken",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Kies of omgevings-/PoE-gegevens worden opgeslagen als attributen (geen geschiedenis) of als aparte sensoren (geschiedenis).",
         "title": "Omgevingssensoren"
       },
       "environmental_poll_interval": {
         "data": {
-          "env_poll_interval": "Poll-interval"
+          "env_poll_interval": "Poll-interval",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Hoe vaak omgevingswaarden pollen (in seconden).",
         "title": "Poll-interval voor omgevingswaarden"
@@ -389,7 +398,8 @@
       },
       "poe_poll_interval": {
         "data": {
-          "poe_poll_interval": "Poll-interval"
+          "poe_poll_interval": "Poll-interval",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Hoe vaak PoE-vermogenwaarden pollen (in seconden).",
         "title": "PoE poll-interval"
@@ -458,10 +468,54 @@
         "title": "Interface IP-weergave",
         "description": "Bepaal hoe IP-adressen op interfaces worden weergegeven.",
         "data": {
-          "hide_ip_on_physical_interfaces": "IP-veld op fysieke interfaces verbergen"
+          "hide_ip_on_physical_interfaces": "IP-veld op fysieke interfaces verbergen",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "data_description": {
           "hide_ip_on_physical_interfaces": "Wanneer ingeschakeld, worden IP-adressen alleen weergegeven op virtuele of logische interfaces (zoals VLAN- of beheerinterfaces)."
+        }
+      },
+      "override_power": {
+        "data": {
+          "oid": "Power OID",
+          "vendor": "Leverancier (Merk)",
+          "method": "Methode",
+          "description": "Beschrijving",
+          "attestation": "Ik verklaar dat ik deze OID hebt getest en geverifieerd dat deze naar behoren werkt.",
+          "share_with_community": "Deel dit met de community",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
+        },
+        "description": "Overschrijf de Power OID voor dit apparaat. Laat dit veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "title": "Power overschrijven"
+      },
+      "override_poe": {
+        "title": "PoE overschrijven",
+        "description": "Overschrijf de Power over Ethernet (PoE) OID’s voor dit apparaat. Laat alle velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "data": {
+          "oid_budget": "Totaal budget OID",
+          "oid_used": "Gebruikt vermogen OID",
+          "oid_port_power": "Port vermogen OID",
+          "vendor": "Fabrikant (Merk)",
+          "method": "Methode",
+          "description": "Beschrijving",
+          "attestation": "Ik verklaar dat ik deze OID's heb getest en geverifieerd en dat ze naar verwachting werken.",
+          "share_with_community": "Deel dit met de community",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
+        }
+      },
+      "override_device_info": {
+        "title": "Apparaatinfo overschrijven",
+        "description": "Overschrijf de diagnostische sensor-OID’s voor dit apparaat. Laat alle velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "data": {
+          "manufacturer_oid": "Fabrikant-OID (optioneel)",
+          "model_oid": "Model-OID (optioneel)",
+          "firmware_oid": "Firmware-OID (optioneel)",
+          "hostname_oid": "Hostname-OID (optioneel)",
+          "uptime_oid": "Uptime-OID (optioneel)",
+          "vendor": "Fabrikant (Merk)",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)",
+          "attestation": "Ik verklaar dat ik deze OID’s heb getest en geverifieerd.",
+          "share_with_community": "Deel dit met de community"
         }
       }
     }

@@ -111,7 +111,10 @@
       "invalid_password_length": "La contraseña debe tener 8–31 caracteres",
       "required_attestation": "Debes certificar que has probado el OID",
       "authorization_pending": "Autorización pendiente. Introduce el código en GitHub e inténtalo de nuevo.",
-      "github_error": "Error de comunicación con GitHub. Inténtalo de nuevo más tarde."
+      "github_error": "Error de comunicación con GitHub. Inténtalo de nuevo más tarde.",
+      "required_share": "Dado que ha verificado el OID, seleccione también la opción de compartirlo con la comunidad para ayudar a otros.",
+      "required_attestation_to_share": "Debe certificar que ha probado el OID antes de compartirlo con la comunidad.",
+      "duplicate_oid": "Este OID ya existe en la base de datos para este proveedor."
     },
     "step": {
       "bandwidth_enable": {
@@ -124,7 +127,8 @@
       "bandwidth_enable_disable": {
         "data": {
           "bw_mode": "Datos de ancho de banda como",
-          "enable_bandwidth_sensors": "Habilitar recopilación de ancho de banda"
+          "enable_bandwidth_sensors": "Habilitar recopilación de ancho de banda",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Habilita la recopilación de ancho de banda para este dispositivo.\n\nSi eliges **Atributos**, los valores de ancho de banda se añaden a las entidades de puerto (sin historial).\nSi eliges **Sensores**, se crean sensores de ancho de banda separados (con historial).",
         "title": "Sensores de ancho de banda"
@@ -145,7 +149,8 @@
           "bw_rx_throughput_icon": "Icono de rendimiento RX",
           "bw_rx_total_icon": "Icono de total RX",
           "bw_tx_throughput_icon": "Icono de rendimiento TX",
-          "bw_tx_total_icon": "Icono de total TX"
+          "bw_tx_total_icon": "Icono de total TX",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Anulaciones opcionales de iconos para sensores de ancho de banda. Deja en blanco para usar los valores predeterminados.",
         "title": "Iconos de sensores de ancho de banda"
@@ -163,7 +168,8 @@
       },
       "bandwidth_poll_interval": {
         "data": {
-          "bandwidth_poll_interval": "Intervalo de sondeo (segundos)"
+          "bandwidth_poll_interval": "Intervalo de sondeo (segundos)",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Establece el intervalo de sondeo para los sensores de ancho de banda. Intervalos más bajos actualizan con más frecuencia, pero aumentan la carga de SNMP.",
         "title": "Sensores de ancho de banda"
@@ -197,33 +203,24 @@
           "snmpv3_auth_protocol": "SNMP v3 — Protocolo de autenticación (opcional)",
           "snmpv3_auth_password": "SNMP v3 — Contraseña de autenticación (opcional)",
           "snmpv3_priv_protocol": "SNMP v3 — Protocolo de privacidad (opcional)",
-          "snmpv3_priv_password": "SNMP v3 — Contraseña de privacidad (opcional)"
+          "snmpv3_priv_password": "SNMP v3 — Contraseña de privacidad (opcional)",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Anulaciones opcionales por dispositivo. Deja en blanco para usar los valores de la configuración inicial.\n\n### Versión de SNMP\nTodos los campos son siempre visibles debido a limitaciones de Home Assistant. Solo la **versión de SNMP** seleccionada determina qué campos se usan.\n\n### SNMP v2c\nUsa **anulación de comunidad SNMP** y **anulación de puerto SNMP** solo si necesitas sobrescribir los valores de la configuración inicial.\n\n### SNMP v3\nRellena **nombre de usuario SNMPv3** y la configuración de autenticación/privacidad cuando se seleccione SNMP v3. Muchos dispositivos requieren contraseñas de 8 a 31 caracteres y pueden rechazar caracteres especiales.",
         "title": "Conexión y nombre"
       },
-      "custom_oids": {
-        "data": {
-          "enable_custom_oids": "Habilitar OIDs de diagnóstico personalizados",
-          "firmware_oid": "OID de firmware (opcional)",
-          "hostname_oid": "OID de nombre de host (opcional)",
-          "manufacturer_oid": "OID de fabricante (opcional)",
-          "model_oid": "OID de modelo (opcional)",
-          "reset_custom_oids": "Restablecer OIDs personalizados a valores predeterminados",
-          "uptime_oid": "OID de tiempo de actividad (opcional)"
-        },
-        "description": "Sobrescribe los OIDs de sensores de diagnóstico solo para este dispositivo. Deja en blanco para usar la detección automática.",
-        "title": "OIDs de diagnóstico personalizados"
-      },
       "feature_overrides": {
         "description": "Gestiona anulaciones de OID personalizadas para funciones específicas.",
         "menu_options": {
+          "override_power": "Anular Power",
           "back": "Atrás",
           "override_cpu": "Anular CPU",
           "override_memory": "Anular memoria",
           "override_fans": "Anular ventiladores",
           "override_psu": "Anular fuente de alimentación",
-          "override_temperature": "Anular temperatura"
+          "override_temperature": "Anular temperatura",
+          "override_poe": "Invalidar PoE",
+          "override_device_info": "Anular info del dispositivo"
         },
         "title": "Anulaciones de OID de función"
       },
@@ -235,9 +232,11 @@
           "scale": "Escala",
           "unit": "Unidad",
           "description": "Descripción",
-          "attestation": "Certifico que he probado y verificado que este OID funciona como se esperaba."
+          "attestation": "Certifico que he probado y verificado que este OID funciona como se esperaba.",
+          "share_with_community": "Compartir esto con la comunidad",
+          "back_to_menu": "Volver (descartar cambios)"
         },
-        "description": "Anular el OID de CPU para este dispositivo.",
+        "description": "Anule el OID de la CPU para este dispositivo. Deje este campo en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Anular CPU"
       },
       "override_memory": {
@@ -246,9 +245,11 @@
           "oid_total": "OID de memoria total",
           "vendor": "Proveedor (Marca)",
           "method": "Método",
-          "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba."
+          "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba.",
+          "share_with_community": "Compartir esto con la comunidad",
+          "back_to_menu": "Volver (descartar cambios)"
         },
-        "description": "Anular los OIDs de memoria para este dispositivo.",
+        "description": "Anule los OID de memoria para este dispositivo. Deje ambos campos en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Anular memoria"
       },
       "override_fans": {
@@ -257,9 +258,11 @@
           "oid_status": "OID de estado de ventilador (opcional)",
           "vendor": "Proveedor (Marca)",
           "method": "Método",
-          "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba."
+          "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba.",
+          "share_with_community": "Compartir esto con la comunidad",
+          "back_to_menu": "Volver (descartar cambios)"
         },
-        "description": "Anular los OIDs de ventilador para este dispositivo.",
+        "description": "Anule los OID del ventilador para este dispositivo. Deje ambos campos en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Anular ventiladores"
       },
       "override_psu": {
@@ -269,9 +272,11 @@
           "method": "Método",
           "oid_label": "OID de etiqueta (opcional)",
           "filter": "Filtro (opcional)",
-          "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba."
+          "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba.",
+          "share_with_community": "Compartir esto con la comunidad",
+          "back_to_menu": "Volver (descartar cambios)"
         },
-        "description": "Anular los OIDs de fuente de alimentación para este dispositivo.",
+        "description": "Anule los OID de la fuente de alimentación para este dispositivo. Deje este campo en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Anular fuente de alimentación"
       },
       "override_temperature": {
@@ -281,9 +286,11 @@
           "method": "Método",
           "oid_state": "OID de estado (opcional)",
           "oid_label": "OID de etiqueta (opcional)",
-          "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba."
+          "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba.",
+          "share_with_community": "Compartir esto con la comunidad",
+          "back_to_menu": "Volver (descartar cambios)"
         },
-        "description": "Anular los OIDs de temperatura para este dispositivo.",
+        "description": "Anule los OID de temperatura para este dispositivo. Deje el campo principal de OID de temperatura en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Anular temperatura"
       },
       "ask_pr": {
@@ -306,7 +313,6 @@
         "menu_options": {
           "bandwidth_sensors": "Sensores de ancho de banda",
           "connection_and_naming_overrides": "Conexión y nombre",
-          "custom_oids": "OIDs de diagnóstico personalizados",
           "environmental_sensors": "Sensores ambientales",
           "feature_overrides": "Anulaciones de OID de función",
           "manage_interfaces": "Gestionar interfaces"
@@ -319,7 +325,8 @@
           "icon_existing": "Regla existente",
           "icon_icon": "Icono (p. ej., mdi:ethernet)",
           "icon_match": "Tipo de coincidencia",
-          "icon_value": "Valor de coincidencia"
+          "icon_value": "Valor de coincidencia",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Sobrescribe los iconos de las entidades de interfaz según la coincidencia del nombre de la interfaz.",
         "title": "Reglas de icono de entidad"
@@ -330,14 +337,16 @@
           "env_mode": "Datos ambientales como",
           "poe_enabled": "Habilitar estadísticas PoE",
           "poe_mode": "Datos PoE como",
-          "poe_per_port_power": "Crear sensores de potencia PoE por puerto"
+          "poe_per_port_power": "Crear sensores de potencia PoE por puerto",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Elige si los datos ambientales/PoE se almacenan como atributos (sin historial) o como sensores separados (con historial).",
         "title": "Sensores ambientales"
       },
       "environmental_poll_interval": {
         "data": {
-          "env_poll_interval": "Intervalo de sondeo"
+          "env_poll_interval": "Intervalo de sondeo",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Con qué frecuencia sondear los valores ambientales (en segundos).",
         "title": "Intervalo de sondeo ambiental"
@@ -389,7 +398,8 @@
       },
       "poe_poll_interval": {
         "data": {
-          "poe_poll_interval": "Intervalo de sondeo"
+          "poe_poll_interval": "Intervalo de sondeo",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Con qué frecuencia sondear los valores de potencia PoE (en segundos).",
         "title": "Intervalo de sondeo PoE"
@@ -458,10 +468,54 @@
         "title": "Mostrar IP de interfaz",
         "description": "Controla cómo se muestran las direcciones IP en las interfaces.",
         "data": {
-          "hide_ip_on_physical_interfaces": "Ocultar campo IP en interfaces físicas"
+          "hide_ip_on_physical_interfaces": "Ocultar campo IP en interfaces físicas",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "data_description": {
           "hide_ip_on_physical_interfaces": "Cuando está habilitado, las direcciones IP solo se mostrarán en interfaces virtuales o lógicas (como interfaces VLAN o de gestión)."
+        }
+      },
+      "override_power": {
+        "data": {
+          "oid": "OID de Power",
+          "vendor": "Proveedor (Marca)",
+          "method": "Método",
+          "description": "Descripción",
+          "attestation": "Certifico que he probado y verificado que este OID funciona como se espera.",
+          "share_with_community": "Compartir esto con la comunidad",
+          "back_to_menu": "Volver (descartar cambios)"
+        },
+        "description": "Anule el OID de energía para este dispositivo. Deje este campo en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
+        "title": "Anular Power"
+      },
+      "override_poe": {
+        "title": "Invalidar PoE",
+        "description": "Anule los OID de Power over Ethernet (PoE) para este dispositivo. Deje todos los campos en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
+        "data": {
+          "oid_budget": "OID de presupuesto total",
+          "oid_used": "OID de energía usada",
+          "oid_port_power": "OID de energía del puerto",
+          "vendor": "Proveedor (Marca)",
+          "method": "Método",
+          "description": "Descripción",
+          "attestation": "Doy fe de que he probado y verificado que estos OID funcionan como se esperaba.",
+          "share_with_community": "Compartir con la comunidad",
+          "back_to_menu": "Volver (descartar cambios)"
+        }
+      },
+      "override_device_info": {
+        "title": "Anular información del dispositivo",
+        "description": "Anule los OID del sensor de diagnóstico para este dispositivo. Deje todos los campos en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
+        "data": {
+          "manufacturer_oid": "OID de fabricante (opcional)",
+          "model_oid": "OID de modelo (opcional)",
+          "firmware_oid": "OID de firmware (opcional)",
+          "hostname_oid": "OID de nombre de host (opcional)",
+          "uptime_oid": "OID de tiempo de actividad (opcional)",
+          "vendor": "Proveedor (Marca)",
+          "back_to_menu": "Volver (descartar cambios)",
+          "attestation": "Doy fe de que he probado y verificado que estos OID funcionan como se esperaba.",
+          "share_with_community": "Compartir esto con la comunidad"
         }
       }
     }

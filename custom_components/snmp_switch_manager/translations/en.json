@@ -109,7 +109,10 @@
       "invalid_uptime_interval": "Invalid uptime refresh interval",
       "required": "Required",
       "invalid_password_length": "Password must be 8–31 characters",
-      "required_attestation": "You must attest that you have tested the OID"
+      "required_attestation": "You must attest that you have tested the OID",
+      "required_share": "Since you verified the OID, please also select the option to share it with the community to help others.",
+      "required_attestation_to_share": "You must attest that you have tested the OID before sharing it with the community.",
+      "duplicate_oid": "This OID already exists in the database for this vendor."
     },
     "step": {
       "bandwidth_enable": {
@@ -122,7 +125,8 @@
       "bandwidth_enable_disable": {
         "data": {
           "bw_mode": "Bandwidth data as",
-          "enable_bandwidth_sensors": "Enable bandwidth collection"
+          "enable_bandwidth_sensors": "Enable bandwidth collection",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "Enable bandwidth collection for this device.\n\nIf you choose **Attributes**, bandwidth values are added to port entities (no history).\nIf you choose **Sensors**, separate bandwidth sensors are created (history).",
         "title": "Bandwidth Sensors"
@@ -143,7 +147,8 @@
           "bw_rx_throughput_icon": "RX Throughput icon",
           "bw_rx_total_icon": "RX Total icon",
           "bw_tx_throughput_icon": "TX Throughput icon",
-          "bw_tx_total_icon": "TX Total icon"
+          "bw_tx_total_icon": "TX Total icon",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "Optional icon overrides for bandwidth sensors. Leave blank to use defaults.",
         "title": "Bandwidth Sensor Icons"
@@ -161,7 +166,8 @@
       },
       "bandwidth_poll_interval": {
         "data": {
-          "bandwidth_poll_interval": "Poll interval (seconds)"
+          "bandwidth_poll_interval": "Poll interval (seconds)",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "Set the poll interval for bandwidth sensors. Lower intervals update more often but increase SNMP load.",
         "title": "Bandwidth Sensors"
@@ -195,33 +201,24 @@
           "snmpv3_auth_protocol": "SNMP v3 — Authentication protocol (optional)",
           "snmpv3_auth_password": "SNMP v3 — Authentication password (optional)",
           "snmpv3_priv_protocol": "SNMP v3 — Privacy protocol (optional)",
-          "snmpv3_priv_password": "SNMP v3 — Privacy password (optional)"
+          "snmpv3_priv_password": "SNMP v3 — Privacy password (optional)",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "Optional per-device overrides. Leave blank to use values from initial setup.\n\n### SNMP Version\nAll fields are always visible due to Home Assistant limitations. Only the selected **SNMP version** determines which fields are used.\n\n### SNMP v2c\nUse **SNMP community override** and **SNMP port override** only if you need to override initial setup values.\n\n### SNMP v3\nFill in **SNMPv3 username** and authentication/privacy settings when SNMP v3 is selected. Many devices require passwords between 8 and 31 characters and may reject special characters.",
         "title": "Connection & Name"
       },
-      "custom_oids": {
-        "data": {
-          "enable_custom_oids": "Enable custom diagnostic OIDs",
-          "firmware_oid": "Firmware OID (optional)",
-          "hostname_oid": "Hostname OID (optional)",
-          "manufacturer_oid": "Manufacturer OID (optional)",
-          "model_oid": "Model OID (optional)",
-          "reset_custom_oids": "Reset custom OIDs to defaults",
-          "uptime_oid": "Uptime OID (optional)"
-        },
-        "description": "Override diagnostic sensor OIDs for this device only. Leave blank to use automatic detection.",
-        "title": "Custom Diagnostic OIDs"
-      },
       "feature_overrides": {
         "description": "Manage custom OID overrides for specific features.",
         "menu_options": {
+          "override_power": "Override Power",
           "back": "Back",
           "override_cpu": "Override CPU",
           "override_memory": "Override Memory",
           "override_fans": "Override Fans",
           "override_psu": "Override PSU",
-          "override_temperature": "Override Temperature"
+          "override_temperature": "Override Temperature",
+          "override_poe": "Override PoE",
+          "override_device_info": "Override Device Info"
         },
         "title": "Feature OID Overrides"
       },
@@ -233,9 +230,11 @@
           "scale": "Scale",
           "unit": "Unit",
           "description": "Description",
-          "attestation": "I attest that I have tested and verified that this OID works as expected."
+          "attestation": "I attest that I have tested and verified that this OID works as expected.",
+          "share_with_community": "Share this with the community",
+          "back_to_menu": "Go back (discard changes)"
         },
-        "description": "Override the CPU OID for this device.",
+        "description": "Override the CPU OID for this device. Leave this field blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Override CPU"
       },
       "override_memory": {
@@ -244,9 +243,11 @@
           "oid_total": "Total Memory OID",
           "vendor": "Vendor (Brand)",
           "method": "Method",
-          "attestation": "I attest that I have tested and verified that these OIDs work as expected."
+          "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
+          "share_with_community": "Share this with the community",
+          "back_to_menu": "Go back (discard changes)"
         },
-        "description": "Override the Memory OIDs for this device.",
+        "description": "Override the Memory OIDs for this device. Leave both fields blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Override Memory"
       },
       "override_fans": {
@@ -255,9 +256,11 @@
           "oid_status": "Fan Status OID (optional)",
           "vendor": "Vendor (Brand)",
           "method": "Method",
-          "attestation": "I attest that I have tested and verified that these OIDs work as expected."
+          "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
+          "share_with_community": "Share this with the community",
+          "back_to_menu": "Go back (discard changes)"
         },
-        "description": "Override the Fan OIDs for this device.",
+        "description": "Override the Fan OIDs for this device. Leave both fields blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Override Fans"
       },
       "override_psu": {
@@ -267,9 +270,11 @@
           "method": "Method",
           "oid_label": "Label OID (optional)",
           "filter": "Filter (optional)",
-          "attestation": "I attest that I have tested and verified that these OIDs work as expected."
+          "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
+          "share_with_community": "Share this with the community",
+          "back_to_menu": "Go back (discard changes)"
         },
-        "description": "Override the PSU OIDs for this device.",
+        "description": "Override the PSU OIDs for this device. Leave this field blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Override PSU"
       },
       "override_temperature": {
@@ -279,9 +284,11 @@
           "method": "Method",
           "oid_state": "State OID (optional)",
           "oid_label": "Label OID (optional)",
-          "attestation": "I attest that I have tested and verified that these OIDs work as expected."
+          "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
+          "share_with_community": "Share this with the community",
+          "back_to_menu": "Go back (discard changes)"
         },
-        "description": "Override the Temperature OIDs for this device.",
+        "description": "Override the Temperature OIDs for this device. Leave the main Temperature OID field blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Override Temperature"
       },
       "device_options": {
@@ -289,7 +296,6 @@
         "menu_options": {
           "bandwidth_sensors": "Bandwidth Sensors",
           "connection_and_naming_overrides": "Connection & Name",
-          "custom_oids": "Custom Diagnostic OIDs",
           "environmental_sensors": "Environmental Sensors",
           "feature_overrides": "Feature OID Overrides",
           "manage_interfaces": "Manage Interfaces"
@@ -302,7 +308,8 @@
           "icon_existing": "Existing rule",
           "icon_icon": "Icon (e.g., mdi:ethernet)",
           "icon_match": "Match type",
-          "icon_value": "Match value"
+          "icon_value": "Match value",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "Override interface entity icons based on interface name matching.",
         "title": "Entity Icon Rules"
@@ -313,14 +320,16 @@
           "env_mode": "Environmental data as",
           "poe_enabled": "Enable PoE statistics",
           "poe_mode": "PoE data as",
-          "poe_per_port_power": "Create per-port PoE Power sensors"
+          "poe_per_port_power": "Create per-port PoE Power sensors",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "Choose whether environmental/PoE data is stored as attributes (no history) or separate sensors (history).",
         "title": "Environmental Sensors"
       },
       "environmental_poll_interval": {
         "data": {
-          "env_poll_interval": "Polling interval"
+          "env_poll_interval": "Polling interval",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "How often to poll environmental values (in seconds).",
         "title": "Environmental polling interval"
@@ -372,7 +381,8 @@
       },
       "poe_poll_interval": {
         "data": {
-          "poe_poll_interval": "Polling interval"
+          "poe_poll_interval": "Polling interval",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "How often to poll PoE power values (in seconds).",
         "title": "PoE polling interval"
@@ -441,10 +451,54 @@
         "title": "Interface IP Display",
         "description": "Control how IP addresses are shown on interfaces.",
         "data": {
-          "hide_ip_on_physical_interfaces": "Hide IP field on Physical Interfaces"
+          "hide_ip_on_physical_interfaces": "Hide IP field on Physical Interfaces",
+          "back_to_menu": "Go back (discard changes)"
         },
         "data_description": {
           "hide_ip_on_physical_interfaces": "When enabled, IP addresses will only be shown on virtual or logical interfaces (such as VLAN or management interfaces)."
+        }
+      },
+      "override_power": {
+        "data": {
+          "oid": "Power OID",
+          "vendor": "Vendor (Brand)",
+          "method": "Method",
+          "description": "Description",
+          "attestation": "I attest that I have tested and verified that this OID works as expected.",
+          "share_with_community": "Share this with the community",
+          "back_to_menu": "Go back (discard changes)"
+        },
+        "description": "Override the Power OID for this device. Leave this field blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
+        "title": "Override Power"
+      },
+      "override_poe": {
+        "title": "Override PoE",
+        "description": "Override the Power over Ethernet (PoE) OIDs for this device. Leave all fields blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
+        "data": {
+          "oid_budget": "Total Budget OID",
+          "oid_used": "Used Power OID",
+          "oid_port_power": "Port Power OID",
+          "vendor": "Vendor (Brand)",
+          "method": "Method",
+          "description": "Description",
+          "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
+          "share_with_community": "Share this with the community",
+          "back_to_menu": "Go back (discard changes)"
+        }
+      },
+      "override_device_info": {
+        "title": "Override Device Info",
+        "description": "Override diagnostic sensor OIDs for this device. Leave all fields blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
+        "data": {
+          "manufacturer_oid": "Manufacturer OID (optional)",
+          "model_oid": "Model OID (optional)",
+          "firmware_oid": "Firmware OID (optional)",
+          "hostname_oid": "Hostname OID (optional)",
+          "uptime_oid": "Uptime OID (optional)",
+          "vendor": "Vendor (Brand)",
+          "back_to_menu": "Go back (discard changes)",
+          "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
+          "share_with_community": "Share this with the community"
         }
       }
     }

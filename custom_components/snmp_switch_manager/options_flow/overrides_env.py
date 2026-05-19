@@ -1,0 +1,221 @@
+from __future__ import annotations
+
+import voluptuous as vol
+
+import homeassistant.helpers.config_validation as cv
+from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers import selector
+
+from ..const import (
+    CONF_FEATURE_OVERRIDES,
+    CONF_ENV_ENABLE,
+    CONF_ENV_MODE,
+    ENV_MODE_SENSORS,
+    ENV_MODE_ATTRIBUTES,
+    CONF_POE_ENABLE,
+    CONF_POE_MODE,
+    CONF_POE_PER_PORT_POWER,
+    POE_MODE_SENSORS,
+    POE_MODE_ATTRIBUTES,
+    CONF_POE_POLL_INTERVAL,
+    DEFAULT_POE_POLL_INTERVAL,
+    CONF_ENV_POLL_INTERVAL,
+    DEFAULT_ENV_POLL_INTERVAL,
+)
+
+
+class OverridesEnvMixin:
+    """Mixin for OptionsFlowHandler to handle environmental sensor settings and PR submission steps."""
+
+    async def async_step_environmental_sensors(self, user_input=None) -> FlowResult:
+        """Environmental / PoE options."""
+        return self.async_show_menu(
+            step_id="environmental_sensors",
+            menu_options=[
+                "environmental_enable_disable",
+                "poe_poll_interval",
+                "environmental_poll_interval",
+                "back",
+            ],
+        )
+
+    async def async_step_environmental_enable_disable(self, user_input=None) -> FlowResult:
+        """Enable/disable Environmental + PoE options."""
+        if user_input is not None:
+            if user_input.get("back_to_menu"):
+                return await self.async_step_environmental_sensors()
+
+            self._options[CONF_ENV_ENABLE] = user_input.get(CONF_ENV_ENABLE, False)
+            self._options[CONF_ENV_MODE] = user_input.get(CONF_ENV_MODE, ENV_MODE_ATTRIBUTES)
+            self._options[CONF_POE_ENABLE] = user_input.get(CONF_POE_ENABLE, False)
+            self._options[CONF_POE_MODE] = user_input.get(CONF_POE_MODE, POE_MODE_ATTRIBUTES)
+            self._options[CONF_POE_PER_PORT_POWER] = user_input.get(CONF_POE_PER_PORT_POWER, False)
+            self._apply_options()
+            return await self.async_step_environmental_sensors()
+
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_ENV_ENABLE,
+                    default=self._options.get(CONF_ENV_ENABLE, False),
+                ): cv.boolean,
+                vol.Optional(
+                    CONF_ENV_MODE,
+                    default=self._options.get(CONF_ENV_MODE, ENV_MODE_SENSORS),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[ENV_MODE_SENSORS, ENV_MODE_ATTRIBUTES],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                        translation_key="env_data_as",
+                    )
+                ),
+                vol.Optional(
+                    CONF_POE_ENABLE,
+                    default=self._options.get(CONF_POE_ENABLE, False),
+                ): cv.boolean,
+                vol.Optional(
+                    CONF_POE_MODE,
+                    default=self._options.get(CONF_POE_MODE, POE_MODE_SENSORS),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[POE_MODE_SENSORS, POE_MODE_ATTRIBUTES],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                        translation_key="poe_data_as",
+                    )
+                ),
+                vol.Optional(
+                    CONF_POE_PER_PORT_POWER,
+                    default=self._options.get(CONF_POE_PER_PORT_POWER, False),
+                ): cv.boolean,
+                vol.Optional("back_to_menu", default=False): cv.boolean,
+            }
+        )
+
+        return self.async_show_form(step_id="environmental_enable_disable", data_schema=schema)
+
+    async def async_step_poe_poll_interval(self, user_input=None) -> FlowResult:
+        """Set PoE polling interval (seconds)."""
+        if user_input is not None:
+            if user_input.get("back_to_menu"):
+                return await self.async_step_environmental_sensors()
+            self._options[CONF_POE_POLL_INTERVAL] = user_input[CONF_POE_POLL_INTERVAL]
+            self._apply_options()
+            return await self.async_step_environmental_sensors()
+
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_POE_POLL_INTERVAL,
+                    default=self._options.get(CONF_POE_POLL_INTERVAL, DEFAULT_POE_POLL_INTERVAL),
+                ): vol.All(vol.Coerce(int), vol.Range(min=5, max=3600)),
+                vol.Optional("back_to_menu", default=False): cv.boolean,
+            }
+        )
+        return self.async_show_form(step_id="poe_poll_interval", data_schema=schema)
+
+    async def async_step_environmental_poll_interval(self, user_input=None) -> FlowResult:
+        """Set Environmental polling interval (seconds)."""
+        if user_input is not None:
+            if user_input.get("back_to_menu"):
+                return await self.async_step_environmental_sensors()
+            self._options[CONF_ENV_POLL_INTERVAL] = user_input[CONF_ENV_POLL_INTERVAL]
+            self._apply_options()
+            return await self.async_step_environmental_sensors()
+
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_ENV_POLL_INTERVAL,
+                    default=self._options.get(CONF_ENV_POLL_INTERVAL, DEFAULT_ENV_POLL_INTERVAL),
+                ): vol.All(vol.Coerce(int), vol.Range(min=5, max=3600)),
+                vol.Optional("back_to_menu", default=False): cv.boolean,
+            }
+        )
+        return self.async_show_form(step_id="environmental_poll_interval", data_schema=schema)
+
+    async def async_step_ask_pr(self, user_input=None) -> FlowResult:
+        """Ask if user wants to submit PR."""
+        if user_input is not None:
+            if user_input.get("submit"):
+                return await self.async_step_submit_pr()
+            return await self.async_step_feature_overrides()
+            
+        return self.async_show_form(
+            step_id="ask_pr",
+            data_schema=vol.Schema({vol.Required("submit", default=True): cv.boolean}),
+        )
+
+    async def async_step_submit_pr(self, user_input=None) -> FlowResult:
+        """Submit override as PR."""
+        errors: dict[str, str] = {}
+        
+        if user_input is not None:
+            from ..github import poll_for_token, GITHUB_CLIENT_ID
+            token = await poll_for_token(GITHUB_CLIENT_ID, getattr(self, "_device_code", ""), interval=1)
+            if token:
+                self._github_token = token
+                return await self.async_step_create_pr()
+            else:
+                errors["base"] = "authorization_pending"
+                
+        if not hasattr(self, "_device_code"):
+            from ..github import request_device_code, GITHUB_CLIENT_ID
+            data = await request_device_code(GITHUB_CLIENT_ID)
+            if data:
+                self._device_code = data.get("device_code")
+                self._user_code = data.get("user_code")
+                self._verification_uri = data.get("verification_uri")
+            else:
+                errors["base"] = "github_error"
+                
+        if "base" not in errors:
+            return self.async_show_form(
+                step_id="submit_pr",
+                data_schema=vol.Schema({}),
+                description_placeholders={
+                    "code": self._user_code,
+                    "url": self._verification_uri,
+                },
+                errors=errors,
+            )
+            
+        return self.async_show_form(
+            step_id="submit_pr",
+            data_schema=vol.Schema({}),
+            errors=errors,
+        )
+
+    async def async_step_create_pr(self, user_input=None) -> FlowResult:
+        """Create PR."""
+        feature = getattr(self, "_last_override_feature", None)
+        token = getattr(self, "_github_token", None)
+        
+        if not feature or not token:
+            return self.async_show_form(
+                step_id="create_pr",
+                data_schema=vol.Schema({}),
+                description_placeholders={"status": "Missing feature or token!"},
+            )
+            
+        overrides = self._options.get(CONF_FEATURE_OVERRIDES, {}).get(feature)
+
+        if not overrides:
+            return self.async_show_form(
+                step_id="create_pr",
+                data_schema=vol.Schema({}),
+                description_placeholders={"status": "No override data found for feature!"},
+            )
+            
+        from ..github import submit_override
+        success = await submit_override(token, feature, overrides)
+        
+        if success:
+            status = "Successfully created Pull Request on GitHub!"
+        else:
+            status = "Failed to create Pull Request. Check logs for details."
+            
+        return self.async_show_form(
+            step_id="create_pr",
+            data_schema=vol.Schema({}),
+            description_placeholders={"status": status},
+        )

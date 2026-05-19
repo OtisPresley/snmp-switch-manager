@@ -111,7 +111,10 @@
       "invalid_password_length": "Passwort muss 8–31 Zeichen lang sein",
       "required_attestation": "Sie müssen bestätigen, dass Sie die OID getestet haben",
       "authorization_pending": "Autorisierung ausstehend. Bitte geben Sie den Code auf GitHub ein und versuchen Sie es erneut.",
-      "github_error": "Kommunikation mit GitHub fehlgeschlagen. Bitte versuchen Sie es später noch einmal."
+      "github_error": "Kommunikation mit GitHub fehlgeschlagen. Bitte versuchen Sie es später noch einmal.",
+      "required_share": "Da Sie die OID verifiziert haben, wählen Sie bitte auch die Option, sie mit der Community zu teilen, um anderen zu helfen.",
+      "required_attestation_to_share": "Sie müssen bestätigen, dass Sie die OID getestet haben, bevor Sie sie mit der Community teilen.",
+      "duplicate_oid": "Diese OID existiert bereits in der Datenbank für diesen Anbieter."
     },
     "step": {
       "bandwidth_enable": {
@@ -124,7 +127,8 @@
       "bandwidth_enable_disable": {
         "data": {
           "bw_mode": "Bandbreitendaten als",
-          "enable_bandwidth_sensors": "Bandbreitenerfassung aktivieren"
+          "enable_bandwidth_sensors": "Bandbreitenerfassung aktivieren",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Bandbreitenerfassung für dieses Gerät aktivieren.\n\nWenn Sie **Attribute** wählen, werden Bandbreitenwerte den Port-Entitäten hinzugefügt (keine Historie).\nWenn Sie **Sensoren** wählen, werden separate Bandbreitensensoren erstellt (Historie).",
         "title": "Bandbreitensensoren"
@@ -145,7 +149,8 @@
           "bw_rx_throughput_icon": "RX-Durchsatz-Symbol",
           "bw_rx_total_icon": "RX-Gesamt-Symbol",
           "bw_tx_throughput_icon": "TX-Durchsatz-Symbol",
-          "bw_tx_total_icon": "TX-Gesamt-Symbol"
+          "bw_tx_total_icon": "TX-Gesamt-Symbol",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Optionale Symbol-Overrides für Bandbreitensensoren. Leer lassen, um Standardwerte zu verwenden.",
         "title": "Symbole für Bandbreitensensoren"
@@ -163,7 +168,8 @@
       },
       "bandwidth_poll_interval": {
         "data": {
-          "bandwidth_poll_interval": "Abfrageintervall (Sekunden)"
+          "bandwidth_poll_interval": "Abfrageintervall (Sekunden)",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Abfrageintervall für Bandbreitensensoren festlegen. Kürzere Intervalle aktualisieren häufiger, erhöhen aber die SNMP-Last.",
         "title": "Bandbreitensensoren"
@@ -197,33 +203,24 @@
           "snmpv3_auth_protocol": "SNMP v3 — Authentifizierungsprotokoll (optional)",
           "snmpv3_auth_password": "SNMP v3 — Authentifizierungspasswort (optional)",
           "snmpv3_priv_protocol": "SNMP v3 — Privatsphäre-Protokoll (optional)",
-          "snmpv3_priv_password": "SNMP v3 — Privatsphäre-Passwort (optional)"
+          "snmpv3_priv_password": "SNMP v3 — Privatsphäre-Passwort (optional)",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Optionale gerätespezifische Overrides. Leer lassen, um Werte aus der Ersteinrichtung zu verwenden.\n\n### SNMP-Version\nAlle Felder sind aufgrund von Home-Assistant-Einschränkungen immer sichtbar. Nur die ausgewählte **SNMP-Version** bestimmt, welche Felder verwendet werden.\n\n### SNMP v2c\nVerwenden Sie **SNMP-Community-Override** und **SNMP-Port-Override** nur, wenn Sie Werte aus der Ersteinrichtung überschreiben müssen.\n\n### SNMP v3\nTragen Sie **SNMPv3-Benutzername** sowie Authentifizierungs-/Privatsphäre-Einstellungen ein, wenn SNMP v3 ausgewählt ist. Viele Geräte erfordern Passwörter zwischen 8 und 31 Zeichen und können Sonderzeichen ablehnen.",
         "title": "Verbindung & Name"
       },
-      "custom_oids": {
-        "data": {
-          "enable_custom_oids": "Benutzerdefinierte Diagnose-OIDs aktivieren",
-          "firmware_oid": "Firmware-OID (optional)",
-          "hostname_oid": "Hostname-OID (optional)",
-          "manufacturer_oid": "Hersteller-OID (optional)",
-          "model_oid": "Modell-OID (optional)",
-          "reset_custom_oids": "Benutzerdefinierte OIDs auf Standard zurücksetzen",
-          "uptime_oid": "Uptime-OID (optional)"
-        },
-        "description": "Diagnose-Sensor-OIDs nur für dieses Gerät überschreiben. Leer lassen, um automatische Erkennung zu verwenden.",
-        "title": "Benutzerdefinierte Diagnose-OIDs"
-      },
       "feature_overrides": {
         "description": "Benutzerdefinierte OID-Überschreibungen für bestimmte Funktionen verwalten.",
         "menu_options": {
+          "override_power": "Power überschreiben",
           "back": "Zurück",
           "override_cpu": "CPU überschreiben",
           "override_memory": "Speicher überschreiben",
           "override_fans": "Lüfter überschreiben",
           "override_psu": "Netzteil überschreiben",
-          "override_temperature": "Temperatur überschreiben"
+          "override_temperature": "Temperatur überschreiben",
+          "override_poe": "PoE überschreiben",
+          "override_device_info": "Geräteinfo überschreiben"
         },
         "title": "Feature-OID-Überschreibungen"
       },
@@ -235,9 +232,11 @@
           "scale": "Skalierung",
           "unit": "Einheit",
           "description": "Beschreibung",
-          "attestation": "Ich bestätige, dass ich diese OID getestet und überprüft habe und sie wie erwartet funktioniert."
+          "attestation": "Ich bestätige, dass ich diese OID getestet und überprüft habe und sie wie erwartet funktioniert.",
+          "share_with_community": "Mit der Community teilen",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
-        "description": "Die CPU-OID für dieses Gerät überschreiben.",
+        "description": "Überschreiben Sie die CPU-OID für dieses Gerät. Lassen Sie dieses Feld leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "CPU überschreiben"
       },
       "override_memory": {
@@ -246,9 +245,11 @@
           "oid_total": "Gesamtspeicher OID",
           "vendor": "Hersteller (Marke)",
           "method": "Methode",
-          "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren."
+          "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren.",
+          "share_with_community": "Mit der Community teilen",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
-        "description": "Die Speicher-OIDs für dieses Gerät überschreiben.",
+        "description": "Überschreiben Sie die Memory-OIDs für dieses Gerät. Lassen Sie beide Felder leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Speicher überschreiben"
       },
       "override_fans": {
@@ -257,9 +258,11 @@
           "oid_status": "Lüfter-Status-OID (optional)",
           "vendor": "Hersteller (Marke)",
           "method": "Methode",
-          "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren."
+          "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren.",
+          "share_with_community": "Mit der Community teilen",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
-        "description": "Die Lüfter-OIDs für dieses Gerät überschreiben.",
+        "description": "Überschreiben Sie die Lüfter-OIDs für dieses Gerät. Lassen Sie beide Felder leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Lüfter überschreiben"
       },
       "override_psu": {
@@ -269,9 +272,11 @@
           "method": "Methode",
           "oid_label": "Bezeichnungs-OID (optional)",
           "filter": "Filter (optional)",
-          "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren."
+          "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren.",
+          "share_with_community": "Mit der Community teilen",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
-        "description": "Die Netzteil-OIDs für dieses Gerät überschreiben.",
+        "description": "Überschreiben Sie die PSU-OIDs für dieses Gerät. Lassen Sie dieses Feld leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Netzteil überschreiben"
       },
       "override_temperature": {
@@ -281,9 +286,11 @@
           "method": "Methode",
           "oid_state": "Status-OID (optional)",
           "oid_label": "Bezeichnungs-OID (optional)",
-          "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren."
+          "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren.",
+          "share_with_community": "Mit der Community teilen",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
-        "description": "Die Temperatur-OIDs für dieses Gerät überschreiben.",
+        "description": "Überschreiben Sie die Temperatur-OIDs für dieses Gerät. Lassen Sie das Haupt-Temperatur-OID-Feld leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Temperatur überschreiben"
       },
       "ask_pr": {
@@ -306,7 +313,6 @@
         "menu_options": {
           "bandwidth_sensors": "Bandbreitensensoren",
           "connection_and_naming_overrides": "Verbindung & Name",
-          "custom_oids": "Benutzerdefinierte Diagnose-OIDs",
           "environmental_sensors": "Umweltsensoren",
           "feature_overrides": "Feature-OID-Überschreibungen",
           "manage_interfaces": "Schnittstellen verwalten"
@@ -319,7 +325,8 @@
           "icon_existing": "Vorhandene Regel",
           "icon_icon": "Symbol (z. B. mdi:ethernet)",
           "icon_match": "Abgleichtyp",
-          "icon_value": "Abgleichwert"
+          "icon_value": "Abgleichwert",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Schnittstellen-Entitätssymbole anhand des Schnittstellennamens überschreiben.",
         "title": "Entitätssymbol-Regeln"
@@ -330,14 +337,16 @@
           "env_mode": "Umgebungsdaten als",
           "poe_enabled": "PoE-Statistiken aktivieren",
           "poe_mode": "PoE-Daten als",
-          "poe_per_port_power": "PoE-Leistungssensoren pro Port erstellen"
+          "poe_per_port_power": "PoE-Leistungssensoren pro Port erstellen",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Wählen Sie, ob Umgebungs-/PoE-Daten als Attribute (keine Historie) oder als separate Sensoren (Historie) gespeichert werden.",
         "title": "Umweltsensoren"
       },
       "environmental_poll_interval": {
         "data": {
-          "env_poll_interval": "Abfrageintervall"
+          "env_poll_interval": "Abfrageintervall",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Wie oft Umgebungswerte abgefragt werden (in Sekunden).",
         "title": "Abfrageintervall für Umgebungswerte"
@@ -389,7 +398,8 @@
       },
       "poe_poll_interval": {
         "data": {
-          "poe_poll_interval": "Abfrageintervall"
+          "poe_poll_interval": "Abfrageintervall",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Wie oft PoE-Leistungswerte abgefragt werden (in Sekunden).",
         "title": "PoE-Abfrageintervall"
@@ -458,10 +468,54 @@
         "title": "IP-Anzeige der Schnittstelle",
         "description": "Steuern Sie, wie IP-Adressen an Schnittstellen angezeigt werden.",
         "data": {
-          "hide_ip_on_physical_interfaces": "IP-Feld bei physischen Schnittstellen ausblenden"
+          "hide_ip_on_physical_interfaces": "IP-Feld bei physischen Schnittstellen ausblenden",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "data_description": {
           "hide_ip_on_physical_interfaces": "Wenn aktiviert, werden IP-Adressen nur auf virtuellen oder logischen Schnittstellen angezeigt (z. B. VLAN- oder Management-Schnittstellen)."
+        }
+      },
+      "override_power": {
+        "data": {
+          "oid": "Power-OID",
+          "vendor": "Hersteller (Marke)",
+          "method": "Methode",
+          "description": "Beschreibung",
+          "attestation": "Ich bestätige, dass ich diese OID getestet und verifiziert habe.",
+          "share_with_community": "Mit der Community teilen",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
+        },
+        "description": "Überschreiben Sie die Power-OID für dieses Gerät. Lassen Sie dieses Feld leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "title": "Power überschreiben"
+      },
+      "override_poe": {
+        "title": "PoE überschreiben",
+        "description": "Überschreiben Sie die Power over Ethernet (PoE) OIDs für dieses Gerät. Lassen Sie alle Felder leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "data": {
+          "oid_budget": "Gesamtbudget OID",
+          "oid_used": "Verbrauchte Leistung OID",
+          "oid_port_power": "Portleistung OID",
+          "vendor": "Hersteller (Marke)",
+          "method": "Methode",
+          "description": "Beschreibung",
+          "attestation": "Ich bestätige, dass ich diese OIDs getestet und verifiziert habe und sie wie erwartet funktionieren.",
+          "share_with_community": "Mit der Community teilen",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
+        }
+      },
+      "override_device_info": {
+        "title": "Geräteinfo überschreiben",
+        "description": "Überschreiben Sie Diagnose-Sensor-OIDs für dieses Gerät. Lassen Sie alle Felder leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "data": {
+          "manufacturer_oid": "Hersteller-OID (optional)",
+          "model_oid": "Modell-OID (optional)",
+          "firmware_oid": "Firmware-OID (optional)",
+          "hostname_oid": "Hostname-OID (optional)",
+          "uptime_oid": "Uptime-OID (optional)",
+          "vendor": "Hersteller (Marke)",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
+          "attestation": "Ich bestätige, dass ich diese OIDs getestet und verifiziert habe.",
+          "share_with_community": "Teilen Sie dies mit der Community"
         }
       }
     }

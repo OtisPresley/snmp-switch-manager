@@ -97,32 +97,18 @@ def get_snmp_connection_settings(entry_data: dict[str, Any], options: dict[str, 
 
 def _abbr_from_speed_or_name(name: str) -> str:
     n = (name or "").lower()
-    if n.startswith("gi"):
-        return "Gi"
-    if n.startswith("te"):
-        return "Te"
-    if n.startswith("tw"):
-        return "Tw"
-    if n.startswith("fa"):
-        return "Fa"
-    if n.startswith("fi"):
-        return "Fi"
-    if n.startswith("hu"):
-        return "Hu"
+    prefixes = {"gi": "Gi", "te": "Te", "tw": "Tw", "fa": "Fa", "fi": "Fi", "hu": "Hu", "lo": "Lo", "vl": "Vl"}
+    for p, abbr in prefixes.items():
+        if n.startswith(p):
+            return abbr
     if n.startswith(("po", "port-channel", "portchannel")):
         return "Po"
-    if n.startswith("lo"):
-        return "Lo"
-    if n.startswith("vl"):
-        return "Vl"
     if "100g" in n:
         return "Hu"
     if "10g" in n:
         return "Te"
     if "20g" in n:
         return "Tw"
-    if "1g" in n or "1000" in n:
-        return "Gi"
     return "Gi"
 
 
@@ -440,15 +426,31 @@ async def _do_get_one(engine, community, target, context, oid: str) -> Optional[
 
 
 async def _do_get_many(engine, community, target, context, oids: list[str]) -> Dict[str, Optional[str]]:
-    obs = [ObjectType(ObjectIdentity(oid)) for oid in oids]
-    err_ind, err_stat, _err_idx, vbs = await get_cmd(
-        engine, community, target, context, *obs, lookupMib=False
-    )
-    if err_ind:
-        if _is_auth_error(err_ind):
-            raise SnmpAuthError(str(err_ind))
-        return {oid: None for oid in oids}
-    return {oid: (str(vbs[i][1]) if i < len(vbs) else None) for i, oid in enumerate(oids)}
+    import asyncio
+    # Batch OID lists to prevent tooBig SNMP packet errors and MTU fragmentation issues.
+    chunk_size = 32
+    results = {}
+
+    chunks = [oids[i : i + chunk_size] for i in range(0, len(oids), chunk_size)]
+
+    async def _fetch_chunk(chunk):
+        obs = [ObjectType(ObjectIdentity(oid)) for oid in chunk]
+        err_ind, err_stat, _err_idx, vbs = await get_cmd(
+            engine, community, target, context, *obs, lookupMib=False
+        )
+        if err_ind:
+            if _is_auth_error(err_ind):
+                raise SnmpAuthError(str(err_ind))
+            return {oid: None for oid in chunk}
+        if err_stat:
+            return {oid: None for oid in chunk}
+        return {oid: (str(vbs[i][1]) if i < len(vbs) else None) for i, oid in enumerate(chunk)}
+
+    chunk_results = await asyncio.gather(*[_fetch_chunk(c) for c in chunks])
+    for r in chunk_results:
+        results.update(r)
+
+    return results
 
 
 async def _do_next_walk(engine, community, target, context, base_oid: str) -> List[Tuple[str, Any]]:

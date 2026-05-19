@@ -1,0 +1,157 @@
+import json
+import os
+import sys
+import re
+
+def is_valid_numeric_oid(oid: str) -> bool:
+    if not oid:
+        return False
+    # Standard OID pattern: digits separated by dots
+    pattern = r"^\.?([0-9]+\.)*[0-9]+$"
+    return bool(re.match(pattern, oid))
+
+def verify_file(file_path: str, feature: str) -> bool:
+    print(f"Verifying {file_path}...")
+    if not os.path.exists(file_path):
+        print(f"Error: File {file_path} does not exist.")
+        return False
+        
+    try:
+        with open(file_path, "r") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"Error: Failed to parse JSON: {e}")
+        return False
+        
+    if not isinstance(data, dict):
+        print("Error: Root must be a JSON object.")
+        return False
+        
+    if feature not in data:
+        print(f"Error: Missing root key '{feature}'.")
+        return False
+        
+    items = data[feature]
+    if not isinstance(items, list):
+        print(f"Error: '{feature}' must be a list.")
+        return False
+        
+    # Check for duplicate OID + Vendor combinations and format
+    seen_oids = {}
+    for idx, item in enumerate(items):
+        if not isinstance(item, dict):
+            print(f"Error: Item at index {idx} is not an object.")
+            return False
+            
+        # Verify OIDs
+        if feature == "memory":
+            m_type = item.get("type", "free_total")
+            if m_type == "percentage":
+                oid = item.get("oid")
+                if not oid:
+                    print(f"Error: Memory percentage item at index {idx} must have 'oid'.")
+                    return False
+                if not is_valid_numeric_oid(oid):
+                    print(f"Error: Invalid memory percentage OID at index {idx}.")
+                    return False
+                oid_key = oid
+            else:
+                free = item.get("oid_free")
+                total = item.get("oid_total")
+                if not free or not total:
+                    print(f"Error: Memory item at index {idx} must have 'oid_free' and 'oid_total'.")
+                    return False
+                if not is_valid_numeric_oid(free) or not is_valid_numeric_oid(total):
+                    print(f"Error: Invalid memory OIDs at index {idx}.")
+                    return False
+                oid_key = f"free:{free}|total:{total}"
+        elif feature == "fans":
+            status = item.get("oid_status")
+            rpm = item.get("oid_rpm")
+            if not status and not rpm:
+                print(f"Error: Fan item at index {idx} must have at least 'oid_status' or 'oid_rpm'.")
+                return False
+            if status and not is_valid_numeric_oid(status):
+                print(f"Error: Invalid fan status OID at index {idx}.")
+                return False
+            if rpm and not is_valid_numeric_oid(rpm):
+                print(f"Error: Invalid fan RPM OID at index {idx}.")
+                return False
+            oid_key = f"status:{status}|rpm:{rpm}"
+        elif feature == "psu":
+            status = item.get("oid_status")
+            if not status:
+                print(f"Error: PSU item at index {idx} must have 'oid_status'.")
+                return False
+            if not is_valid_numeric_oid(status):
+                print(f"Error: Invalid PSU status OID at index {idx}.")
+                return False
+            oid_key = f"status:{status}"
+        elif feature == "poe":
+            # POE has multiple optional fields, check what's present
+            budget = item.get("oid_budget")
+            used = item.get("oid_used")
+            port_power = item.get("oid_port_power")
+            if not budget and not used and not port_power:
+                print(f"Error: PoE item at index {idx} must have at least one PoE OID.")
+                return False
+            if budget and not is_valid_numeric_oid(budget):
+                print(f"Error: Invalid PoE budget OID at index {idx}.")
+                return False
+            if used and not is_valid_numeric_oid(used):
+                print(f"Error: Invalid PoE used OID at index {idx}.")
+                return False
+            if port_power and not is_valid_numeric_oid(port_power):
+                print(f"Error: Invalid PoE port power OID at index {idx}.")
+                return False
+            oid_key = f"budget:{budget}|used:{used}|port_power:{port_power}"
+        else: # cpu, temperature, power
+            oid = item.get("oid")
+            if not oid:
+                print(f"Error: Item at index {idx} must have 'oid'.")
+                return False
+            if not is_valid_numeric_oid(oid):
+                print(f"Error: Invalid OID at index {idx}.")
+                return False
+            oid_key = oid
+            
+        # Check vendors list
+        vendors = item.get("vendors")
+        if not isinstance(vendors, list) or not vendors:
+            print(f"Error: Item at index {idx} must have a non-empty list of 'vendors'.")
+            return False
+            
+        # Check for duplicate vendors in the same item
+        lower_vendors = [v.lower() for v in vendors]
+        if len(lower_vendors) != len(set(lower_vendors)):
+            print(f"Error: Duplicate vendors in item at index {idx}: {vendors}")
+            return False
+            
+        # Check for duplicate OID + Vendor across different items
+        if oid_key not in seen_oids:
+            seen_oids[oid_key] = []
+        for v in lower_vendors:
+            if v in seen_oids[oid_key]:
+                print(f"Error: Duplicate entry for OID '{oid_key}' and vendor '{v}' detected.")
+                return False
+            seen_oids[oid_key].append(v)
+            
+    print(f"Successfully verified {file_path}!")
+    return True
+
+def main():
+    db_dir = "custom_components/snmp_switch_manager/database"
+    features = ["cpu", "memory", "fans", "psu", "temperature", "power", "poe"]
+    
+    success = True
+    for feature in features:
+        file_path = os.path.join(db_dir, f"{feature}.json")
+        if not verify_file(file_path, feature):
+            success = False
+            
+    if not success:
+        sys.exit(1)
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
