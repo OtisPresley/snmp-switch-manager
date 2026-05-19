@@ -139,7 +139,8 @@
           "rule_existing": "Bestaande regel",
           "rule_match": "Match",
           "rule_new_value": "Nieuwe waarde",
-          "rule_value": "Waarde"
+          "rule_value": "Waarde",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Voeg uitsluitregels toe of verwijder ze. Uitsluitregels hebben altijd voorrang.",
         "title": "Uitsluitregels voor bandbreedtesensoren"
@@ -161,7 +162,8 @@
           "rule_existing": "Bestaande regel",
           "rule_match": "Match",
           "rule_new_value": "Nieuwe waarde",
-          "rule_value": "Waarde"
+          "rule_value": "Waarde",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Voeg insluitregels toe of verwijder ze. Als er insluitregels zijn ingesteld, krijgen alleen overeenkomende interfaces bandbreedtesensoren.",
         "title": "Insluitregels voor bandbreedtesensoren"
@@ -188,7 +190,8 @@
       },
       "builtin_filters": {
         "data": {
-          "disabled_vendor_filter_rule_ids": "Uitgeschakelde ingebouwde filterregels"
+          "disabled_vendor_filter_rule_ids": "Uitgeschakelde ingebouwde filterregels",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Schakel ingebouwde leveranciers-interfacefilterregels voor dit apparaat in of uit.\n\nUitgeschakelde regels worden niet toegepast tijdens interface-detectie.",
         "title": "Ingebouwde leveranciersfilters"
@@ -367,7 +370,8 @@
           "rule_existing": "Bestaande regel",
           "rule_match": "Matchtype",
           "rule_new_value": "Nieuwe waarde",
-          "rule_value": "Matchwaarde"
+          "rule_value": "Matchwaarde",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Voeg interface-uitsluitregels toe, bewerk of verwijder ze.",
         "title": "Uitsluitregels"
@@ -378,7 +382,8 @@
           "rule_existing": "Bestaande regel",
           "rule_match": "Matchtype",
           "rule_new_value": "Nieuwe waarde",
-          "rule_value": "Matchwaarde"
+          "rule_value": "Matchwaarde",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Voeg interface-insluitregels toe, bewerk of verwijder ze.",
         "title": "Insluitregels"

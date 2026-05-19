@@ -139,7 +139,8 @@
           "rule_existing": "Regola esistente",
           "rule_match": "Corrispondenza",
           "rule_new_value": "Nuovo valore",
-          "rule_value": "Valore"
+          "rule_value": "Valore",
+          "back_to_menu": "Torna indietro (annulla modifiche)"
         },
         "description": "Aggiungi o rimuovi regole di esclusione. Le regole di esclusione hanno sempre la precedenza.",
         "title": "Regole di esclusione sensori di banda"
@@ -161,7 +162,8 @@
           "rule_existing": "Regola esistente",
           "rule_match": "Corrispondenza",
           "rule_new_value": "Nuovo valore",
-          "rule_value": "Valore"
+          "rule_value": "Valore",
+          "back_to_menu": "Torna indietro (annulla modifiche)"
         },
         "description": "Aggiungi o rimuovi regole di inclusione. Se sono impostate regole di inclusione, solo le interfacce corrispondenti avranno sensori di banda.",
         "title": "Regole di inclusione sensori di banda"
@@ -188,7 +190,8 @@
       },
       "builtin_filters": {
         "data": {
-          "disabled_vendor_filter_rule_ids": "Regole di filtro integrate disabilitate"
+          "disabled_vendor_filter_rule_ids": "Regole di filtro integrate disabilitate",
+          "back_to_menu": "Torna indietro (annulla modifiche)"
         },
         "description": "Abilita o disabilita le regole integrate di filtro interfaccia del fornitore per questo dispositivo.\n\nLe regole disabilitate non verranno applicate durante la scoperta delle interfacce.",
         "title": "Filtri fornitore integrati"
@@ -367,7 +370,8 @@
           "rule_existing": "Regola esistente",
           "rule_match": "Tipo di corrispondenza",
           "rule_new_value": "Nuovo valore",
-          "rule_value": "Valore di corrispondenza"
+          "rule_value": "Valore di corrispondenza",
+          "back_to_menu": "Torna indietro (annulla modifiche)"
         },
         "description": "Aggiungi, modifica o rimuovi regole di esclusione delle interfacce.",
         "title": "Regole di esclusione"
@@ -378,7 +382,8 @@
           "rule_existing": "Regola esistente",
           "rule_match": "Tipo di corrispondenza",
           "rule_new_value": "Nuovo valore",
-          "rule_value": "Valore di corrispondenza"
+          "rule_value": "Valore di corrispondenza",
+          "back_to_menu": "Torna indietro (annulla modifiche)"
         },
         "description": "Aggiungi, modifica o rimuovi regole di inclusione delle interfacce.",
         "title": "Regole di inclusione"

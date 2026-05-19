@@ -173,6 +173,9 @@ class InterfacesOptionsMixin:
         current_rules = "\n".join(parts) if parts else "(none)"
 
         if user_input is not None:
+            if user_input.get("back_to_menu"):
+                return await getattr(self, f"async_step_{return_to}")()
+
             action = user_input.get(KEY_ACTION)
 
             if action == "done":
@@ -254,6 +257,7 @@ class InterfacesOptionsMixin:
                     )
                 ),
                 vol.Optional(KEY_VALUE, default=""): cv.string,
+                vol.Optional("back_to_menu", default=False): cv.boolean,
             }
         )
 
@@ -269,6 +273,9 @@ class InterfacesOptionsMixin:
         options_map = {r["id"]: r["label"] for r in BUILTIN_VENDOR_FILTER_RULES}
 
         if user_input is not None:
+            if user_input.get("back_to_menu"):
+                return await self.async_step_manage_interfaces()
+
             disabled = list(user_input.get(CONF_DISABLED_VENDOR_FILTER_RULE_IDS, []) or [])
             if disabled:
                 self._options[CONF_DISABLED_VENDOR_FILTER_RULE_IDS] = disabled
@@ -283,6 +290,7 @@ class InterfacesOptionsMixin:
                     CONF_DISABLED_VENDOR_FILTER_RULE_IDS,
                     default=current_disabled,
                 ): cv.multi_select(options_map),
+                vol.Optional("back_to_menu", default=False): cv.boolean,
             }
         )
 

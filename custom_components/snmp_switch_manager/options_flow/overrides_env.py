@@ -168,20 +168,13 @@ class OverridesEnvMixin:
             else:
                 errors["base"] = "github_error"
                 
-        if "base" not in errors:
-            return self.async_show_form(
-                step_id="submit_pr",
-                data_schema=vol.Schema({}),
-                description_placeholders={
-                    "code": self._user_code,
-                    "url": self._verification_uri,
-                },
-                errors=errors,
-            )
-            
         return self.async_show_form(
             step_id="submit_pr",
             data_schema=vol.Schema({}),
+            description_placeholders={
+                "code": getattr(self, "_user_code", "ERROR"),
+                "url": getattr(self, "_verification_uri", "https://github.com"),
+            },
             errors=errors,
         )
 

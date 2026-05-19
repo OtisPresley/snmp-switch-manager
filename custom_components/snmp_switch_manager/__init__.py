@@ -226,6 +226,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # Clean up duplicate legacy device registry entries if they exist
+    try:
+        from homeassistant.helpers import device_registry as dr
+        device_registry = dr.async_get(hass)
+        devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+        if len(devices) > 1:
+            _LOGGER.info("Found %d registered devices for config entry %s, starting cleanup", len(devices), entry.entry_id)
+            true_device = None
+            for device in devices:
+                if (DOMAIN, entry.entry_id) in device.identifiers:
+                    true_device = device
+                    break
+            
+            if true_device:
+                for device in devices:
+                    if device.id != true_device.id:
+                        _LOGGER.warning("Removing duplicate/legacy device registry entry: %s (ID: %s)", device.name, device.id)
+                        device_registry.async_remove_device(device.id)
+    except Exception as exc:
+        _LOGGER.error("Error during device registry cleanup: %s", exc)
+
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
 

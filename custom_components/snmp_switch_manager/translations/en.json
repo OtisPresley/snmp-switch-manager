@@ -137,7 +137,8 @@
           "rule_existing": "Existing rule",
           "rule_match": "Match",
           "rule_new_value": "New value",
-          "rule_value": "Value"
+          "rule_value": "Value",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "Add or remove exclude rules. Exclude rules always take precedence.",
         "title": "Bandwidth Sensor Exclude Rules"
@@ -159,7 +160,8 @@
           "rule_existing": "Existing rule",
           "rule_match": "Match",
           "rule_new_value": "New value",
-          "rule_value": "Value"
+          "rule_value": "Value",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "Add or remove include rules. If any include rules are set, only matching interfaces will get bandwidth sensors.",
         "title": "Bandwidth Sensor Include Rules"
@@ -186,7 +188,8 @@
       },
       "builtin_filters": {
         "data": {
-          "disabled_vendor_filter_rule_ids": "Disabled built-in filter rules"
+          "disabled_vendor_filter_rule_ids": "Disabled built-in filter rules",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "Enable or disable built-in vendor interface filter rules for this device.\n\nDisabled rules will not be applied during interface discovery.",
         "title": "Built-in Vendor Filters"
@@ -350,7 +353,8 @@
           "rule_existing": "Existing rule",
           "rule_match": "Match type",
           "rule_new_value": "New value",
-          "rule_value": "Match value"
+          "rule_value": "Match value",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "Add, edit, or remove interface exclude rules.",
         "title": "Exclude Rules"
@@ -361,7 +365,8 @@
           "rule_existing": "Existing rule",
           "rule_match": "Match type",
           "rule_new_value": "New value",
-          "rule_value": "Match value"
+          "rule_value": "Match value",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "Add, edit, or remove interface include rules.",
         "title": "Include Rules"

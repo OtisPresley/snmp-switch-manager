@@ -139,7 +139,8 @@
           "rule_existing": "Règle existante",
           "rule_match": "Correspondance",
           "rule_new_value": "Nouvelle valeur",
-          "rule_value": "Valeur"
+          "rule_value": "Valeur",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Ajouter ou supprimer des règles d’exclusion. Les règles d’exclusion ont toujours la priorité.",
         "title": "Règles d’exclusion des capteurs de bande passante"
@@ -161,7 +162,8 @@
           "rule_existing": "Règle existante",
           "rule_match": "Correspondance",
           "rule_new_value": "Nouvelle valeur",
-          "rule_value": "Valeur"
+          "rule_value": "Valeur",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Ajouter ou supprimer des règles d’inclusion. Si des règles d’inclusion sont définies, seules les interfaces correspondantes auront des capteurs de bande passante.",
         "title": "Règles d’inclusion des capteurs de bande passante"
@@ -188,7 +190,8 @@
       },
       "builtin_filters": {
         "data": {
-          "disabled_vendor_filter_rule_ids": "Règles de filtre intégrées désactivées"
+          "disabled_vendor_filter_rule_ids": "Règles de filtre intégrées désactivées",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Activer ou désactiver les règles intégrées de filtrage des interfaces par fournisseur pour cet appareil.\n\nLes règles désactivées ne seront pas appliquées lors de la découverte des interfaces.",
         "title": "Filtres fournisseur intégrés"
@@ -367,7 +370,8 @@
           "rule_existing": "Règle existante",
           "rule_match": "Type de correspondance",
           "rule_new_value": "Nouvelle valeur",
-          "rule_value": "Valeur de correspondance"
+          "rule_value": "Valeur de correspondance",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Ajouter, modifier ou supprimer des règles d’exclusion d’interface.",
         "title": "Règles d’exclusion"
@@ -378,7 +382,8 @@
           "rule_existing": "Règle existante",
           "rule_match": "Type de correspondance",
           "rule_new_value": "Nouvelle valeur",
-          "rule_value": "Valeur de correspondance"
+          "rule_value": "Valeur de correspondance",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Ajouter, modifier ou supprimer des règles d’inclusion d’interface.",
         "title": "Règles d’inclusion"

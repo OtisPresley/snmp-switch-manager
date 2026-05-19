@@ -139,7 +139,8 @@
           "rule_existing": "Regla existente",
           "rule_match": "Coincidencia",
           "rule_new_value": "Nuevo valor",
-          "rule_value": "Valor"
+          "rule_value": "Valor",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Añade o elimina reglas de exclusión. Las reglas de exclusión siempre tienen prioridad.",
         "title": "Reglas de exclusión de sensores de ancho de banda"
@@ -161,7 +162,8 @@
           "rule_existing": "Regla existente",
           "rule_match": "Coincidencia",
           "rule_new_value": "Nuevo valor",
-          "rule_value": "Valor"
+          "rule_value": "Valor",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Añade o elimina reglas de inclusión. Si hay reglas de inclusión, solo las interfaces que coincidan tendrán sensores de ancho de banda.",
         "title": "Reglas de inclusión de sensores de ancho de banda"
@@ -188,7 +190,8 @@
       },
       "builtin_filters": {
         "data": {
-          "disabled_vendor_filter_rule_ids": "Reglas de filtro integradas deshabilitadas"
+          "disabled_vendor_filter_rule_ids": "Reglas de filtro integradas deshabilitadas",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Habilita o deshabilita las reglas integradas de filtro de interfaces por proveedor para este dispositivo.\n\nLas reglas deshabilitadas no se aplicarán durante el descubrimiento de interfaces.",
         "title": "Filtros de proveedor integrados"
@@ -367,7 +370,8 @@
           "rule_existing": "Regla existente",
           "rule_match": "Tipo de coincidencia",
           "rule_new_value": "Nuevo valor",
-          "rule_value": "Valor de coincidencia"
+          "rule_value": "Valor de coincidencia",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Añade, edita o elimina reglas de exclusión de interfaces.",
         "title": "Reglas de exclusión"
@@ -378,7 +382,8 @@
           "rule_existing": "Regla existente",
           "rule_match": "Tipo de coincidencia",
           "rule_new_value": "Nuevo valor",
-          "rule_value": "Valor de coincidencia"
+          "rule_value": "Valor de coincidencia",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Añade, edita o elimina reglas de inclusión de interfaces.",
         "title": "Reglas de inclusión"

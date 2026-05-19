@@ -73,10 +73,14 @@ class InterfacesIconsMixin:
                 ),
                 vol.Optional(KEY_VALUE): cv.string,
                 vol.Optional(KEY_ICON): cv.string,
+                vol.Optional("back_to_menu", default=False): cv.boolean,
             }
         )
 
     async def _step_icon_rules(self, user_input) -> FlowResult:
+        if user_input.get("back_to_menu"):
+            return await self.async_step_manage_interfaces()
+
         KEY_ACTION = "icon_action"
         KEY_MATCH = "icon_match"
         KEY_VALUE = "icon_value"

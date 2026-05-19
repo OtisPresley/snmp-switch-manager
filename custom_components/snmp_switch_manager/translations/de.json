@@ -139,7 +139,8 @@
           "rule_existing": "Vorhandene Regel",
           "rule_match": "Abgleich",
           "rule_new_value": "Neuer Wert",
-          "rule_value": "Wert"
+          "rule_value": "Wert",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Ausschlussregeln hinzufügen oder entfernen. Ausschlussregeln haben immer Vorrang.",
         "title": "Ausschlussregeln für Bandbreitensensoren"
@@ -161,7 +162,8 @@
           "rule_existing": "Vorhandene Regel",
           "rule_match": "Abgleich",
           "rule_new_value": "Neuer Wert",
-          "rule_value": "Wert"
+          "rule_value": "Wert",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Einschlussregeln hinzufügen oder entfernen. Wenn Einschlussregeln gesetzt sind, erhalten nur passende Schnittstellen Bandbreitensensoren.",
         "title": "Einschlussregeln für Bandbreitensensoren"
@@ -188,7 +190,8 @@
       },
       "builtin_filters": {
         "data": {
-          "disabled_vendor_filter_rule_ids": "Deaktivierte integrierte Filterregeln"
+          "disabled_vendor_filter_rule_ids": "Deaktivierte integrierte Filterregeln",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Integrierte Hersteller-Schnittstellenfilterregeln für dieses Gerät aktivieren oder deaktivieren.\n\nDeaktivierte Regeln werden bei der Schnittstellenerkennung nicht angewendet.",
         "title": "Integrierte Herstellerfilter"
@@ -367,7 +370,8 @@
           "rule_existing": "Vorhandene Regel",
           "rule_match": "Abgleichtyp",
           "rule_new_value": "Neuer Wert",
-          "rule_value": "Abgleichwert"
+          "rule_value": "Abgleichwert",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Schnittstellen-Ausschlussregeln hinzufügen, bearbeiten oder entfernen.",
         "title": "Ausschlussregeln"
@@ -378,7 +382,8 @@
           "rule_existing": "Vorhandene Regel",
           "rule_match": "Abgleichtyp",
           "rule_new_value": "Neuer Wert",
-          "rule_value": "Abgleichwert"
+          "rule_value": "Abgleichwert",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Schnittstellen-Einschlussregeln hinzufügen, bearbeiten oder entfernen.",
         "title": "Einschlussregeln"

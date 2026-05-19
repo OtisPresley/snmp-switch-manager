@@ -186,6 +186,9 @@ class BandwidthOptionsMixin:
         current_rules = "\n".join(parts) if parts else "(none)"
 
         if user_input is not None:
+            if user_input.get("back_to_menu"):
+                return await getattr(self, f"async_step_{return_to}")()
+
             action = user_input.get(KEY_ACTION)
 
             if action == "done":
@@ -267,6 +270,7 @@ class BandwidthOptionsMixin:
                     )
                 ),
                 vol.Optional(KEY_VALUE, default=""): cv.string,
+                vol.Optional("back_to_menu", default=False): cv.boolean,
             }
         )
 
