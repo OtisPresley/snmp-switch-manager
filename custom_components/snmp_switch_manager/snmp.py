@@ -1753,7 +1753,6 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
         else:
             interval = int(self._poe_options.get(CONF_POE_POLL_INTERVAL, 30))
             interval = max(1, interval)
-            now_mono = time.monotonic()
             should_poll = (now_mono - float(self._poe_last_poll or 0.0)) >= interval or float(self._poe_last_poll or 0.0) == 0.0
 
             if should_poll:
@@ -1864,6 +1863,13 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
             # Keep keys stable, but clear values when disabled
             self.cache["env_power_mw"] = {}
             self.cache["env_power_mw_total"] = 0.0
+            for k in (
+                "env_cpu_5s", "env_cpu_60s", "env_cpu_300s",
+                "env_mem_total_kb", "env_mem_free_kb",
+                "env_fans_rpm", "env_fans_status", "env_psu_status",
+                "env_temps_c", "env_temp_labels"
+            ):
+                self.cache.pop(k, None)
         else:
             try:
                 interval = int(self._env_options.get(CONF_ENV_POLL_INTERVAL, DEFAULT_ENV_POLL_INTERVAL))
@@ -1878,32 +1884,209 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                 self._env_last_poll = now_mono
                 env_power_mw: Dict[int, float] = {}
 
-                # Fetch all Dell OS6 environmental tables in parallel.
-                (
-                    dell_power_rows,
-                    mem_free_raw,
-                    mem_total_raw,
-                    cpu_raw,
-                    fans_rows,
-                    fan_status_rows,
-                    psu_status_rows,
-                    temps_rows,
-                    unit_temp_raw,
-                    unit_temp_state_raw,
-                ) = await asyncio.gather(
-                    self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.9.1.4.1"),
-                    self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.1.0"),
-                    self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.2.0"),
-                    self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.9.0"),
-                    self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.6.1.4.1"),
-                    self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.6.1.3.1"),
-                    self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.7.1.2.1"),
-                    self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.8.1.5.1"),
-                    self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.15.1.3.1"),
-                    self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.15.1.2.1"),
-                )
+                if getattr(self, "_is_h3c", False):
+                    # ---- H3C / HP Comware Block ----
+                    physical_names: dict[int, str] = {}
+                    
+                    # Try entPhysicalName first
+                    try:
+                        for oid, val in await self._async_walk(OID_entPhysicalName):
+                            try:
+                                idx = int(str(oid).split(".")[-1])
+                                name_str = ""
+                                if hasattr(val, "asOctets"):
+                                    name_str = val.asOctets().decode("utf-8", "ignore")
+                                elif hasattr(val, "prettyPrint"):
+                                    name_str = val.prettyPrint()
+                                else:
+                                    name_str = str(val)
+                                if name_str:
+                                    physical_names[idx] = name_str.strip()
+                            except Exception:
+                                continue
+                    except Exception:
+                        pass
+                    
+                    # Fallback to entPhysicalDescr
+                    if not physical_names:
+                        try:
+                            for oid, val in await self._async_walk("1.3.6.1.2.1.47.1.1.1.1.2"):
+                                try:
+                                    idx = int(str(oid).split(".")[-1])
+                                    desc_str = ""
+                                    if hasattr(val, "asOctets"):
+                                        desc_str = val.asOctets().decode("utf-8", "ignore")
+                                    elif hasattr(val, "prettyPrint"):
+                                        desc_str = val.prettyPrint()
+                                    else:
+                                        desc_str = str(val)
+                                    if desc_str:
+                                        physical_names[idx] = desc_str.strip()
+                                except Exception:
+                                    continue
+                        except Exception:
+                            pass
 
-                # Dell N-Series power
+                    # CPU Walk
+                    try:
+                        cpu_by_idx = {}
+                        for oid, val in await self._async_walk(OID_h3c_entity_cpu_usage):
+                            try:
+                                idx = int(str(oid).split(".")[-1])
+                                n = _parse_numeric(val)
+                                if n is not None and 0 <= n <= 100:
+                                    cpu_by_idx[idx] = float(n)
+                            except Exception:
+                                continue
+
+                        # Find index corresponding to "board", "chassis", "main", "mpu", or "cpu" (case-insensitive)
+                        board_cpu = None
+                        for idx, cpu_val in cpu_by_idx.items():
+                            name = physical_names.get(idx, "").lower()
+                            if "board" in name or "chassis" in name or "main" in name or "mpu" in name or "cpu" in name:
+                                board_cpu = cpu_val
+                                break
+
+                        # Fallback: if not found, use index 212, or average non-zeros, or max non-zero
+                        if board_cpu is None:
+                            board_cpu = cpu_by_idx.get(212)
+                        if board_cpu is None:
+                            non_zero = [v for v in cpu_by_idx.values() if v > 0]
+                            board_cpu = max(non_zero) if non_zero else 0.0
+
+                        self.cache["env_cpu_5s"] = board_cpu
+                        self.cache["env_cpu_60s"] = board_cpu
+                        self.cache["env_cpu_300s"] = board_cpu
+                    except Exception:
+                        self.cache["env_cpu_5s"] = None
+                        self.cache["env_cpu_60s"] = None
+                        self.cache["env_cpu_300s"] = None
+
+                    # Memory Walk
+                    try:
+                        mem_by_idx = {}
+                        for oid, val in await self._async_walk(OID_h3c_entity_mem_usage):
+                            try:
+                                idx = int(str(oid).split(".")[-1])
+                                n = _parse_numeric(val)
+                                if n is not None and 0 <= n <= 100:
+                                    mem_by_idx[idx] = float(n)
+                            except Exception:
+                                continue
+
+                        board_mem = None
+                        for idx, mem_val in mem_by_idx.items():
+                            name = physical_names.get(idx, "").lower()
+                            if "board" in name or "chassis" in name or "main" in name or "mpu" in name or "cpu" in name:
+                                board_mem = mem_val
+                                break
+
+                        if board_mem is None:
+                            board_mem = mem_by_idx.get(212)
+                        if board_mem is None:
+                            non_zero = [v for v in mem_by_idx.values() if v > 0]
+                            board_mem = max(non_zero) if non_zero else 0.0
+
+                        self.cache["env_mem_total_kb"] = 1000000
+                        self.cache["env_mem_free_kb"] = int(1000000.0 * (100.0 - board_mem) / 100.0)
+                    except Exception:
+                        self.cache["env_mem_total_kb"] = None
+                        self.cache["env_mem_free_kb"] = None
+
+                    # Temperature Walk
+                    temps_c: dict[int, int] = {}
+                    try:
+                        for oid, val in await self._async_walk(OID_h3c_entity_temp):
+                            try:
+                                idx = int(str(oid).split(".")[-1])
+                                n = _parse_numeric(val)
+                                if n is not None and n != 65535 and -50 <= n <= 200:
+                                    temps_c[idx] = int(n)
+                            except Exception:
+                                continue
+                    except Exception:
+                        pass
+
+                    # Fans & PSUs Walk via ErrorStatus
+                    raw_fans_status: dict[int, int] = {}
+                    raw_psus_status: dict[int, int] = {}
+                    try:
+                        for oid, val in await self._async_walk(OID_h3c_entity_error_status):
+                            try:
+                                idx = int(str(oid).split(".")[-1])
+                                st_n = _parse_numeric(val)
+                                if st_n is not None:
+                                    st_n = int(st_n)
+                                    if st_n in (1, 4):
+                                        continue
+                                    name_str = physical_names.get(idx, "")
+                                    name_lower = name_str.lower()
+                                    is_fan = "fan" in name_lower
+                                    is_psu = "power" in name_lower or "psu" in name_lower
+                                    mapped_status = 2 if st_n == 2 else 3
+                                    
+                                    if is_fan:
+                                        raw_fans_status[idx] = mapped_status
+                                    elif is_psu:
+                                        raw_psus_status[idx] = mapped_status
+                            except Exception:
+                                continue
+                    except Exception:
+                        pass
+
+                    # Sequential Index Mapping
+                    sorted_temp_idxs = sorted(temps_c.keys())
+                    sorted_fan_idxs = sorted(raw_fans_status.keys())
+                    sorted_psu_idxs = sorted(raw_psus_status.keys())
+
+                    mapped_temps_c = {}
+                    mapped_temp_labels = {}
+                    for seq_idx, raw_idx in enumerate(sorted_temp_idxs):
+                        mapped_temps_c[seq_idx] = temps_c[raw_idx]
+                        raw_label = physical_names.get(raw_idx, f"SENSOR {seq_idx + 1}")
+                        mapped_temp_labels[seq_idx] = raw_label
+                    self.cache["env_temps_c"] = mapped_temps_c
+                    self.cache["env_temp_labels"] = mapped_temp_labels
+
+                    mapped_fans_status = {}
+                    for seq_idx, raw_idx in enumerate(sorted_fan_idxs):
+                        mapped_fans_status[seq_idx] = raw_fans_status[raw_idx]
+                    self.cache["env_fans_status"] = mapped_fans_status
+
+                    mapped_psus_status = {}
+                    for seq_idx, raw_idx in enumerate(sorted_psu_idxs):
+                        mapped_psus_status[seq_idx] = raw_psus_status[raw_idx]
+                    self.cache["env_psu_status"] = mapped_psus_status
+
+                    return self.cache
+
+                else:
+                    # Fetch all Dell OS6 environmental tables in parallel.
+                    (
+                        dell_power_rows,
+                        mem_free_raw,
+                        mem_total_raw,
+                        cpu_raw,
+                        fans_rows,
+                        fan_status_rows,
+                        psu_status_rows,
+                        temps_rows,
+                        unit_temp_raw,
+                        unit_temp_state_raw,
+                    ) = await asyncio.gather(
+                        self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.9.1.4.1"),
+                        self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.1.0"),
+                        self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.2.0"),
+                        self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.9.0"),
+                        self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.6.1.4.1"),
+                        self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.6.1.3.1"),
+                        self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.7.1.2.1"),
+                        self._async_walk("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.8.1.5.1"),
+                        self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.15.1.3.1"),
+                        self._async_get_one("1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.15.1.2.1"),
+                    )
+
+                    # Dell N-Series power
                 # 1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.9.1.4.1.<idx> = INTEGER: <mW>
                 for oid, val in dell_power_rows:
                     try:
@@ -2293,111 +2476,6 @@ OID_dot1qVlanCurrentUntaggedPorts = "1.3.6.1.2.1.17.7.1.4.2.1.5"
                                     self.cache["env_mem_total_kb"] = int(total_bytes / 1024)
                                 if self.cache.get("env_mem_free_kb") is None:
                                     self.cache["env_mem_free_kb"] = int(free_bytes / 1024)
-                    except Exception:
-                        pass
-                # ---- H3C / HP Comware Fallback (Issue #73) ----
-                if getattr(self, "_is_h3c", False):
-                    # CPU Walk
-                    try:
-                        h3c_cpus: list[float] = []
-                        if self.cache.get("env_cpu_5s") is None:
-                            for oid, val in await self._async_walk(OID_h3c_entity_cpu_usage):
-                                n = _parse_numeric(val)
-                                if n is not None and 0 <= n <= 100:
-                                    h3c_cpus.append(float(n))
-                            if h3c_cpus:
-                                avg_cpu = sum(h3c_cpus) / float(len(h3c_cpus))
-                                self.cache["env_cpu_5s"] = avg_cpu
-                                self.cache["env_cpu_60s"] = avg_cpu
-                                self.cache["env_cpu_300s"] = avg_cpu
-                    except Exception:
-                        pass
-
-                    # Memory Walk
-                    try:
-                        h3c_mems: list[float] = []
-                        if self.cache.get("env_mem_total_kb") is None:
-                            for oid, val in await self._async_walk(OID_h3c_entity_mem_usage):
-                                n = _parse_numeric(val)
-                                if n is not None and 0 <= n <= 100:
-                                    h3c_mems.append(float(n))
-                            if h3c_mems:
-                                avg_mem = sum(h3c_mems) / float(len(h3c_mems))
-                                # Scale to 1,000,000 kB (1 GB) so the UI doesn't look ridiculous
-                                self.cache["env_mem_total_kb"] = 1000000
-                                self.cache["env_mem_free_kb"] = int(1000000.0 * (100.0 - avg_mem) / 100.0)
-                    except Exception:
-                        pass
-                                
-                    # Pre-walk Physical Names to avoid individual GET requests (Issue #73)
-                    physical_names: dict[int, str] = {}
-                    try:
-                        for oid, val in await self._async_walk(OID_entPhysicalName):
-                            try:
-                                idx = int(str(oid).split(".")[-1])
-                                # PySNMP OctetString safe extraction
-                                name_str = ""
-                                if hasattr(val, "asOctets"):
-                                    name_str = val.asOctets().decode("utf-8", "ignore")
-                                elif hasattr(val, "prettyPrint"):
-                                    name_str = val.prettyPrint()
-                                else:
-                                    name_str = str(val)
-                                if name_str:
-                                    physical_names[idx] = name_str.strip()
-                            except Exception:
-                                continue
-                    except Exception:
-                        pass
-
-                    # Temperature Walk
-                    try:
-                        temps_c: dict[int, int] = {}
-                        if self.cache.get("env_temps_c") in (None, {}):
-                            for oid, val in await self._async_walk(OID_h3c_entity_temp):
-                                try:
-                                    idx = int(str(oid).split(".")[-1])
-                                    n = _parse_numeric(val)
-                                    if n is not None and n != 65535 and -50 <= n <= 200:
-                                        temps_c[idx] = int(n)
-                                except Exception:
-                                    continue
-                            
-                            if temps_c:
-                                for idx, temp_val in temps_c.items():
-                                    label = physical_names.get(idx)
-                                    if label:
-                                        self.cache.setdefault("env_temp_labels", {})[idx] = label
-                                    self.cache.setdefault("env_temps_c", {})[idx] = temp_val
-                    except Exception:
-                        pass
-
-                    # Fans & PSUs Walk via ErrorStatus
-                    try:
-                        fans_status: dict[int, int] = {}
-                        psu_status: dict[int, int] = {}
-                        if self.cache.get("env_fans_status") in (None, {}) or self.cache.get("env_psu_status") in (None, {}):
-                            for oid, val in await self._async_walk(OID_h3c_entity_error_status):
-                                try:
-                                    idx = int(str(oid).split(".")[-1])
-                                    st_n = _parse_numeric(val)
-                                    if st_n is not None:
-                                        name_str = physical_names.get(idx, "")
-                                        name_lower = name_str.lower()
-                                        is_fan = "fan" in name_lower
-                                        is_psu = "power" in name_lower or "psu" in name_lower
-                                        
-                                        if is_fan:
-                                            fans_status[idx] = int(st_n)
-                                        elif is_psu:
-                                            psu_status[idx] = int(st_n)
-                                except Exception:
-                                    continue
-                                    
-                            if fans_status and self.cache.get("env_fans_status") in (None, {}):
-                                self.cache["env_fans_status"] = fans_status
-                            if psu_status and self.cache.get("env_psu_status") in (None, {}):
-                                self.cache["env_psu_status"] = psu_status
                     except Exception:
                         pass
 
