@@ -295,6 +295,7 @@ async def run_tests():
     section("2 · auth + engine bootstrap")
     # -----------------------------------------------------------------------
     client = SwitchSnmpClient(hass, SWITCH_HOST, SNMP_SETTINGS, bandwidth_options=BW_OPTIONS, poe_options=POE_OPTIONS, env_options=ENV_OPTIONS)
+    await hass.async_add_executor_job(client._load_database)
     check("auth_data created",  client.auth_data,  nonempty=True)
     check("context created",    client.context,    nonempty=True)
     check("database loaded",    client._database,  nonempty=True)

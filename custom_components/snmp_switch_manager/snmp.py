@@ -80,7 +80,7 @@ class SwitchSnmpClient:
         self.port = int(self._snmp_settings.get("port") or 161)
         self.custom_oids: Dict[str, str] = dict(custom_oids or {})
         self.feature_overrides: Dict[str, Any] = dict(feature_overrides or {})
-        self._load_database()
+        self._database: Dict[str, Any] = {}
 
         # Bandwidth sensor options (set by config entry options)
         self._bandwidth_options: Dict[str, Any] = dict(bandwidth_options or {})
@@ -245,6 +245,7 @@ class SwitchSnmpClient:
             self.target = None
 
     async def async_initialize(self) -> None:
+        await self.hass.async_add_executor_job(self._load_database)
         await self._ensure_engine()
         await self._ensure_target()
 

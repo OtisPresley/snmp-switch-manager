@@ -16,6 +16,8 @@ from .const import (
     CONF_SNMPV3_AUTH_PASSWORD,
     CONF_SNMPV3_PRIV_PROTOCOL,
     CONF_SNMPV3_PRIV_PASSWORD,
+    OID_ifAlias,
+    OID_ifAdminStatus,
 )
 
 from .snmp_compat import (
@@ -471,21 +473,23 @@ async def _do_next_walk(engine, community, target, context, base_oid: str) -> Li
     return results
 
 
-async def _do_set_alias(engine, community, target, context, if_index: int, alias: str, OID_ifAlias: str) -> None:
-    err_ind, _err_stat, _err_idx, _vbs = await set_cmd(
+async def _do_set_alias(engine, community, target, context, if_index: int, alias: str) -> bool:
+    err_ind, err_stat, _err_idx, _vbs = await set_cmd(
         engine, community, target, context,
         ObjectType(ObjectIdentity(f"{OID_ifAlias}.{if_index}"), OctetString(alias)),
         lookupMib=False,
     )
     if err_ind and _is_auth_error(err_ind):
         raise SnmpAuthError(str(err_ind))
+    return (not err_ind) and (not err_stat)
 
 
-async def _do_set_admin_status(engine, community, target, context, if_index: int, state: int, OID_ifAdminStatus: str) -> None:
-    err_ind, _err_stat, _err_idx, _vbs = await set_cmd(
+async def _do_set_admin_status(engine, community, target, context, if_index: int, state: int) -> bool:
+    err_ind, err_stat, _err_idx, _vbs = await set_cmd(
         engine, community, target, context,
         ObjectType(ObjectIdentity(f"{OID_ifAdminStatus}.{if_index}"), Integer(state)),
         lookupMib=False,
     )
     if err_ind and _is_auth_error(err_ind):
         raise SnmpAuthError(str(err_ind))
+    return (not err_ind) and (not err_stat)
