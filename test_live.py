@@ -23,13 +23,11 @@ Usage:
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 import sys
 import time
 import types
-import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 # ---------------------------------------------------------------------------
 # Path setup – allow importing the integration without installing it
@@ -141,7 +139,8 @@ def section(title: str):
 async def run_tests():
     # Late import AFTER sys.modules patched — import only what we need,
     # bypassing __init__.py and config_flow.py which require full HA install.
-    import importlib, importlib.util
+    import importlib
+    import importlib.util
 
     def _stub_module(name: str, **attrs):
         m = types.ModuleType(name)
@@ -179,7 +178,8 @@ async def run_tests():
         _stub_module("voluptuous")
 
     # Now import snmp.py and features directly
-    import importlib.util as _ilu, pathlib as _pl
+    import importlib.util as _ilu
+    import pathlib as _pl
 
     _base = _pl.Path(__file__).parent / "custom_components" / "snmp_switch_manager"
 
@@ -217,7 +217,7 @@ async def run_tests():
     from custom_components.snmp_switch_manager.features.cpu import _parse_cpu_string
     from custom_components.snmp_switch_manager.features.device_info import _parse_sysdescr_generic
     from custom_components.snmp_switch_manager.helpers import (
-        _parse_numeric, decode_label, _decode_bridge_port_bitmap, uptime_human,
+        _parse_numeric, _decode_bridge_port_bitmap, uptime_human,
         parse_pfsense_sysdescr, classify_port_type,
     )
     from custom_components.snmp_switch_manager.features.device_info import initialize_device_info, refresh_device_info
@@ -321,7 +321,6 @@ async def run_tests():
     # -----------------------------------------------------------------------
     section("4 · device_info.py – initialize_device_info()")
     # -----------------------------------------------------------------------
-    from custom_components.snmp_switch_manager.features.device_info import initialize_device_info, refresh_device_info
     await initialize_device_info(client)
 
     check("cache sysDescr",      client.cache.get("sysDescr"),     nonempty=True)
@@ -342,7 +341,6 @@ async def run_tests():
     # -----------------------------------------------------------------------
     section("5 · interfaces.py – poll_interfaces()")
     # -----------------------------------------------------------------------
-    from custom_components.snmp_switch_manager.features.interfaces import poll_interfaces
     await poll_interfaces(client, dynamic_only=False)
 
     iftable = client.cache.get("ifTable", {})
@@ -369,7 +367,6 @@ async def run_tests():
     # -----------------------------------------------------------------------
     section("6 · ipv4.py – poll_ipv4()")
     # -----------------------------------------------------------------------
-    from custom_components.snmp_switch_manager.features.ipv4 import poll_ipv4
     await poll_ipv4(client)
     check("ipIndex populated",  client.cache.get("ipIndex"), nonempty=True, warn_only=True)
     print(f"  {INFO} IP entries: {len(client.cache.get('ipIndex', {}))}")
@@ -377,7 +374,6 @@ async def run_tests():
     # -----------------------------------------------------------------------
     section("7 · bandwidth.py – poll_bandwidth()")
     # -----------------------------------------------------------------------
-    from custom_components.snmp_switch_manager.features.bandwidth import poll_bandwidth
     # Force bw_use_hc reset so it auto-detects
     client._bw_use_hc = None
     client._bw_last_poll = None
@@ -394,7 +390,6 @@ async def run_tests():
     # -----------------------------------------------------------------------
     section("8 · poe.py – poll_poe()")
     # -----------------------------------------------------------------------
-    from custom_components.snmp_switch_manager.features.poe import poll_poe
     client._poe_last_poll = 0.0
     await poll_poe(client)
 
@@ -413,13 +408,6 @@ async def run_tests():
     vendor = client.cache.get("vendor", "Unknown")
     print(f"  {INFO} Using vendor: {vendor}")
 
-    from custom_components.snmp_switch_manager.features.cpu import poll_cpu
-    from custom_components.snmp_switch_manager.features.memory import poll_memory
-    from custom_components.snmp_switch_manager.features.temperature import poll_temperature
-    from custom_components.snmp_switch_manager.features.fans import poll_fans
-    from custom_components.snmp_switch_manager.features.psu import poll_psu
-    from custom_components.snmp_switch_manager.features.power import poll_power
-    from custom_components.snmp_switch_manager.features.entity_sensor import poll_entity_sensor_fallback
 
     await poll_cpu(client, vendor)
     print(f"  {INFO} CPU 5s={client.cache.get('env_cpu_5s')}% 60s={client.cache.get('env_cpu_60s')}% 300s={client.cache.get('env_cpu_300s')}%")
