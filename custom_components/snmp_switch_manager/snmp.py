@@ -20,6 +20,7 @@ from .features.temperature import poll_temperature
 from .features.entity_sensor import poll_entity_sensor_fallback
 from .features.bandwidth import poll_bandwidth
 from .features.poe import poll_poe
+from .features.h3c import poll_h3c_environment
 from .features.engine import ensure_engine
 from .features.device_info import initialize_device_info, refresh_device_info
 from .features.auth import build_auth_data
@@ -366,28 +367,31 @@ class SwitchSnmpClient:
 
             if should_poll:
                 self._env_last_poll = now_mono
-                vendor = self.cache.get("vendor", "Unknown")
+                if getattr(self, "_is_h3c", False):
+                    await poll_h3c_environment(self)
+                else:
+                    vendor = self.cache.get("vendor", "Unknown")
 
-                # Memory
-                await poll_memory(self, vendor)
+                    # Memory
+                    await poll_memory(self, vendor)
 
-                # CPU
-                await poll_cpu(self, vendor)
+                    # CPU
+                    await poll_cpu(self, vendor)
 
-                # Power
-                await poll_power(self, vendor)
+                    # Power
+                    await poll_power(self, vendor)
 
-                # Fans
-                await poll_fans(self, vendor)
+                    # Fans
+                    await poll_fans(self, vendor)
 
-                # PSU
-                await poll_psu(self, vendor)
+                    # PSU
+                    await poll_psu(self, vendor)
 
-                # Temperature
-                await poll_temperature(self, vendor)
+                    # Temperature
+                    await poll_temperature(self, vendor)
 
-                # Fallback
-                await poll_entity_sensor_fallback(self)
+                    # Fallback
+                    await poll_entity_sensor_fallback(self)
 
 
 
