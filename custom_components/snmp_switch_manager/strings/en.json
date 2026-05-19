@@ -427,7 +427,8 @@
           "rule_existing": "Existing rule",
           "rule_match": "Match type",
           "rule_value": "Match value",
-          "rule_replace": "Replacement"
+          "rule_replace": "Replacement",
+          "back_to_menu": "Go back (discard changes)"
         }
       },
       "port_rename_custom_add": {
@@ -464,7 +465,8 @@
           "builtin_unit_slot_port_1g_to_gi": "Normalize Unit/Slot/Port 1G → Gi",
           "builtin_unit_slot_port_20g_to_tw": "Normalize Unit/Slot/Port 20G → Tw",
           "defaults_action": "Action",
-          "port_rename_disabled_default_ids": "Built-in Rename Rules (disable)"
+          "port_rename_disabled_default_ids": "Built-in Rename Rules (disable)",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "Enable or disable built-in display name rules for this device.\n\nCurrent built-ins:\n{rules}",
         "title": "Built-in Rename Rules"

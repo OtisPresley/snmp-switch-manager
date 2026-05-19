@@ -427,7 +427,8 @@
           "rule_existing": "Vorhandene Regel",
           "rule_match": "Abgleichtyp",
           "rule_value": "Abgleichwert",
-          "rule_replace": "Ersetzung"
+          "rule_replace": "Ersetzung",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         }
       },
       "port_rename_custom_add": {
@@ -464,7 +465,8 @@
           "builtin_unit_slot_port_1g_to_gi": "Einheit/Slot/Port 1G normalisieren → Gi",
           "builtin_unit_slot_port_20g_to_tw": "Einheit/Slot/Port 20G normalisieren → Tw",
           "defaults_action": "Aktion",
-          "port_rename_disabled_default_ids": "Integrierte Umbenennungsregeln (deaktivieren)"
+          "port_rename_disabled_default_ids": "Integrierte Umbenennungsregeln (deaktivieren)",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         },
         "description": "Integrierte Anzeigenamensregeln für dieses Gerät aktivieren oder deaktivieren.\n\nAktuelle integrierte Regeln:\n{rules}",
         "title": "Integrierte Umbenennungsregeln"

@@ -76,6 +76,9 @@ class InterfacesNamingMixin:
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            if user_input.get("back_to_menu"):
+                return await self.async_step_port_name_rules()
+
             action = user_input.get(KEY_ACTION)
 
             if action == "done":
@@ -194,6 +197,7 @@ class InterfacesNamingMixin:
                 ),
                 vol.Optional(KEY_VALUE, default=""): cv.string,
                 vol.Optional(KEY_REPLACE, default=""): cv.string,
+                vol.Optional("back_to_menu", default=False): cv.boolean,
             }
         )
 
@@ -347,6 +351,9 @@ class InterfacesNamingMixin:
             options_map[rid] = label
 
         if user_input is not None:
+            if user_input.get("back_to_menu"):
+                return await self.async_step_port_name_rules()
+
             disabled = list(user_input.get(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS, []) or [])
             changed = disabled != current_disabled
 
@@ -372,6 +379,7 @@ class InterfacesNamingMixin:
                     CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
                     default=current_disabled,
                 ): cv.multi_select(options_map),
+                vol.Optional("back_to_menu", default=False): cv.boolean,
             }
         )
 

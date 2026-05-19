@@ -427,7 +427,8 @@
           "rule_existing": "Bestaande regel",
           "rule_match": "Matchtype",
           "rule_value": "Matchwaarde",
-          "rule_replace": "Vervanging"
+          "rule_replace": "Vervanging",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         }
       },
       "port_rename_custom_add": {
@@ -464,7 +465,8 @@
           "builtin_unit_slot_port_1g_to_gi": "Unit/Slot/Port 1G normaliseren → Gi",
           "builtin_unit_slot_port_20g_to_tw": "Unit/Slot/Port 20G normaliseren → Tw",
           "defaults_action": "Actie",
-          "port_rename_disabled_default_ids": "Ingebouwde hernoemregels (uitschakelen)"
+          "port_rename_disabled_default_ids": "Ingebouwde hernoemregels (uitschakelen)",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
         "description": "Schakel ingebouwde weergavenaamregels voor dit apparaat in of uit.\n\nHuidige ingebouwde regels:\n{rules}",
         "title": "Ingebouwde hernoemregels"

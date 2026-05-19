@@ -427,7 +427,8 @@
           "rule_existing": "Regla existente",
           "rule_match": "Tipo de coincidencia",
           "rule_value": "Valor de coincidencia",
-          "rule_replace": "Reemplazo"
+          "rule_replace": "Reemplazo",
+          "back_to_menu": "Volver (descartar cambios)"
         }
       },
       "port_rename_custom_add": {
@@ -464,7 +465,8 @@
           "builtin_unit_slot_port_1g_to_gi": "Normalizar Unidad/Slot/Puerto 1G → Gi",
           "builtin_unit_slot_port_20g_to_tw": "Normalizar Unidad/Slot/Puerto 20G → Tw",
           "defaults_action": "Acción",
-          "port_rename_disabled_default_ids": "Reglas integradas de cambio de nombre (desactivar)"
+          "port_rename_disabled_default_ids": "Reglas integradas de cambio de nombre (desactivar)",
+          "back_to_menu": "Volver (descartar cambios)"
         },
         "description": "Habilita o deshabilita las reglas integradas de nombre mostrado para este dispositivo.\n\nReglas integradas actuales:\n{rules}",
         "title": "Reglas integradas de cambio de nombre"

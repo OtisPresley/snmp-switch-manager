@@ -427,7 +427,8 @@
           "rule_existing": "Regola esistente",
           "rule_match": "Tipo di corrispondenza",
           "rule_value": "Valore di corrispondenza",
-          "rule_replace": "Sostituzione"
+          "rule_replace": "Sostituzione",
+          "back_to_menu": "Torna indietro (annulla modifiche)"
         }
       },
       "port_rename_custom_add": {
@@ -464,7 +465,8 @@
           "builtin_unit_slot_port_1g_to_gi": "Normalizza Unità/Slot/Porta 1G → Gi",
           "builtin_unit_slot_port_20g_to_tw": "Normalizza Unità/Slot/Porta 20G → Tw",
           "defaults_action": "Azione",
-          "port_rename_disabled_default_ids": "Regole di rinomina integrate (disattiva)"
+          "port_rename_disabled_default_ids": "Regole di rinomina integrate (disattiva)",
+          "back_to_menu": "Torna indietro (annulla modifiche)"
         },
         "description": "Abilita o disabilita le regole integrate del nome visualizzato per questo dispositivo.\n\nRegole integrate correnti:\n{rules}",
         "title": "Regole di rinomina integrate"

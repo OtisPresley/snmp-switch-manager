@@ -427,7 +427,8 @@
           "rule_existing": "Règle existante",
           "rule_match": "Type de correspondance",
           "rule_value": "Valeur de correspondance",
-          "rule_replace": "Remplacement"
+          "rule_replace": "Remplacement",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         }
       },
       "port_rename_custom_add": {
@@ -464,7 +465,8 @@
           "builtin_unit_slot_port_1g_to_gi": "Normaliser Unité/Slot/Port 1G → Gi",
           "builtin_unit_slot_port_20g_to_tw": "Normaliser Unité/Slot/Port 20G → Tw",
           "defaults_action": "Action",
-          "port_rename_disabled_default_ids": "Règles de renommage intégrées (désactiver)"
+          "port_rename_disabled_default_ids": "Règles de renommage intégrées (désactiver)",
+          "back_to_menu": "Retourner (ignorer les modifications)"
         },
         "description": "Activer ou désactiver les règles intégrées de nom d’affichage pour cet appareil.\n\nRègles intégrées actuelles :\n{rules}",
         "title": "Règles de renommage intégrées"

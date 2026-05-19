@@ -112,7 +112,9 @@
       "required_attestation": "You must attest that you have tested the OID",
       "required_share": "Since you verified the OID, please also select the option to share it with the community to help others.",
       "required_attestation_to_share": "You must attest that you have tested the OID before sharing it with the community.",
-      "duplicate_oid": "This OID already exists in the database for this vendor."
+      "duplicate_oid": "This OID already exists in the database for this vendor.",
+      "authorization_pending": "Authorization pending. Please enter the code on GitHub and try again.",
+      "github_error": "Failed to communicate with GitHub. Please try again later."
     },
     "step": {
       "bandwidth_enable": {
@@ -410,7 +412,8 @@
           "rule_existing": "Existing rule",
           "rule_match": "Match type",
           "rule_value": "Match value",
-          "rule_replace": "Replacement"
+          "rule_replace": "Replacement",
+          "back_to_menu": "Go back (discard changes)"
         }
       },
       "port_rename_custom_add": {
@@ -447,7 +450,8 @@
           "builtin_unit_slot_port_1g_to_gi": "Normalize Unit/Slot/Port 1G → Gi",
           "builtin_unit_slot_port_20g_to_tw": "Normalize Unit/Slot/Port 20G → Tw",
           "defaults_action": "Action",
-          "port_rename_disabled_default_ids": "Built-in Rename Rules (disable)"
+          "port_rename_disabled_default_ids": "Built-in Rename Rules (disable)",
+          "back_to_menu": "Go back (discard changes)"
         },
         "description": "Enable or disable built-in display name rules for this device.\n\nCurrent built-ins:\n{rules}",
         "title": "Built-in Rename Rules"
@@ -505,6 +509,21 @@
           "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
           "share_with_community": "Share this with the community"
         }
+      },
+      "ask_pr": {
+        "data": {
+          "submit": "Submit override to GitHub"
+        },
+        "description": "Do you want to submit this override to the repository to help other users?",
+        "title": "Submit to GitHub?"
+      },
+      "submit_pr": {
+        "description": "To submit your override, please authenticate with GitHub:\n\n1. Go to {url}\n2. Enter code: **{code}**\n3. Click Check when done.",
+        "title": "Authenticate with GitHub"
+      },
+      "create_pr": {
+        "description": "{status}",
+        "title": "PR Status"
       }
     }
   },
