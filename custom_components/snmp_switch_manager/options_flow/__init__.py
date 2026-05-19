@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -40,6 +41,8 @@ from .overrides_hardware import OverridesHardwareMixin
 from .overrides_power import OverridesPowerMixin
 from .overrides_env import OverridesEnvMixin
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class OptionsFlowHandler(
     InterfacesOptionsMixin,
@@ -62,6 +65,7 @@ class OptionsFlowHandler(
     def _get_database(self) -> dict:
         """Lazy-load and cache database JSON files to avoid repetitive parsing."""
         if self._database is None:
+            _LOGGER.warning("Synchronous database load in options flow - pre-loading should occur in async_step_init")
             self._database = load_database()
         return self._database
 
@@ -237,6 +241,8 @@ class OptionsFlowHandler(
 
     async def async_step_init(self, user_input=None) -> FlowResult:
         """Manage the options."""
+        if self._database is None:
+            self._database = await self.hass.async_add_executor_job(load_database)
         return self.async_show_menu(
             step_id="device_options",
             menu_options=[
