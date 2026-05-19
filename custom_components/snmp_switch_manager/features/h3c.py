@@ -9,16 +9,26 @@ from ..helpers import _parse_numeric
 from ..const import (
     OID_entPhysicalName,
     OID_entPhysicalDescr,
-    OID_h3c_entity_cpu_usage,
-    OID_h3c_entity_mem_usage,
-    OID_h3c_entity_temp,
-    OID_h3c_entity_error_status,
 )
 
 
 async def poll_h3c_environment(client: SwitchSnmpClient) -> None:
     """Fetch environmental statistics for H3C devices cleanly and efficiently."""
     physical_names: dict[int, str] = {}
+
+    # Retrieve vendor-specific OIDs dynamically from the JSON database
+    # with local fallbacks to keep other files completely clean.
+    cpu_items = client._get_database_oids("cpu", "H3C")
+    oid_h3c_cpu = cpu_items[0].get("oid") if cpu_items else "1.3.6.1.4.1.25506.2.6.1.1.1.1.6"
+
+    mem_items = client._get_database_oids("memory", "H3C")
+    oid_h3c_mem = mem_items[0].get("oid") if mem_items else "1.3.6.1.4.1.25506.2.6.1.1.1.1.8"
+
+    temp_items = client._get_database_oids("temperature", "H3C")
+    oid_h3c_temp = temp_items[0].get("oid") if temp_items else "1.3.6.1.4.1.25506.2.6.1.1.1.1.12"
+
+    psu_items = client._get_database_oids("psu", "H3C")
+    oid_h3c_error_status = psu_items[0].get("oid_status") if psu_items else "1.3.6.1.4.1.25506.2.6.1.1.1.1.19"
     
     # Try entPhysicalName first
     try:
@@ -62,7 +72,7 @@ async def poll_h3c_environment(client: SwitchSnmpClient) -> None:
     # CPU Walk
     try:
         cpu_by_idx = {}
-        for oid, val in await client._async_walk(OID_h3c_entity_cpu_usage):
+        for oid, val in await client._async_walk(oid_h3c_cpu):
             try:
                 idx = int(str(oid).split(".")[-1])
                 n = _parse_numeric(val)
@@ -97,7 +107,7 @@ async def poll_h3c_environment(client: SwitchSnmpClient) -> None:
     # Memory Walk
     try:
         mem_by_idx = {}
-        for oid, val in await client._async_walk(OID_h3c_entity_mem_usage):
+        for oid, val in await client._async_walk(oid_h3c_mem):
             try:
                 idx = int(str(oid).split(".")[-1])
                 n = _parse_numeric(val)
@@ -128,7 +138,7 @@ async def poll_h3c_environment(client: SwitchSnmpClient) -> None:
     # Temperature Walk
     temps_c: dict[int, int] = {}
     try:
-        for oid, val in await client._async_walk(OID_h3c_entity_temp):
+        for oid, val in await client._async_walk(oid_h3c_temp):
             try:
                 idx = int(str(oid).split(".")[-1])
                 n = _parse_numeric(val)
@@ -143,7 +153,7 @@ async def poll_h3c_environment(client: SwitchSnmpClient) -> None:
     raw_fans_status: dict[int, int] = {}
     raw_psus_status: dict[int, int] = {}
     try:
-        for oid, val in await client._async_walk(OID_h3c_entity_error_status):
+        for oid, val in await client._async_walk(oid_h3c_error_status):
             try:
                 idx = int(str(oid).split(".")[-1])
                 st_n = _parse_numeric(val)
