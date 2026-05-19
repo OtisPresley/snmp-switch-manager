@@ -524,6 +524,10 @@
           "attestation": "Ich bestätige, dass ich diese OIDs getestet und verifiziert habe.",
           "share_with_community": "Teilen Sie dies mit der Community"
         }
+      },
+      "github_connection_error": {
+        "title": "GitHub-Verbindungsfehler",
+        "description": "Verbindung mit GitHub fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
       }
     }
   },

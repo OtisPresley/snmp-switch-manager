@@ -524,6 +524,10 @@
           "attestation": "Doy fe de que he probado y verificado que estos OID funcionan como se esperaba.",
           "share_with_community": "Compartir esto con la comunidad"
         }
+      },
+      "github_connection_error": {
+        "title": "Error de conexión con GitHub",
+        "description": "Error al comunicarse con GitHub. Por favor, comprueba tu conexión a internet e inténtalo de nuevo."
       }
     }
   },

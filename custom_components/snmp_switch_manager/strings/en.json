@@ -524,6 +524,10 @@
           "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
           "share_with_community": "Share this with the community"
         }
+      },
+      "github_connection_error": {
+        "title": "GitHub Connection Error",
+        "description": "Failed to communicate with GitHub (could not retrieve authentication device code). Please check your network/internet connection and try again."
       }
     }
   },

@@ -524,6 +524,10 @@
           "attestation": "Ik verklaar dat ik deze OID’s heb getest en geverifieerd.",
           "share_with_community": "Deel dit met de community"
         }
+      },
+      "github_connection_error": {
+        "title": "GitHub-verbindingsfout",
+        "description": "Fout bij de communicatie met GitHub. Controleer uw internetverbinding en probeer het opnieuw."
       }
     }
   },

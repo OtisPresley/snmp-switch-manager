@@ -524,6 +524,10 @@
       "create_pr": {
         "description": "{status}",
         "title": "PR Status"
+      },
+      "github_connection_error": {
+        "title": "GitHub Connection Error",
+        "description": "Failed to communicate with GitHub (could not retrieve authentication device code). Please check your network/internet connection and try again."
       }
     }
   },

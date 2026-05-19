@@ -166,7 +166,7 @@ class OverridesEnvMixin:
                 self._user_code = data.get("user_code")
                 self._verification_uri = data.get("verification_uri")
             else:
-                errors["base"] = "github_error"
+                return await self.async_step_github_connection_error()
                 
         return self.async_show_form(
             step_id="submit_pr",
@@ -211,4 +211,14 @@ class OverridesEnvMixin:
             step_id="create_pr",
             data_schema=vol.Schema({}),
             description_placeholders={"status": status},
+        )
+
+    async def async_step_github_connection_error(self, user_input=None) -> FlowResult:
+        """Show error when connection to GitHub fails."""
+        if user_input is not None:
+            return await self.async_step_feature_overrides()
+            
+        return self.async_show_form(
+            step_id="github_connection_error",
+            data_schema=vol.Schema({}),
         )
