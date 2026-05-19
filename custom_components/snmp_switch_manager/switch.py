@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ipaddress
 import logging
+import time
 from typing import Any, Dict, Optional
 
 from homeassistant.components.switch import SwitchEntity
@@ -307,6 +308,8 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
         self._alias = alias
         self._hostname = hostname
         self._client = client
+        self._state_override = None
+        self._state_override_time = None
 
         self._attr_unique_id = f"{entry_id}-if-{if_index}"
         # Name includes hostname so entity_id becomes e.g. switch.switch1_gi1_0_1
@@ -339,6 +342,13 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
 
     @property
     def is_on(self) -> bool:
+        if self._state_override_time is not None:
+            if time.monotonic() - self._state_override_time < 10.0:
+                return self._state_override == 1
+            else:
+                self._state_override_time = None
+                self._state_override = None
+
         data = self.coordinator.data or {}
         row = data.get("ifTable", {}).get(self._if_index, {})
         return row.get("admin") == 1
@@ -346,12 +356,16 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs):
         ok = await self._client.set_admin_status(self._if_index, 1)
         if ok:
+            self._state_override = 1
+            self._state_override_time = time.monotonic()
             self.coordinator.data["ifTable"].setdefault(self._if_index, {})["admin"] = 1
             self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs):
         ok = await self._client.set_admin_status(self._if_index, 2)
         if ok:
+            self._state_override = 2
+            self._state_override_time = time.monotonic()
             self.coordinator.data["ifTable"].setdefault(self._if_index, {})["admin"] = 2
             self.async_write_ha_state()
 
@@ -359,13 +373,22 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
     def extra_state_attributes(self) -> Dict[str, Any]:
         data = self.coordinator.data or {}
         row = data.get("ifTable", {}).get(self._if_index, {})
+        
+        admin_val = row.get("admin", 0)
+        if self._state_override_time is not None:
+            if time.monotonic() - self._state_override_time < 10.0:
+                admin_val = self._state_override
+            else:
+                self._state_override_time = None
+                self._state_override = None
+
         attrs: Dict[str, Any] = {
             "Index": self._if_index,
             "Name": self._display,
             # Many switches leave ifAlias blank and place the user-visible port
             # description in ifDescr instead.
             "Alias": row.get("alias") or row.get("descr") or "",
-            "Admin": ADMIN_STATE.get(row.get("admin", 0), "Unknown"),
+            "Admin": ADMIN_STATE.get(admin_val, "Unknown"),
             "Oper": OPER_STATE.get(row.get("oper", 0), "Unknown"),
             "Speed": _speed_display(row),
         }
