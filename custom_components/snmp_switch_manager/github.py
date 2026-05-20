@@ -215,7 +215,7 @@ async def create_pull_request(token: str, repo: str, base: str, head: str, title
 async def submit_override(token: str, feature: str, override_data: Dict[str, Any]) -> bool:
     """Full flow to submit an override as a PR."""
     repo = "OtisPresley/snmp-switch-manager"
-    base_branch = "main"
+    base_branch = "feature/modular-refactor"
     
     # 1. Get user info
     user_info = await get_user(token)
@@ -248,7 +248,7 @@ async def submit_override(token: str, feature: str, override_data: Dict[str, Any
         
     # 5. Get file content from ORIGINAL repo
     file_path = f"custom_components/snmp_switch_manager/database/{feature}.json"
-    file_data = await get_file(token, repo, file_path)
+    file_data = await get_file(token, repo, file_path, ref=base_branch)
     if not file_data:
         return False
         
