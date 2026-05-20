@@ -237,7 +237,7 @@
           "scale": "Escala",
           "unit": "Unidad",
           "description": "Descripción",
-          "attestation": "Certifico que he probado and verificado que este OID funciona como se esperaba.",
+          "attestation": "Certifico que he probado y verificado que este OID funciona como se esperaba.",
           "share_with_community": "Compartir esto con la comunidad",
           "back_to_menu": "Volver (descartar cambios)"
         },
