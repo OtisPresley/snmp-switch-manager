@@ -37,14 +37,16 @@ async def poll_memory(client: "SwitchSnmpClient", vendor: str) -> None:
     mem_items = client._get_database_oids("memory", vendor)
     mem_free_val = mem_total_val = None
 
+    scale = 1.0
     for item in mem_items:
         if item.get("type") == "free_total" and item.get("method") == "get":
             mem_free_val = await client._async_get_one(item.get("oid_free"))
             mem_total_val = await client._async_get_one(item.get("oid_total"))
+            scale = float(item.get("scale", 1.0))
 
     def _to_kb(raw) -> int | None:
         n = _parse_numeric(raw)
-        return int(n) if n is not None else None
+        return int(float(n) * scale) if n is not None else None
 
     client.cache["env_mem_free_kb"] = _to_kb(mem_free_val)
     client.cache["env_mem_total_kb"] = _to_kb(mem_total_val)

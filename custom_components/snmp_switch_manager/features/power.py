@@ -15,6 +15,7 @@ async def poll_power(client: SwitchSnmpClient, vendor: str) -> None:
     env_power_mw: Dict[int, float] = {}
     for item in power_items:
         oid = item.get("oid")
+        scale = float(item.get("scale", 1.0))
         if item.get("method") == "walk":
             rows = await client._async_walk(oid)
             for o, val in rows:
@@ -25,7 +26,7 @@ async def poll_power(client: SwitchSnmpClient, vendor: str) -> None:
                 mw = _parse_numeric(val)
                 if mw is None:
                     continue
-                env_power_mw[env_idx] = mw
+                env_power_mw[env_idx] = float(mw) * scale
                 
     client.cache["env_power_mw"] = env_power_mw
     client.cache["env_power_mw_total"] = float(sum(env_power_mw.values())) if env_power_mw else 0.0

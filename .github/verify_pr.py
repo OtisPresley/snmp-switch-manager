@@ -139,6 +139,126 @@ def verify_file(file_path: str, feature: str) -> bool:
     print(f"Successfully verified {file_path}!")
     return True
 
+def verify_rename_rules(file_path: str) -> bool:
+    print(f"Verifying {file_path}...")
+    if not os.path.exists(file_path):
+        print(f"Error: File {file_path} does not exist.")
+        return False
+        
+    try:
+        with open(file_path, "r") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"Error: Failed to parse JSON: {e}")
+        return False
+        
+    if not isinstance(data, dict):
+        print("Error: Root must be a JSON object.")
+        return False
+        
+    if "rename_rules" not in data:
+        print("Error: Missing root key 'rename_rules'.")
+        return False
+        
+    items = data["rename_rules"]
+    if not isinstance(items, list):
+        print("Error: 'rename_rules' must be a list.")
+        return False
+        
+    seen_ids = set()
+    seen_patterns = set()
+    for idx, item in enumerate(items):
+        if not isinstance(item, dict):
+            print(f"Error: Item at index {idx} is not an object.")
+            return False
+            
+        r_id = item.get("id")
+        pattern = item.get("pattern")
+        replace = item.get("replace")
+        
+        if not r_id or not pattern or replace is None:
+            print(f"Error: Rename rule at index {idx} must have 'id', 'pattern', and 'replace'.")
+            return False
+            
+        if r_id in seen_ids:
+            print(f"Error: Duplicate rename rule id '{r_id}' detected.")
+            return False
+        seen_ids.add(r_id)
+        
+        if pattern in seen_patterns:
+            print(f"Error: Duplicate rename rule pattern '{pattern}' detected.")
+            return False
+        seen_patterns.add(pattern)
+        
+        # Verify it compiles as regex
+        try:
+            re.compile(pattern)
+        except Exception as e:
+            print(f"Error: Invalid regex pattern '{pattern}' in rule '{r_id}': {e}")
+            return False
+            
+    print(f"Successfully verified {file_path}!")
+    return True
+
+def verify_interface_filters(file_path: str) -> bool:
+    print(f"Verifying {file_path}...")
+    if not os.path.exists(file_path):
+        print(f"Error: File {file_path} does not exist.")
+        return False
+        
+    try:
+        with open(file_path, "r") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"Error: Failed to parse JSON: {e}")
+        return False
+        
+    if not isinstance(data, dict):
+        print("Error: Root must be a JSON object.")
+        return False
+        
+    if "interface_filters" not in data:
+        print("Error: Missing root key 'interface_filters'.")
+        return False
+        
+    items = data["interface_filters"]
+    if not isinstance(items, list):
+        print("Error: 'interface_filters' must be a list.")
+        return False
+        
+    seen_ids = set()
+    seen_rule_types = set()
+    for idx, item in enumerate(items):
+        if not isinstance(item, dict):
+            print(f"Error: Item at index {idx} is not an object.")
+            return False
+            
+        f_id = item.get("id")
+        label = item.get("label")
+        vendors = item.get("vendors")
+        rule_type = item.get("rule_type")
+        
+        if not f_id or not label or not vendors or not rule_type:
+            print(f"Error: Interface filter at index {idx} must have 'id', 'label', 'vendors', and 'rule_type'.")
+            return False
+            
+        if not isinstance(vendors, list) or not vendors:
+            print(f"Error: 'vendors' at index {idx} must be a non-empty list of strings.")
+            return False
+            
+        if f_id in seen_ids:
+            print(f"Error: Duplicate interface filter id '{f_id}' detected.")
+            return False
+        seen_ids.add(f_id)
+        
+        if rule_type in seen_rule_types:
+            print(f"Error: Duplicate interface filter rule_type/conditions '{rule_type}' detected.")
+            return False
+        seen_rule_types.add(rule_type)
+        
+    print(f"Successfully verified {file_path}!")
+    return True
+
 def main():
     db_dir = "custom_components/snmp_switch_manager/database"
     features = ["cpu", "memory", "fans", "psu", "temperature", "power", "poe"]
@@ -148,6 +268,12 @@ def main():
         file_path = os.path.join(db_dir, f"{feature}.json")
         if not verify_file(file_path, feature):
             success = False
+            
+    # Verify modular JSON rules
+    if not verify_rename_rules(os.path.join(db_dir, "rename_rules.json")):
+        success = False
+    if not verify_interface_filters(os.path.join(db_dir, "interface_filters.json")):
+        success = False
             
     if not success:
         sys.exit(1)

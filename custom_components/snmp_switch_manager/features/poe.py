@@ -97,11 +97,22 @@ async def poll_poe(client: "SwitchSnmpClient") -> None:
     u_sum = sum(used_list) if used_list else 0.0
 
     # Heuristic: Zyxel returns Watts directly; others may return mW
-    if getattr(client, "_is_zyxel", False):
+    # Overridable by setting 'scale' or 'scale_budget'/'scale_used' in the database/options.
+    custom_scale_b = (standard_item or {}).get("scale_budget") or (standard_item or {}).get("scale")
+    custom_scale_u = (standard_item or {}).get("scale_used") or (standard_item or {}).get("scale")
+    
+    if custom_scale_b is not None:
+        scale_b = float(custom_scale_b)
+    elif getattr(client, "_is_zyxel", False):
         scale_b = 1.0 if b_sum < 2000 else 1000.0
-        scale_u = 1.0 if u_sum < 2000 else 1000.0
     else:
         scale_b = 1000.0 if b_sum > 5000 else 1.0
+
+    if custom_scale_u is not None:
+        scale_u = float(custom_scale_u)
+    elif getattr(client, "_is_zyxel", False):
+        scale_u = 1.0 if u_sum < 2000 else 1000.0
+    else:
         scale_u = 1000.0 if u_sum > 5000 else 1.0
 
     if budget_list or used_list:

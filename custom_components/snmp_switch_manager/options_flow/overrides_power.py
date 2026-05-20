@@ -39,6 +39,7 @@ class OverridesPowerMixin:
             vendor = user_input.get("vendor", "").strip()
             method = user_input.get("method", "get")
             description = user_input.get("description", "")
+            scale_str = str(user_input.get("scale", "1.0")).strip()
             attestation = user_input.get("attestation", False)
             share_with_community = user_input.get("share_with_community", False)
             
@@ -51,6 +52,12 @@ class OverridesPowerMixin:
             elif not _is_valid_numeric_oid(oid):
                 errors["oid"] = "invalid_oid"
                 
+            try:
+                scale = float(scale_str)
+            except ValueError:
+                errors["scale"] = "invalid_float"
+                scale = 1.0
+
             if not errors:
                 norm_oid = _normalize_oid(oid)
                 items = db.get("power", {}).get("power", [])
@@ -75,6 +82,7 @@ class OverridesPowerMixin:
                     "vendor": vendor,
                     "method": method,
                     "description": description,
+                    "scale": scale,
                 }
                 self._options[CONF_FEATURE_OVERRIDES] = overrides
                 self._apply_options()
@@ -89,6 +97,7 @@ class OverridesPowerMixin:
             vendor = defaults.get("vendor", "")
             method = defaults.get("method", "get")
             description = defaults.get("description", "")
+            scale_str = str(defaults.get("scale", 1.0))
             attestation = False
             share_with_community = False
 
@@ -112,6 +121,7 @@ class OverridesPowerMixin:
                     )
                 ),
                 vol.Optional("description"): str,
+                vol.Optional("scale"): str,
                 vol.Optional("attestation"): cv.boolean,
                 vol.Optional("share_with_community"): cv.boolean,
                 vol.Optional("back_to_menu", default=False): cv.boolean,
@@ -127,6 +137,7 @@ class OverridesPowerMixin:
                     "vendor": vendor,
                     "method": method,
                     "description": description,
+                    "scale": scale_str,
                     "attestation": attestation,
                     "share_with_community": share_with_community,
                 }
@@ -175,6 +186,23 @@ class OverridesPowerMixin:
             if oid_port_power and not _is_valid_numeric_oid(oid_port_power):
                 errors["oid_port_power"] = "invalid_oid"
 
+            scale_str = str(user_input.get("scale", "1.0")).strip()
+            attestation = user_input.get("attestation", False)
+            share_with_community = user_input.get("share_with_community", False)
+            
+            if oid_budget and not _is_valid_numeric_oid(oid_budget):
+                errors["oid_budget"] = "invalid_oid"
+            if oid_used and not _is_valid_numeric_oid(oid_used):
+                errors["oid_used"] = "invalid_oid"
+            if oid_port_power and not _is_valid_numeric_oid(oid_port_power):
+                errors["oid_port_power"] = "invalid_oid"
+
+            try:
+                scale = float(scale_str)
+            except ValueError:
+                errors["scale"] = "invalid_float"
+                scale = 1.0
+
             if not oid_budget and not oid_used and not oid_port_power:
                 overrides = dict(self._options.get(CONF_FEATURE_OVERRIDES, {}) or {})
                 overrides.pop("poe", None)
@@ -217,6 +245,7 @@ class OverridesPowerMixin:
                     "vendor": vendor,
                     "method": method,
                     "description": description,
+                    "scale": scale,
                 }
                 if oid_budget:
                     overrides["poe"]["oid_budget"] = _normalize_oid(oid_budget)
@@ -240,6 +269,7 @@ class OverridesPowerMixin:
             vendor = defaults.get("vendor", "")
             method = defaults.get("method", "get")
             description = defaults.get("description", "")
+            scale_str = str(defaults.get("scale", 1.0))
             attestation = False
             share_with_community = False
 
@@ -265,6 +295,7 @@ class OverridesPowerMixin:
                     )
                 ),
                 vol.Optional("description"): str,
+                vol.Optional("scale"): str,
                 vol.Optional("attestation"): cv.boolean,
                 vol.Optional("share_with_community"): cv.boolean,
                 vol.Optional("back_to_menu", default=False): cv.boolean,
@@ -282,6 +313,7 @@ class OverridesPowerMixin:
                     "vendor": vendor,
                     "method": method,
                     "description": description,
+                    "scale": scale_str,
                     "attestation": attestation,
                     "share_with_community": share_with_community,
                 }

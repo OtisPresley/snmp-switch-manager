@@ -114,7 +114,8 @@
       "github_error": "Échec de la communication avec GitHub. Veuillez réessayer plus tard.",
       "required_share": "Puisque vous avez vérifié l'OID, veuillez également sélectionner l'option de le partager avec la communauté pour aider les autres.",
       "required_attestation_to_share": "Vous devez attester que vous avez testé l'OID avant de le partager avec la communauté.",
-      "duplicate_oid": "Cet OID existe déjà dans la base de données pour ce fournisseur."
+      "duplicate_oid": "Cet OID existe déjà dans la base de données pour ce fournisseur.",
+      "invalid_float": "Facteur d'échelle numérique invalide (doit être un float comme 1.0 ou 0.1)"
     },
     "step": {
       "bandwidth_enable": {
@@ -250,7 +251,8 @@
           "method": "Méthode",
           "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu.",
           "share_with_community": "Partager avec la communauté",
-          "back_to_menu": "Retourner (ignorer les modifications)"
+          "back_to_menu": "Retourner (ignorer les modifications)",
+          "scale": "Échelle"
         },
         "description": "Remplacez les OID de mémoire pour cet appareil. Laissez les deux champs vides pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Remplacer la mémoire"
@@ -263,7 +265,8 @@
           "method": "Méthode",
           "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu.",
           "share_with_community": "Partager avec la communauté",
-          "back_to_menu": "Retourner (ignorer les modifications)"
+          "back_to_menu": "Retourner (ignorer les modifications)",
+          "scale": "Échelle"
         },
         "description": "Remplacez les OID de ventilateur pour cet appareil. Laissez les deux champs vides pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Remplacer les ventilateurs"
@@ -291,7 +294,8 @@
           "oid_label": "OID d'étiquette (facultatif)",
           "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu.",
           "share_with_community": "Partager avec la communauté",
-          "back_to_menu": "Retourner (ignorer les modifications)"
+          "back_to_menu": "Retourner (ignorer les modifications)",
+          "scale": "Échelle"
         },
         "description": "Remplacez les OID de température pour cet appareil. Laissez le champ OID principal de température vide pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Remplacer la température"
@@ -490,7 +494,8 @@
           "description": "Description",
           "attestation": "J'atteste que j'ai testé et vérifié que cet OID fonctionne comme prévu.",
           "share_with_community": "Partager avec la communauté",
-          "back_to_menu": "Retourner (ignorer les modifications)"
+          "back_to_menu": "Retourner (ignorer les modifications)",
+          "scale": "Échelle"
         },
         "description": "Remplacez l'OID de puissance pour cet appareil. Laissez ce champ vide pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Remplacer l'alimentation"
@@ -507,7 +512,8 @@
           "description": "Description",
           "attestation": "J'atteste avoir testé et vérifié que ces OID fonctionnent comme prévu.",
           "share_with_community": "Partager avec la communauté",
-          "back_to_menu": "Retourner (ignorer les modifications)"
+          "back_to_menu": "Retourner (ignorer les modifications)",
+          "scale": "Échelle"
         }
       },
       "override_device_info": {

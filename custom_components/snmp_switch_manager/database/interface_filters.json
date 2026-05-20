@@ -1,0 +1,52 @@
+{
+  "interface_filters": [
+    {
+      "id": "generic_skip_cpu_interface",
+      "label": "Generic: Skip CPU pseudo-interface (IF-MIB name 'CPU')",
+      "vendors": ["Standard"],
+      "rule_type": "generic_skip_cpu_interface"
+    },
+    {
+      "id": "cisco_sg_physical_fa_gi",
+      "label": "Cisco SG: Only create physical Fa*/Gi* interfaces",
+      "vendors": ["Cisco"],
+      "rule_type": "cisco_sg_physical_fa_gi"
+    },
+    {
+      "id": "cisco_sg_vlan_admin_or_oper",
+      "label": "Cisco SG: Create VLAN interfaces (oper up or admin down)",
+      "vendors": ["Cisco"],
+      "rule_type": "cisco_sg_vlan_admin_or_oper"
+    },
+    {
+      "id": "cisco_sg_other_has_ip",
+      "label": "Cisco SG: Create other interfaces when an IP is configured",
+      "vendors": ["Cisco"],
+      "rule_type": "cisco_sg_other_has_ip"
+    },
+    {
+      "id": "junos_physical_ge",
+      "label": "Junos: Create physical ge-0/0/X interfaces",
+      "vendors": ["Junos"],
+      "rule_type": "junos_physical_ge"
+    },
+    {
+      "id": "junos_l3_subif_has_ip",
+      "label": "Junos: Create ge-0/0/X.Y subinterfaces with IP (non-.0)",
+      "vendors": ["Junos"],
+      "rule_type": "junos_l3_subif_has_ip"
+    },
+    {
+      "id": "junos_vlan_admin_or_oper",
+      "label": "Junos: Create VLAN interfaces (oper up or admin down)",
+      "vendors": ["Junos"],
+      "rule_type": "junos_vlan_admin_or_oper"
+    },
+    {
+      "id": "junos_other_has_ip",
+      "label": "Junos: Create other interfaces when an IP is configured",
+      "vendors": ["Junos"],
+      "rule_type": "junos_other_has_ip"
+    }
+  ]
+}

@@ -114,7 +114,8 @@
       "github_error": "Kommunikation mit GitHub fehlgeschlagen. Bitte versuchen Sie es später noch einmal.",
       "required_share": "Da Sie die OID verifiziert haben, wählen Sie bitte auch die Option, sie mit der Community zu teilen, um anderen zu helfen.",
       "required_attestation_to_share": "Sie müssen bestätigen, dass Sie die OID getestet haben, bevor Sie sie mit der Community teilen.",
-      "duplicate_oid": "Diese OID existiert bereits in der Datenbank für diesen Anbieter."
+      "duplicate_oid": "Diese OID existiert bereits in der Datenbank für diesen Anbieter.",
+      "invalid_float": "Ungültiger numerischer Skalierungsfaktor (muss eine Fließkommazahl wie 1.0 oder 0.1 sein)"
     },
     "step": {
       "bandwidth_enable": {
@@ -250,7 +251,8 @@
           "method": "Methode",
           "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren.",
           "share_with_community": "Mit der Community teilen",
-          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
+          "scale": "Skalierung"
         },
         "description": "Überschreiben Sie die Memory-OIDs für dieses Gerät. Lassen Sie beide Felder leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Speicher überschreiben"
@@ -263,7 +265,8 @@
           "method": "Methode",
           "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren.",
           "share_with_community": "Mit der Community teilen",
-          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
+          "scale": "Skalierung"
         },
         "description": "Überschreiben Sie die Lüfter-OIDs für dieses Gerät. Lassen Sie beide Felder leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Lüfter überschreiben"
@@ -291,7 +294,8 @@
           "oid_label": "Bezeichnungs-OID (optional)",
           "attestation": "Ich bestätige, dass ich diese OIDs getestet und überprüft habe und sie wie erwartet funktionieren.",
           "share_with_community": "Mit der Community teilen",
-          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
+          "scale": "Skalierung"
         },
         "description": "Überschreiben Sie die Temperatur-OIDs für dieses Gerät. Lassen Sie das Haupt-Temperatur-OID-Feld leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Temperatur überschreiben"
@@ -490,7 +494,8 @@
           "description": "Beschreibung",
           "attestation": "Ich bestätige, dass ich diese OID getestet und verifiziert habe.",
           "share_with_community": "Mit der Community teilen",
-          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
+          "scale": "Skalierung"
         },
         "description": "Überschreiben Sie die Power-OID für dieses Gerät. Lassen Sie dieses Feld leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Power überschreiben"
@@ -507,7 +512,8 @@
           "description": "Beschreibung",
           "attestation": "Ich bestätige, dass ich diese OIDs getestet und verifiziert habe und sie wie erwartet funktionieren.",
           "share_with_community": "Mit der Community teilen",
-          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
+          "scale": "Skalierung"
         }
       },
       "override_device_info": {

@@ -18,6 +18,7 @@ async def poll_temperature(client: "SwitchSnmpClient", vendor: str) -> None:
 
         for item in temp_items:
             oid = item.get("oid")
+            scale = float(item.get("scale", 1.0))
             if item.get("method") == "walk" and oid:
                 for o, val in await client._async_walk(oid):
                     try:
@@ -26,7 +27,7 @@ async def poll_temperature(client: "SwitchSnmpClient", vendor: str) -> None:
                         continue
                     n = _parse_numeric(val)
                     if n is not None:
-                        temps_c[idx] = int(n)
+                        temps_c[idx] = int(float(n) * scale)
 
                 if "oid_label" in item:
                     temp_labels: dict[int, str] = {}
@@ -45,7 +46,7 @@ async def poll_temperature(client: "SwitchSnmpClient", vendor: str) -> None:
                 if oid:
                     raw = await client._async_get_one(oid)
                     n = _parse_numeric(raw)
-                    unit_temp_c = int(n) if n is not None else None
+                    unit_temp_c = int(float(n) * scale) if n is not None else None
                 if "oid_state" in item:
                     raw_s = await client._async_get_one(item["oid_state"])
                     n = _parse_numeric(raw_s)

@@ -39,6 +39,7 @@ class OverridesHardwareMixin:
             oid_status = user_input.get("oid_status", "").strip()
             vendor = user_input.get("vendor", "").strip()
             method = user_input.get("method", "walk")
+            scale_str = str(user_input.get("scale", "1.0")).strip()
             attestation = user_input.get("attestation", False)
             share_with_community = user_input.get("share_with_community", False)
             
@@ -54,6 +55,12 @@ class OverridesHardwareMixin:
                 self._options[CONF_FEATURE_OVERRIDES] = overrides
                 self._apply_options()
                 return await self.async_step_feature_overrides()
+
+            try:
+                scale = float(scale_str)
+            except ValueError:
+                errors["scale"] = "invalid_float"
+                scale = 1.0
 
             if not errors:
                 norm_rpm = _normalize_oid(oid_rpm) if oid_rpm else ""
@@ -84,6 +91,7 @@ class OverridesHardwareMixin:
                     "oid_status": _normalize_oid(oid_status),
                     "vendor": vendor,
                     "method": method,
+                    "scale": scale,
                 }
                 self._options[CONF_FEATURE_OVERRIDES] = overrides
                 self._apply_options()
@@ -98,6 +106,7 @@ class OverridesHardwareMixin:
             oid_status = defaults.get("oid_status", "")
             vendor = defaults.get("vendor", "")
             method = defaults.get("method", "walk")
+            scale_str = str(defaults.get("scale", 1.0))
             attestation = False
             share_with_community = False
 
@@ -121,6 +130,7 @@ class OverridesHardwareMixin:
                         mode=selector.SelectSelectorMode.DROPDOWN,
                     )
                 ),
+                vol.Optional("scale"): str,
                 vol.Optional("attestation"): cv.boolean,
                 vol.Optional("share_with_community"): cv.boolean,
                 vol.Optional("back_to_menu", default=False): cv.boolean,
@@ -136,6 +146,7 @@ class OverridesHardwareMixin:
                     "oid_status": oid_status,
                     "vendor": vendor,
                     "method": method,
+                    "scale": scale_str,
                     "attestation": attestation,
                     "share_with_community": share_with_community,
                 }
@@ -308,6 +319,7 @@ class OverridesHardwareMixin:
             method = user_input.get("method", "walk")
             oid_state = user_input.get("oid_state", "").strip()
             oid_label = user_input.get("oid_label", "").strip()
+            scale_str = str(user_input.get("scale", "1.0")).strip()
             attestation = user_input.get("attestation", False)
             share_with_community = user_input.get("share_with_community", False)
             
@@ -326,6 +338,12 @@ class OverridesHardwareMixin:
             if oid_label and not _is_valid_numeric_oid(oid_label):
                 errors["oid_label"] = "invalid_oid"
                 
+            try:
+                scale = float(scale_str)
+            except ValueError:
+                errors["scale"] = "invalid_float"
+                scale = 1.0
+
             if not errors:
                 norm_oid = _normalize_oid(oid)
                 items = db.get("temperature", {}).get("temperature", [])
@@ -349,6 +367,7 @@ class OverridesHardwareMixin:
                     "oid": _normalize_oid(oid),
                     "vendor": vendor,
                     "method": method,
+                    "scale": scale,
                 }
                 if oid_state:
                     overrides["temperature"]["oid_state"] = _normalize_oid(oid_state)
@@ -369,6 +388,7 @@ class OverridesHardwareMixin:
             method = defaults.get("method", "walk")
             oid_state = defaults.get("oid_state", "")
             oid_label = defaults.get("oid_label", "")
+            scale_str = str(defaults.get("scale", 1.0))
             attestation = False
             share_with_community = False
 
@@ -393,6 +413,7 @@ class OverridesHardwareMixin:
                 ),
                 vol.Optional("oid_state"): str,
                 vol.Optional("oid_label"): str,
+                vol.Optional("scale"): str,
                 vol.Optional("attestation"): cv.boolean,
                 vol.Optional("share_with_community"): cv.boolean,
                 vol.Optional("back_to_menu", default=False): cv.boolean,
@@ -409,6 +430,7 @@ class OverridesHardwareMixin:
                     "method": method,
                     "oid_state": oid_state,
                     "oid_label": oid_label,
+                    "scale": scale_str,
                     "attestation": attestation,
                     "share_with_community": share_with_community,
                 }

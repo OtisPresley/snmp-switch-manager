@@ -114,7 +114,8 @@
       "github_error": "Error de comunicación con GitHub. Inténtalo de nuevo más tarde.",
       "required_share": "Dado que ha verificado el OID, seleccione también la opción de compartirlo con la comunidad para ayudar a otros.",
       "required_attestation_to_share": "Debe certificar que ha probado el OID antes de compartirlo con la comunidad.",
-      "duplicate_oid": "Este OID ya existe en la base de datos para este proveedor."
+      "duplicate_oid": "Este OID ya existe en la base de datos para este proveedor.",
+      "invalid_float": "Factor de escala numérico no válido (debe ser un flotante como 1.0 o 0.1)"
     },
     "step": {
       "bandwidth_enable": {
@@ -250,7 +251,8 @@
           "method": "Método",
           "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba.",
           "share_with_community": "Compartir esto con la comunidad",
-          "back_to_menu": "Volver (descartar cambios)"
+          "back_to_menu": "Volver (descartar cambios)",
+          "scale": "Escala"
         },
         "description": "Anule los OID de memoria para este dispositivo. Deje ambos campos en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Anular memoria"
@@ -263,7 +265,8 @@
           "method": "Método",
           "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba.",
           "share_with_community": "Compartir esto con la comunidad",
-          "back_to_menu": "Volver (descartar cambios)"
+          "back_to_menu": "Volver (descartar cambios)",
+          "scale": "Escala"
         },
         "description": "Anule los OID del ventilador para este dispositivo. Deje ambos campos en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Anular ventiladores"
@@ -291,7 +294,8 @@
           "oid_label": "OID de etiqueta (opcional)",
           "attestation": "Certifico que he probado y verificado que estos OIDs funcionan como se esperaba.",
           "share_with_community": "Compartir esto con la comunidad",
-          "back_to_menu": "Volver (descartar cambios)"
+          "back_to_menu": "Volver (descartar cambios)",
+          "scale": "Escala"
         },
         "description": "Anule los OID de temperatura para este dispositivo. Deje el campo principal de OID de temperatura en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Anular temperatura"
@@ -490,7 +494,8 @@
           "description": "Descripción",
           "attestation": "Certifico que he probado y verificado que este OID funciona como se espera.",
           "share_with_community": "Compartir esto con la comunidad",
-          "back_to_menu": "Volver (descartar cambios)"
+          "back_to_menu": "Volver (descartar cambios)",
+          "scale": "Escala"
         },
         "description": "Anule el OID de energía para este dispositivo. Deje este campo en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Anular Power"
@@ -507,7 +512,8 @@
           "description": "Descripción",
           "attestation": "Doy fe de que he probado y verificado que estos OID funcionan como se esperaba.",
           "share_with_community": "Compartir con la comunidad",
-          "back_to_menu": "Volver (descartar cambios)"
+          "back_to_menu": "Volver (descartar cambios)",
+          "scale": "Escala"
         }
       },
       "override_device_info": {

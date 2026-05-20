@@ -333,6 +333,7 @@ class OverridesBasicMixin:
             oid_total = user_input.get("oid_total", "").strip()
             vendor = user_input.get("vendor", "").strip()
             method = user_input.get("method", "get")
+            scale_str = str(user_input.get("scale", "1.0")).strip()
             attestation = user_input.get("attestation", False)
             share_with_community = user_input.get("share_with_community", False)
             
@@ -353,6 +354,12 @@ class OverridesBasicMixin:
             elif not _is_valid_numeric_oid(oid_total):
                 errors["oid_total"] = "invalid_oid"
                 
+            try:
+                scale = float(scale_str)
+            except ValueError:
+                errors["scale"] = "invalid_float"
+                scale = 1.0
+
             if not errors:
                 norm_free = _normalize_oid(oid_free)
                 norm_total = _normalize_oid(oid_total)
@@ -382,6 +389,7 @@ class OverridesBasicMixin:
                     "oid_total": _normalize_oid(oid_total),
                     "vendor": vendor,
                     "method": method,
+                    "scale": scale,
                 }
                 self._options[CONF_FEATURE_OVERRIDES] = overrides
                 self._apply_options()
@@ -396,6 +404,7 @@ class OverridesBasicMixin:
             oid_total = defaults.get("oid_total", "")
             vendor = defaults.get("vendor", "")
             method = defaults.get("method", "get")
+            scale_str = str(defaults.get("scale", 1.0))
             attestation = False
             share_with_community = False
 
@@ -419,6 +428,7 @@ class OverridesBasicMixin:
                         mode=selector.SelectSelectorMode.DROPDOWN,
                     )
                 ),
+                vol.Optional("scale"): str,
                 vol.Optional("attestation"): cv.boolean,
                 vol.Optional("share_with_community"): cv.boolean,
                 vol.Optional("back_to_menu", default=False): cv.boolean,
@@ -434,6 +444,7 @@ class OverridesBasicMixin:
                     "oid_total": oid_total,
                     "vendor": vendor,
                     "method": method,
+                    "scale": scale_str,
                     "attestation": attestation,
                     "share_with_community": share_with_community,
                 }

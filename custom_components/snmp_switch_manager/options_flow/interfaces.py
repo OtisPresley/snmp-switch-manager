@@ -16,7 +16,6 @@ from ..const import (
     CONF_EXCLUDE_CONTAINS,
     CONF_EXCLUDE_ENDS_WITH,
     CONF_DISABLED_VENDOR_FILTER_RULE_IDS,
-    BUILTIN_VENDOR_FILTER_RULES,
 )
 
 
@@ -270,7 +269,9 @@ class InterfacesOptionsMixin:
     async def async_step_builtin_filters(self, user_input=None) -> FlowResult:
         """Enable/disable built-in vendor interface filtering rules."""
         current_disabled: list[str] = list(self._options.get(CONF_DISABLED_VENDOR_FILTER_RULE_IDS, []) or [])
-        options_map = {r["id"]: r["label"] for r in BUILTIN_VENDOR_FILTER_RULES}
+        db = self._get_database()
+        filter_rules = db.get("interface_filters", {}).get("interface_filters", [])
+        options_map = {r["id"]: r["label"] for r in filter_rules}
 
         if user_input is not None:
             if user_input.get("back_to_menu"):

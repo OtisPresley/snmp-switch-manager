@@ -197,79 +197,15 @@ CONF_BW_EXCLUDE_RULES = "bw_exclude_rules"
 # Built-in vendor interface filtering rule toggles (per-device)
 CONF_DISABLED_VENDOR_FILTER_RULE_IDS = "disabled_vendor_filter_rule_ids"
 
-# Rule IDs for built-in vendor interface filtering (used for disable/enable)
-BUILTIN_VENDOR_FILTER_RULES: list[dict[str, str]] = [
-    {"id": "generic_skip_cpu_interface", "label": "Generic: Skip CPU pseudo-interface (IF-MIB name 'CPU')"},
-    # Cisco SG
-    {"id": "cisco_sg_physical_fa_gi", "label": "Cisco SG: Only create physical Fa*/Gi* interfaces"},
-    {"id": "cisco_sg_vlan_admin_or_oper", "label": "Cisco SG: Create VLAN interfaces (oper up or admin down)"},
-    {"id": "cisco_sg_other_has_ip", "label": "Cisco SG: Create other interfaces when an IP is configured"},
-    # Juniper EX (Junos)
-    {"id": "junos_physical_ge", "label": "Junos: Create physical ge-0/0/X interfaces"},
-    {"id": "junos_l3_subif_has_ip", "label": "Junos: Create ge-0/0/X.Y subinterfaces with IP (non-.0)"},
-    {"id": "junos_vlan_admin_or_oper", "label": "Junos: Create VLAN interfaces (oper up or admin down)"},
-    {"id": "junos_other_has_ip", "label": "Junos: Create other interfaces when an IP is configured"},
-]
+# Built-in vendor interface filtering rules (deprecated in code, now in interface_filters.json)
+BUILTIN_VENDOR_FILTER_RULES: list[dict[str, str]] = []
 
 # Port rename rules (regex)
 CONF_PORT_RENAME_USER_RULES = "port_rename_user_rules"
 CONF_PORT_RENAME_DISABLED_DEFAULT_IDS = "port_rename_disabled_default_ids"
 
-# ---------------------------
-# Built-in port rename rules
-# (Applied to display name only)
-# ---------------------------
-
-DEFAULT_PORT_RENAME_RULES: list[dict[str, str]] = [
-    {
-        "id": "link_aggregate_to_po",
-        "description": "Normalize 'link aggregate N' to 'PoN'",
-        "pattern": r"^link\s+aggregate\s+(\d+)$",
-        "replace": r"Po\1",
-    },
-    {
-        "id": "port_channel_to_po",
-        "description": "Normalize 'Port-channelN' to 'PoN'",
-        "pattern": r"^port-?channel\s*(\d+)$",
-        "replace": r"Po\1",
-    },
-    {
-        "id": "portchannel_to_po",
-        "description": "Normalize 'PortChannelN' to 'PoN'",
-        "pattern": r"^portchannel\s*(\d+)$",
-        "replace": r"Po\1",
-    },
-    {
-        "id": "loopback_to_lo0",
-        "description": "Normalize loopback names to 'Lo0'",
-        "pattern": r"^lo\d*(?:\.\d+)?$",
-        "replace": r"Lo0",
-    },
-    {
-        "id": "unit_slot_port_10g_to_te",
-        "description": "Normalize 'Unit: U Slot: S Port: P 10G' to 'TeU/S/P'",
-        "pattern": r"^Unit:\s*(\d+)\s+Slot:\s*(\d+)\s+Port:\s*(\d+)\s+10G$",
-        "replace": r"Te\1/\2/\3",
-    },
-    {
-        "id": "unit_slot_port_20g_to_tw",
-        "description": "Normalize 'Unit: U Slot: S Port: P 20G' to 'TwU/S/P'",
-        "pattern": r"^Unit:\s*(\d+)\s+Slot:\s*(\d+)\s+Port:\s*(\d+)\s+20G$",
-        "replace": r"Tw\1/\2/\3",
-    },
-    {
-        "id": "unit_slot_port_1g_to_gi",
-        "description": "Normalize 'Unit: U Slot: S Port: P 1G' to 'GiU/S/P'",
-        "pattern": r"^Unit:\s*(\d+)\s+Slot:\s*(\d+)\s+Port:\s*(\d+)\s+1G$",
-        "replace": r"Gi\1/\2/\3",
-    },
-    {
-        "id": "unit_slot_port_100m_to_fa",
-        "description": "Normalize 'Unit: U Slot: S Port: P 100M' to 'FaU/S/P'",
-        "pattern": r"^Unit:\s*(\d+)\s+Slot:\s*(\d+)\s+Port:\s*(\d+)\s+100M$",
-        "replace": r"Fa\1/\2/\3",
-    },
-]
+# Built-in port rename rules (deprecated in code, now in rename_rules.json)
+DEFAULT_PORT_RENAME_RULES: list[dict[str, str]] = []
 
 # -----------------------------
 # v0.4.0+ (planned): history vs attributes mode selectors

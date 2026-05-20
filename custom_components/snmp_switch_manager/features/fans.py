@@ -31,6 +31,7 @@ async def poll_fans(client: "SwitchSnmpClient", vendor: str) -> None:
         fans_rpm: dict[int, int] = {}
         for item in fans_items:
             oid_rpm = item.get("oid_rpm")
+            scale = float(item.get("scale", 1.0))
             if oid_rpm and item.get("method") == "walk":
                 for o, val in await client._async_walk(oid_rpm):
                     try:
@@ -39,7 +40,7 @@ async def poll_fans(client: "SwitchSnmpClient", vendor: str) -> None:
                         continue
                     n = _parse_numeric(val)
                     if n is not None:
-                        fans_rpm[idx] = int(n)
+                        fans_rpm[idx] = int(float(n) * scale)
         client.cache["env_fans_rpm"] = fans_rpm or None
     except Exception:
         client.cache["env_fans_rpm"] = None

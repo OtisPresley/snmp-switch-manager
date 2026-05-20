@@ -9,7 +9,6 @@ from homeassistant.helpers import selector
 
 from ..const import (
     CONF_PORT_RENAME_USER_RULES,
-    DEFAULT_PORT_RENAME_RULES,
     CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
 )
 
@@ -338,7 +337,9 @@ class InterfacesNamingMixin:
         current_disabled: list[str] = list(self._options.get(CONF_PORT_RENAME_DISABLED_DEFAULT_IDS, []) or [])
         options_map: dict[str, str] = {}
 
-        for r in DEFAULT_PORT_RENAME_RULES:
+        db = self._get_database()
+        default_rules = db.get("rename_rules", {}).get("rename_rules", [])
+        for r in default_rules:
             rid = str(r.get("id") or "").strip()
             if not rid:
                 continue

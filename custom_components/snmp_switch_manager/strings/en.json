@@ -114,7 +114,8 @@
       "github_error": "Failed to communicate with GitHub. Please try again later.",
       "required_share": "Since you verified the OID, please also select the option to share it with the community to help others.",
       "required_attestation_to_share": "You must attest that you have tested the OID before sharing it with the community.",
-      "duplicate_oid": "This OID already exists in the database for this vendor."
+      "duplicate_oid": "This OID already exists in the database for this vendor.",
+      "invalid_float": "Invalid numeric scale factor (must be a float like 1.0 or 0.1)"
     },
     "step": {
       "bandwidth_enable": {
@@ -250,7 +251,8 @@
           "method": "Method",
           "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
           "share_with_community": "Share this with the community",
-          "back_to_menu": "Go back (discard changes)"
+          "back_to_menu": "Go back (discard changes)",
+          "scale": "Scale"
         },
         "description": "Override the Memory OIDs for this device. Leave both fields blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Override Memory"
@@ -263,7 +265,8 @@
           "method": "Method",
           "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
           "share_with_community": "Share this with the community",
-          "back_to_menu": "Go back (discard changes)"
+          "back_to_menu": "Go back (discard changes)",
+          "scale": "Scale"
         },
         "description": "Override the Fan OIDs for this device. Leave both fields blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Override Fans"
@@ -291,7 +294,8 @@
           "oid_label": "Label OID (optional)",
           "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
           "share_with_community": "Share this with the community",
-          "back_to_menu": "Go back (discard changes)"
+          "back_to_menu": "Go back (discard changes)",
+          "scale": "Scale"
         },
         "description": "Override the Temperature OIDs for this device. Leave the main Temperature OID field blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Override Temperature"
@@ -490,7 +494,8 @@
           "description": "Description",
           "attestation": "I attest that I have tested and verified that this OID works as expected.",
           "share_with_community": "Share this with the community",
-          "back_to_menu": "Go back (discard changes)"
+          "back_to_menu": "Go back (discard changes)",
+          "scale": "Scale"
         },
         "description": "Override the Power OID for this device. Leave this field blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Override Power"
@@ -507,7 +512,8 @@
           "description": "Description",
           "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
           "share_with_community": "Share this with the community",
-          "back_to_menu": "Go back (discard changes)"
+          "back_to_menu": "Go back (discard changes)",
+          "scale": "Scale"
         }
       },
       "override_device_info": {

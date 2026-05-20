@@ -114,7 +114,8 @@
       "github_error": "Comunicazione con GitHub fallita. Riprova più tardi.",
       "required_share": "Dato che hai verificato l'OID, seleziona anche l'opzione per condividerlo con la community per aiutare gli altri.",
       "required_attestation_to_share": "Devi attestare di aver testato l'OID prima di condividerlo con la community.",
-      "duplicate_oid": "Questo OID esiste già nel database per questo fornitore."
+      "duplicate_oid": "Questo OID esiste già nel database per questo fornitore.",
+      "invalid_float": "Fattore di scala numerico non valido (deve essere un float come 1.0 o 0.1)"
     },
     "step": {
       "bandwidth_enable": {
@@ -250,7 +251,8 @@
           "method": "Metodo",
           "attestation": "Attesto di aver testato e verificato che questi OID funzionano come previsto.",
           "share_with_community": "Condividi con la community",
-          "back_to_menu": "Torna indietro (annulla modifiche)"
+          "back_to_menu": "Torna indietro (annulla modifiche)",
+          "scale": "Scala"
         },
         "description": "Ignora gli OID di memoria per questo dispositivo. Lascia entrambi i campi vuoti per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Sovrascrivi memoria"
@@ -263,7 +265,8 @@
           "method": "Metodo",
           "attestation": "Attesto di aver testato e verificato che questi OID funzionano come previsto.",
           "share_with_community": "Condividi con la community",
-          "back_to_menu": "Torna indietro (annulla modifiche)"
+          "back_to_menu": "Torna indietro (annulla modifiche)",
+          "scale": "Scala"
         },
         "description": "Ignora gli OID della ventola per questo dispositivo. Lascia entrambi i campi vuoti per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Sovrascrivi ventilatori"
@@ -291,7 +294,8 @@
           "oid_label": "OID etichetta (opzionale)",
           "attestation": "Attesto di aver testato e verificato che questi OID funzionano come previsto.",
           "share_with_community": "Condividi con la community",
-          "back_to_menu": "Torna indietro (annulla modifiche)"
+          "back_to_menu": "Torna indietro (annulla modifiche)",
+          "scale": "Scala"
         },
         "description": "Ignora gli OID della temperatura per questo dispositivo. Lascia il campo OID principale della temperatura vuoto per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Sovrascrivi temperatura"
@@ -490,7 +494,8 @@
           "description": "Descrizione",
           "attestation": "Attesto di aver testato e verificato che questo OID funziona come previsto.",
           "share_with_community": "Condividi con la community",
-          "back_to_menu": "Torna indietro (annulla modifiche)"
+          "back_to_menu": "Torna indietro (annulla modifiche)",
+          "scale": "Scala"
         },
         "description": "Ignora l'OID di potenza per questo dispositivo. Lascia questo campo vuoto per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Sovrascrivi alimentazione"
@@ -507,7 +512,8 @@
           "description": "Descrizione",
           "attestation": "Attesto di aver testato e verificato che questi OID funzionino come previsto.",
           "share_with_community": "Condividi con la community",
-          "back_to_menu": "Torna indietro (annulla modifiche)"
+          "back_to_menu": "Torna indietro (annulla modifiche)",
+          "scale": "Scala"
         }
       },
       "override_device_info": {

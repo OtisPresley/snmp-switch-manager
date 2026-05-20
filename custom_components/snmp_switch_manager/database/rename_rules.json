@@ -1,0 +1,52 @@
+{
+  "rename_rules": [
+    {
+      "id": "link_aggregate_to_po",
+      "description": "Normalize 'link aggregate N' to 'PoN'",
+      "pattern": "^link\\s+aggregate\\s+(\\d+)$",
+      "replace": "Po\\1"
+    },
+    {
+      "id": "port_channel_to_po",
+      "description": "Normalize 'Port-channelN' to 'PoN'",
+      "pattern": "^port-?channel\\s*(\\d+)$",
+      "replace": "Po\\1"
+    },
+    {
+      "id": "portchannel_to_po",
+      "description": "Normalize 'PortChannelN' to 'PoN'",
+      "pattern": "^portchannel\\s*(\\d+)$",
+      "replace": "Po\\1"
+    },
+    {
+      "id": "loopback_to_lo0",
+      "description": "Normalize loopback names to 'Lo0'",
+      "pattern": "^lo\\d*(?:\\.\\d+)?$",
+      "replace": "Lo0"
+    },
+    {
+      "id": "unit_slot_port_10g_to_te",
+      "description": "Normalize 'Unit: U Slot: S Port: P 10G' to 'TeU/S/P'",
+      "pattern": "^Unit:\\s*(\\d+)\\s+Slot:\\s*(\\d+)\\s+Port:\\s*(\\d+)\\s+10G$",
+      "replace": "Te\\1/\\2/\\3"
+    },
+    {
+      "id": "unit_slot_port_20g_to_tw",
+      "description": "Normalize 'Unit: U Slot: S Port: P 20G' to 'TwU/S/P'",
+      "pattern": "^Unit:\\s*(\\d+)\\s+Slot:\\s*(\\d+)\\s+Port:\\s*(\\d+)\\s+20G$",
+      "replace": "Tw\\1/\\2/\\3"
+    },
+    {
+      "id": "unit_slot_port_1g_to_gi",
+      "description": "Normalize 'Unit: U Slot: S Port: P 1G' to 'GiU/S/P'",
+      "pattern": "^Unit:\\s*(\\d+)\\s+Slot:\\s*(\\d+)\\s+Port:\\s*(\\d+)\\s+1G$",
+      "replace": "Gi\\1/\\2/\\3"
+    },
+    {
+      "id": "unit_slot_port_100m_to_fa",
+      "description": "Normalize 'Unit: U Slot: S Port: P 100M' to 'FaU/S/P'",
+      "pattern": "^Unit:\\s*(\\d+)\\s+Slot:\\s*(\\d+)\\s+Port:\\s*(\\d+)\\s+100M$",
+      "replace": "Fa\\1/\\2/\\3"
+    }
+  ]
+}

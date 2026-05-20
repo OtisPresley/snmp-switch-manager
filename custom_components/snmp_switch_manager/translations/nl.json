@@ -114,7 +114,8 @@
       "github_error": "Communicatie met GitHub mislukt. Probeer het later opnieuw.",
       "required_share": "Aangezien u de OID hebt geverifieerd, selecteert u ook de optie om deze met de community te delen om anderen te helpen.",
       "required_attestation_to_share": "U moet verklaren dat u de OID hebt getest voordat u deze met de community deelt.",
-      "duplicate_oid": "Deze OID bestaat al in de database voor deze leverancier."
+      "duplicate_oid": "Deze OID bestaat al in de database voor deze leverancier.",
+      "invalid_float": "Ongeldige numerieke schaalfactor (moet een float zijn zoals 1.0 of 0.1)"
     },
     "step": {
       "bandwidth_enable": {
@@ -250,7 +251,8 @@
           "method": "Methode",
           "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht.",
           "share_with_community": "Deel dit met de community",
-          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)",
+          "scale": "Schaal"
         },
         "description": "Overschrijf de Geheugen OID’s voor dit apparaat. Laat beide velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Geheugen overschrijven"
@@ -263,7 +265,8 @@
           "method": "Methode",
           "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht.",
           "share_with_community": "Deel dit met de community",
-          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)",
+          "scale": "Schaal"
         },
         "description": "Overschrijf de Ventilator OID’s voor dit apparaat. Laat beide velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Ventilatoren overschrijven"
@@ -291,7 +294,8 @@
           "oid_label": "Label OID (optioneel)",
           "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID's werken zoals verwacht.",
           "share_with_community": "Deel dit met de community",
-          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)",
+          "scale": "Schaal"
         },
         "description": "Overschrijf de Temperatuur OID’s voor dit apparaat. Laat het hoofd-temperatuur OID veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Temperatuur overschrijven"
@@ -490,7 +494,8 @@
           "description": "Beschrijving",
           "attestation": "Ik verklaar dat ik deze OID hebt getest en geverifieerd dat deze naar behoren werkt.",
           "share_with_community": "Deel dit met de community",
-          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)",
+          "scale": "Schaal"
         },
         "description": "Overschrijf de Power OID voor dit apparaat. Laat dit veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Power overschrijven"
@@ -507,7 +512,8 @@
           "description": "Beschrijving",
           "attestation": "Ik verklaar dat ik deze OID's heb getest en geverifieerd en dat ze naar verwachting werken.",
           "share_with_community": "Deel dit met de community",
-          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)",
+          "scale": "Schaal"
         }
       },
       "override_device_info": {

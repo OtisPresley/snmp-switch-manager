@@ -32,7 +32,6 @@ from .const import (
     CONF_BW_EXCLUDE_ENDS_WITH,
     CONF_PORT_RENAME_USER_RULES,
     CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
-    DEFAULT_PORT_RENAME_RULES,
     CONF_POE_ENABLE,
     CONF_POE_MODE,
     CONF_POE_POLL_INTERVAL,
@@ -68,7 +67,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     await async_register_services(hass)
     return True
 
-def _build_port_rename_rules(options: dict) -> list[tuple[str, _re.Pattern[str], str]]:
+def _build_port_rename_rules(options: dict, default_rules: list[dict[str, str]] | None = None) -> list[tuple[str, _re.Pattern[str], str]]:
     """Build ordered (id, compiled_regex, replace) rules from config entry options.
 
     User rules come first (highest priority), followed by enabled built-in defaults.
@@ -86,7 +85,7 @@ def _build_port_rename_rules(options: dict) -> list[tuple[str, _re.Pattern[str],
         except Exception:
             continue
 
-    for r in DEFAULT_PORT_RENAME_RULES:
+    for r in (default_rules or []):
         rid = (r or {}).get("id") or ""
         if not rid or rid in disabled:
             continue
@@ -198,7 +197,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
     # Apply per-device option for sysUpTime throttling
     client.set_uptime_poll_interval(entry.options.get(CONF_UPTIME_POLL_INTERVAL, DEFAULT_UPTIME_POLL_INTERVAL))
 
-    port_rename_rules = _build_port_rename_rules(entry.options)
+    default_rename_rules = client._database.get("rename_rules", {}).get("rename_rules", [])
+    port_rename_rules = _build_port_rename_rules(entry.options, default_rename_rules)
 
     async def _update_method():
         data = await client.async_poll()
