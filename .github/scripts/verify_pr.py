@@ -250,6 +250,9 @@ def main():
         print("✅ vendors.json is already fully synchronized and up-to-date!")
         
     print("🎉 PR Verification and Self-Healing completed successfully!")
+    if any_files_modified:
+        print("📝 Note: Some database or vendor files were updated/healed during verification.")
 
 if __name__ == "__main__":
     main()
+

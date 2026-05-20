@@ -1,5 +1,6 @@
 """GitHub API helper for Device Flow and PR generation."""
 import asyncio
+import os
 import logging
 from typing import Any, Dict, Optional
 import aiohttp
