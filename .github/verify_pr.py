@@ -259,6 +259,47 @@ def verify_interface_filters(file_path: str) -> bool:
     print(f"Successfully verified {file_path}!")
     return True
 
+def verify_interface_classification(file_path: str) -> bool:
+    print(f"Verifying {file_path}...")
+    if not os.path.exists(file_path):
+        print(f"Error: File {file_path} does not exist.")
+        return False
+        
+    try:
+        with open(file_path, "r") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"Error: Failed to parse JSON: {e}")
+        return False
+        
+    if not isinstance(data, dict):
+        print("Error: Root must be a JSON object.")
+        return False
+        
+    for key in ["virtual_tokens", "physical_tokens"]:
+        if key not in data:
+            print(f"Error: Missing key '{key}' in interface classification database.")
+            return False
+            
+        tokens = data[key]
+        if not isinstance(tokens, list):
+            print(f"Error: '{key}' must be a list of strings.")
+            return False
+            
+        seen = set()
+        for idx, token in enumerate(tokens):
+            if not isinstance(token, str) or not token.strip():
+                print(f"Error: Token at index {idx} in '{key}' must be a non-empty string.")
+                return False
+                
+            if token in seen:
+                print(f"Error: Duplicate token '{token}' in '{key}' detected.")
+                return False
+            seen.add(token)
+            
+    print(f"Successfully verified {file_path}!")
+    return True
+
 def main():
     db_dir = "custom_components/snmp_switch_manager/database"
     features = ["cpu", "memory", "fans", "psu", "temperature", "power", "poe"]
@@ -273,6 +314,8 @@ def main():
     if not verify_rename_rules(os.path.join(db_dir, "rename_rules.json")):
         success = False
     if not verify_interface_filters(os.path.join(db_dir, "interface_filters.json")):
+        success = False
+    if not verify_interface_classification(os.path.join(db_dir, "interface_classification.json")):
         success = False
             
     if not success:

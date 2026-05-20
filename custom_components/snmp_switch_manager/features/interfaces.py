@@ -245,6 +245,7 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
                 if_type=if_type,
                 name=name,
                 is_bridge_port=is_bridge_port,
+                classification_db=client._database.get("interface_classification") if hasattr(client, "_database") else None,
             )
             rec["is_bridge_port"] = is_bridge_port
 

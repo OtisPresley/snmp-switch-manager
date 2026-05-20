@@ -1,0 +1,29 @@
+{
+  "virtual_tokens": [
+    "vlan",
+    "loopback",
+    "mgmt",
+    "management",
+    "irb",
+    "bdi",
+    "svi",
+    "bridge",
+    "port-channel",
+    "bond",
+    "lag"
+  ],
+  "physical_tokens": [
+    "gigabit",
+    "gige",
+    "gi",
+    "fastethernet",
+    "fa",
+    "ethernet",
+    "eth",
+    "tengig",
+    "ten",
+    "te",
+    "ge",
+    "xe"
+  ]
+}

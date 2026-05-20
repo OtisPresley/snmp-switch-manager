@@ -153,7 +153,13 @@ _PHYSICAL_NAME_TOKENS = (
 )
 
 
-def classify_port_type(*, if_type: int | None, name: str, is_bridge_port: bool) -> str:
+def classify_port_type(
+    *,
+    if_type: int | None,
+    name: str,
+    is_bridge_port: bool,
+    classification_db: dict | None = None,
+) -> str:
     """Classify an interface as physical, virtual, or unknown.
 
     Heuristic-based and centralized here to make it easier to update as new
@@ -164,13 +170,20 @@ def classify_port_type(*, if_type: int | None, name: str, is_bridge_port: bool) 
     if isinstance(if_type, int) and if_type in VIRTUAL_IFTYPES:
         return "virtual"
 
-    if any(tok in nm for tok in _VIRTUAL_NAME_TOKENS) or nm.startswith(("br", "lo")):
+    virtual_tokens = _VIRTUAL_NAME_TOKENS
+    physical_tokens = _PHYSICAL_NAME_TOKENS
+
+    if classification_db:
+        virtual_tokens = classification_db.get("virtual_tokens", _VIRTUAL_NAME_TOKENS)
+        physical_tokens = classification_db.get("physical_tokens", _PHYSICAL_NAME_TOKENS)
+
+    if any(tok in nm for tok in virtual_tokens) or nm.startswith(("br", "lo")):
         return "virtual"
 
     if is_bridge_port:
         return "physical"
 
-    if if_type == 6 and (nm.startswith("port") or any(tok in nm for tok in _PHYSICAL_NAME_TOKENS)):
+    if if_type == 6 and (nm.startswith("port") or any(tok in nm for tok in physical_tokens)):
         return "physical"
 
     return "unknown"
