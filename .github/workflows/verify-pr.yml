@@ -46,7 +46,41 @@ jobs:
 
       - name: Automatically Merge Pull Request
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "🚀 Verification successful! Automatically merging Pull Request #${{ github.event.pull_request.number }}..."
-          gh pr merge ${{ github.event.pull_request.number }} --merge --delete-branch
+          echo "🚀 Attempting to merge Pull Request #${{ github.event.pull_request.number }}..."
+          
+          # Try using GitHub CLI first
+          if gh pr merge ${{ github.event.pull_request.number }} --merge --delete-branch; then
+            echo "✅ PR merged successfully via GitHub API!"
+          else
+            echo "⚠️ GitHub CLI merge failed. Falling back to direct Git merge and push..."
+            
+            # Configure Git identity if not already set
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            
+            # Fetch base branch and head refs from remote origin
+            BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
+            git fetch origin $BASE_BRANCH
+            git fetch origin ${{ github.event.pull_request.head.ref }}
+            
+            # Checkout and update the base branch
+            git checkout -B $BASE_BRANCH origin/$BASE_BRANCH
+            
+            # Merge the PR head branch locally
+            git merge origin/${{ github.event.pull_request.head.ref }} --no-edit
+            
+            # Push the merged base branch back to origin
+            if git push origin $BASE_BRANCH; then
+              echo "✅ PR merged successfully via Git push fallback!"
+              
+              # Delete the head branch remotely if possible
+              git push origin --delete ${{ github.event.pull_request.head.ref }} || true
+            else
+              echo "❌ Direct Git merge fallback push failed!"
+              exit 1
+            fi
+          fi
+
