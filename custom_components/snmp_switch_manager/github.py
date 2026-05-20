@@ -11,7 +11,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # Placeholder Client ID - User will need to provide their own or we use a default one for the app.
 # For now, we use a placeholder.
-GITHUB_CLIENT_ID = "YOUR_CLIENT_ID_HERE"
+GITHUB_CLIENT_ID = "Ov23liTlBABZlhQen9QI"
 
 async def request_device_code(client_id: str) -> Optional[Dict[str, Any]]:
     """Request a device code from GitHub."""
