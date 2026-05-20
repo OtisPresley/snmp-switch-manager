@@ -30,6 +30,7 @@ class InterfacesOptionsMixin:
                 "included_interfaces",
                 "excluded_interfaces",
                 "builtin_vendor_filters",
+                "submit_community_interface_rule",
                 "interface_name_rules",
                 "interface_ip_display",
                 "entity_icon_rules",
@@ -299,4 +300,141 @@ class InterfacesOptionsMixin:
             step_id="builtin_filters",
             description_placeholders={},
             data_schema=schema,
+        )
+
+    async def async_step_submit_community_interface_rule(self, user_input=None) -> FlowResult:
+        """Choose between Filter or Token contribution."""
+        if user_input is not None:
+            contrib_type = user_input.get("contrib_type")
+            if contrib_type == "filter":
+                return await self.async_step_submit_community_filter()
+            elif contrib_type == "token":
+                return await self.async_step_submit_community_token()
+
+        return self.async_show_form(
+            step_id="submit_community_interface_rule",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("contrib_type", default="filter"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=[
+                                selector.SelectOptionDict(value="filter", label="Interface Filter"),
+                                selector.SelectOptionDict(value="token", label="Classification Token"),
+                            ],
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
+            )
+        )
+
+    async def async_step_submit_community_filter(self, user_input=None) -> FlowResult:
+        """Form for submitting a community interface filter."""
+        errors = {}
+        if user_input is not None:
+            if user_input.get("back_to_menu"):
+                return await self.async_step_manage_interfaces()
+
+            fid = (user_input.get("id") or "").strip()
+            label = (user_input.get("label") or "").strip()
+            vendors_str = (user_input.get("vendors") or "").strip()
+            rule_type = (user_input.get("rule_type") or "").strip()
+            
+            share = user_input.get("share_with_community", False)
+            attest = user_input.get("attestation", False)
+            beneficial = user_input.get("beneficial_for_everyone", False)
+
+            if not fid:
+                errors["id"] = "required"
+            if not label:
+                errors["label"] = "required"
+            if not vendors_str:
+                errors["vendors"] = "required"
+            if not rule_type:
+                errors["rule_type"] = "required"
+
+            if share or attest or beneficial:
+                if not (share and attest and beneficial):
+                    errors["share_with_community"] = "required_all_attestations_to_share"
+
+            if not errors:
+                vendors = [v.strip() for v in vendors_str.split(",") if v.strip()]
+                self._community_pr_feature = "interface_filters"
+                self._community_pr_data = {
+                    "id": fid,
+                    "label": label,
+                    "vendors": vendors,
+                    "rule_type": rule_type
+                }
+                return await self.async_step_submit_pr()
+
+        schema = vol.Schema(
+            {
+                vol.Required("id"): str,
+                vol.Required("label"): str,
+                vol.Required("vendors"): str,
+                vol.Required("rule_type"): str,
+                vol.Optional("share_with_community", default=False): cv.boolean,
+                vol.Optional("attestation", default=False): cv.boolean,
+                vol.Optional("beneficial_for_everyone", default=False): cv.boolean,
+                vol.Optional("back_to_menu", default=False): cv.boolean,
+            }
+        )
+        return self.async_show_form(
+            step_id="submit_community_filter",
+            data_schema=schema,
+            errors=errors
+        )
+
+    async def async_step_submit_community_token(self, user_input=None) -> FlowResult:
+        """Form for submitting a community classification token."""
+        errors = {}
+        if user_input is not None:
+            if user_input.get("back_to_menu"):
+                return await self.async_step_manage_interfaces()
+
+            ttype = user_input.get("type", "virtual_tokens")
+            token = (user_input.get("token") or "").strip().lower()
+            
+            share = user_input.get("share_with_community", False)
+            attest = user_input.get("attestation", False)
+            beneficial = user_input.get("beneficial_for_everyone", False)
+
+            if not token:
+                errors["token"] = "required"
+
+            if share or attest or beneficial:
+                if not (share and attest and beneficial):
+                    errors["share_with_community"] = "required_all_attestations_to_share"
+
+            if not errors:
+                self._community_pr_feature = "interface_classification"
+                self._community_pr_data = {
+                    "type": ttype,
+                    "token": token
+                }
+                return await self.async_step_submit_pr()
+
+        schema = vol.Schema(
+            {
+                vol.Required("type", default="virtual_tokens"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="virtual_tokens", label="Virtual Token List"),
+                            selector.SelectOptionDict(value="physical_tokens", label="Physical Token List"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Required("token"): str,
+                vol.Optional("share_with_community", default=False): cv.boolean,
+                vol.Optional("attestation", default=False): cv.boolean,
+                vol.Optional("beneficial_for_everyone", default=False): cv.boolean,
+                vol.Optional("back_to_menu", default=False): cv.boolean,
+            }
+        )
+        return self.async_show_form(
+            step_id="submit_community_token",
+            data_schema=schema,
+            errors=errors
         )

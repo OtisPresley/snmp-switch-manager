@@ -181,9 +181,11 @@ class OverridesEnvMixin:
     async def async_step_create_pr(self, user_input=None) -> FlowResult:
         """Create PR."""
         if user_input is not None:
+            if hasattr(self, "_community_pr_feature"):
+                return await self.async_step_manage_interfaces()
             return await self.async_step_feature_overrides()
 
-        feature = getattr(self, "_last_override_feature", None)
+        feature = getattr(self, "_community_pr_feature", getattr(self, "_last_override_feature", None))
         token = getattr(self, "_github_token", None)
         
         if not feature or not token:
@@ -193,7 +195,10 @@ class OverridesEnvMixin:
                 description_placeholders={"status": "Missing feature or token!"},
             )
             
-        overrides = self._options.get(CONF_FEATURE_OVERRIDES, {}).get(feature)
+        if hasattr(self, "_community_pr_data"):
+            overrides = self._community_pr_data
+        else:
+            overrides = self._options.get(CONF_FEATURE_OVERRIDES, {}).get(feature)
 
         if not overrides:
             return self.async_show_form(
@@ -219,6 +224,8 @@ class OverridesEnvMixin:
     async def async_step_github_connection_error(self, user_input=None) -> FlowResult:
         """Show error when connection to GitHub fails."""
         if user_input is not None:
+            if hasattr(self, "_community_pr_feature"):
+                return await self.async_step_manage_interfaces()
             return await self.async_step_feature_overrides()
             
         return self.async_show_form(

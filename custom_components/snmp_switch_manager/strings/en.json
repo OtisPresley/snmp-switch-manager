@@ -114,6 +114,7 @@
       "github_error": "Failed to communicate with GitHub. Please try again later.",
       "required_share": "Since you verified the OID, please also select the option to share it with the community to help others.",
       "required_attestation_to_share": "You must attest that you have tested the OID before sharing it with the community.",
+      "required_all_attestations_to_share": "You must check all three attestation checkboxes to submit to GitHub.",
       "duplicate_oid": "This OID already exists in the database for this vendor.",
       "invalid_float": "Invalid numeric scale factor (must be a float like 1.0 or 0.1)"
     },
@@ -397,6 +398,7 @@
         "menu_options": {
           "back": "Back",
           "builtin_vendor_filters": "Built-in Vendor Filters",
+          "submit_community_interface_rule": "Submit Community Filter/Token",
           "entity_icon_rules": "Entity Icon Rules",
           "excluded_interfaces": "Excluded Interfaces",
           "included_interfaces": "Included Interfaces",
@@ -529,6 +531,39 @@
           "back_to_menu": "Go back (discard changes)",
           "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
           "share_with_community": "Share this with the community"
+        }
+      },
+      "submit_community_interface_rule": {
+        "title": "Choose Contribution Type",
+        "description": "Submit a new interface filter or physical/virtual classification token to the community repository to benefit all users.",
+        "data": {
+          "contrib_type": "Contribution Type"
+        }
+      },
+      "submit_community_filter": {
+        "title": "Submit Interface Filter",
+        "description": "Define a system-level interface filter. All 3 checkboxes must be checked to authorize submission.",
+        "data": {
+          "id": "Unique Rule ID (e.g., cisco_skip_vlan)",
+          "label": "Display Label (e.g., Cisco: Skip VLANs)",
+          "vendors": "Comma-separated Vendors (e.g., Cisco, Dell)",
+          "rule_type": "Rule Type / Action (e.g., exclude)",
+          "share_with_community": "Share this with the community",
+          "attestation": "I attest that I have tested and verified that these rules/tokens work as expected.",
+          "beneficial_for_everyone": "I attest that these filters/tokens are beneficial for everyone, are generic, and do not contain personal preferences.",
+          "back_to_menu": "Go back (discard changes)"
+        }
+      },
+      "submit_community_token": {
+        "title": "Submit Classification Token",
+        "description": "Define a physical/virtual classification token. All 3 checkboxes must be checked to authorize submission.",
+        "data": {
+          "type": "Token List",
+          "token": "Token String (e.g., irb, bdi, lag)",
+          "share_with_community": "Share this with the community",
+          "attestation": "I attest that I have tested and verified that these rules/tokens work as expected.",
+          "beneficial_for_everyone": "I attest that these filters/tokens are beneficial for everyone, are generic, and do not contain personal preferences.",
+          "back_to_menu": "Go back (discard changes)"
         }
       },
       "github_connection_error": {
