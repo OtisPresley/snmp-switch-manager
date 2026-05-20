@@ -1,0 +1,52 @@
+name: PR Verification & Auto-Merge
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/modular-refactor
+    paths:
+      - 'custom_components/snmp_switch_manager/database/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Verification & Self-Healing Script
+        run: python .github/scripts/verify_pr.py
+
+      - name: Commit and Push Self-Healing Adjustments
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "✨ Database corrections or compiled vendors.json detected! Auto-committing changes..."
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add custom_components/snmp_switch_manager/database/
+            git commit -m "Auto-normalize database layout and vendors.json compilation [skip ci]"
+            git push
+          else
+            echo "✅ All database files are fully normalized and correct!"
+          fi
+
+      - name: Automatically Merge Pull Request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🚀 Verification successful! Automatically merging Pull Request #${{ github.event.pull_request.number }}..."
+          gh pr merge ${{ github.event.pull_request.number }} --merge --delete-branch

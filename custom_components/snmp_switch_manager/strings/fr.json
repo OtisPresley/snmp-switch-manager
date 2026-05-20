@@ -304,7 +304,7 @@
         "title": "Soumettre à GitHub ?"
       },
       "submit_pr": {
-        "description": "Pour soumettre votre remplacement, veuillez vous authentifier auprès de GitHub :\n\n1. Allez sur {url}\n2. Entrez le code : **{code}**\n3. Cliquez sur Vérifier une fois terminé.",
+        "description": "Pour soumettre votre remplacement, veuillez vous authentifier auprès de GitHub :\n\n1. Allez sur {url}\n2. Entrez le code : **{code}**\n3. Une fois que vous avez le crochet vert sur GitHub, cliquez sur Soumettre.",
         "title": "S'authentifier auprès de GitHub"
       },
       "create_pr": {

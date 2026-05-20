@@ -518,7 +518,7 @@
         "title": "Submit to GitHub?"
       },
       "submit_pr": {
-        "description": "To submit your override, please authenticate with GitHub:\n\n1. Go to {url}\n2. Enter code: **{code}**\n3. Click Check when done.",
+        "description": "To submit your override, please authenticate with GitHub:\n\n1. Go to {url}\n2. Enter code: **{code}**\n3. Once you get the green check on GitHub, click Submit.",
         "title": "Authenticate with GitHub"
       },
       "create_pr": {

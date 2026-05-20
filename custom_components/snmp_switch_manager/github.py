@@ -219,6 +219,22 @@ async def submit_override(token: str, feature: str, override_data: Dict[str, Any
     repo = GITHUB_REPO
     base_branch = GITHUB_BASE_BRANCH
     
+    # Pre-normalize casing against existing vendors.json
+    raw_vendor = override_data.get("vendor", "").strip()
+    if raw_vendor:
+        vendors_path = os.path.join(os.path.dirname(__file__), "database", "vendors.json")
+        if os.path.exists(vendors_path):
+            try:
+                with open(vendors_path, "r", encoding="utf-8") as f:
+                    v_data = json.load(f)
+                    for v_item in v_data.get("vendors", []):
+                        if v_item["name"].lower().strip() == raw_vendor.lower():
+                            override_data["vendor"] = v_item["name"]
+                            break
+            except Exception:
+                pass
+
+    
     # 1. Get user info
     user_info = await get_user(token)
     if not user_info:

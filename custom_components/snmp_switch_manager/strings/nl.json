@@ -304,7 +304,7 @@
         "title": "Indienen bij GitHub?"
       },
       "submit_pr": {
-        "description": "Om je overschrijving in te dienen, authenticeer je bij GitHub:\n\n1. Ga naar {url}\n2. Voer de code in: **{code}**\n3. Klik op Verifiëren als je klaar bent.",
+        "description": "Om je overschrijving in te dienen, authenticeer je bij GitHub:\n\n1. Ga naar {url}\n2. Voer de code in: **{code}**\n3. Zodra je het groene vinkje op GitHub krijgt, klik je op Verzenden.",
         "title": "Authenticeren bij GitHub"
       },
       "create_pr": {

@@ -304,7 +304,7 @@
         "title": "An GitHub senden?"
       },
       "submit_pr": {
-        "description": "Um Ihre Überschreibung zu senden, authentifizieren Sie sich bitte bei GitHub:\n\n1. Gehen Sie zu {url}\n2. Geben Sie den Code ein: **{code}**\n3. Klicken Sie auf Prüfen, wenn Sie fertig sind.",
+        "description": "Um Ihre Überschreibung zu senden, authentifizieren Sie sich bitte bei GitHub:\n\n1. Gehen Sie zu {url}\n2. Geben Sie den Code ein: **{code}**\n3. Sobald Sie das grüne Häkchen auf GitHub erhalten, klicken Sie auf Absenden.",
         "title": "Mit GitHub authentifizieren"
       },
       "create_pr": {

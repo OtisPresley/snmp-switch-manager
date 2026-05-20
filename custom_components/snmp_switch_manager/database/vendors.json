@@ -1,9 +1,9 @@
 {
   "vendors": [
     {
-      "name": "H3C",
-      "enterprise_number": "25506",
-      "sys_object_id_prefix": "1.3.6.1.4.1.25506"
+      "name": "Cisco",
+      "enterprise_number": "9",
+      "sys_object_id_prefix": "1.3.6.1.4.1.9"
     },
     {
       "name": "Dell",
@@ -11,9 +11,14 @@
       "sys_object_id_prefix": "1.3.6.1.4.1.674"
     },
     {
-      "name": "Cisco",
-      "enterprise_number": "9",
-      "sys_object_id_prefix": "1.3.6.1.4.1.9"
+      "name": "H3C",
+      "enterprise_number": "25506",
+      "sys_object_id_prefix": "1.3.6.1.4.1.25506"
+    },
+    {
+      "name": "HP",
+      "enterprise_number": "25506",
+      "sys_object_id_prefix": "1.3.6.1.4.1.25506"
     },
     {
       "name": "Huawei",
@@ -21,9 +26,19 @@
       "sys_object_id_prefix": "1.3.6.1.4.1.2011"
     },
     {
+      "name": "Jt-Com",
+      "enterprise_number": "",
+      "sys_object_id_prefix": ""
+    },
+    {
       "name": "Mikrotik",
       "enterprise_number": "14988",
       "sys_object_id_prefix": "1.3.6.1.4.1.14988"
+    },
+    {
+      "name": "Standard",
+      "enterprise_number": "",
+      "sys_object_id_prefix": ""
     },
     {
       "name": "Zyxel",

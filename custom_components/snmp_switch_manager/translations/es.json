@@ -304,7 +304,7 @@
         "title": "¿Enviar a GitHub?"
       },
       "submit_pr": {
-        "description": "Para enviar tu anulación, autentícate en GitHub:\n\n1. Ve a {url}\n2. Introduce el código: **{code}**\n3. Haz clic en Verificar cuando hayas terminado.",
+        "description": "Para enviar tu anulación, autentícate en GitHub:\n\n1. Ve a {url}\n2. Introduce el código: **{code}**\n3. Una vez que obtenga la marca de verificación verde en GitHub, haga clic en Enviar.",
         "title": "Autenticarse en GitHub"
       },
       "create_pr": {

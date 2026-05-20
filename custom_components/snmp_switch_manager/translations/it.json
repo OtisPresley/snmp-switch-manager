@@ -304,7 +304,7 @@
         "title": "Inviare a GitHub ?"
       },
       "submit_pr": {
-        "description": "Per inviare il tuo override, autenticati su GitHub :\n\n1. Vai su {url}\n2. Inserisci il codice : **{code}**\n3. Fai clic su Verifica al termine.",
+        "description": "Per inviare il tuo override, autenticati su GitHub :\n\n1. Vai su {url}\n2. Inserisci il codice : **{code}**\n3. Una volta ottenuta la spunta verde su GitHub, fai clic su Invia.",
         "title": "Autenticati su GitHub"
       },
       "create_pr": {
