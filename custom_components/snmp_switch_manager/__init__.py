@@ -247,6 +247,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
     except Exception as exc:
         _LOGGER.error("Error during device registry cleanup: %s", exc)
 
+    from .db_updater import async_setup_db_updater
+    await async_setup_db_updater(hass, entry)
+
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
 
@@ -257,6 +260,9 @@ async def _async_update_listener(hass: HomeAssistant, entry: SwitchManagerConfig
 async def async_unload_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
+        from .db_updater import async_unload_db_updater
+        async_unload_db_updater(hass, entry)
+
         runtime: SnmpSwitchRuntimeData | None = getattr(entry, "runtime_data", None)
         if runtime is not None:
             try:
