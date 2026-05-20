@@ -16,7 +16,7 @@ from ..const import (
     OID_ifHCOutOctets,
     OID_ifOutOctets,
 )
-from ..helpers import _do_get_many
+from ..snmp_compat import _do_get_many
 
 _LOGGER = logging.getLogger(__name__)
 

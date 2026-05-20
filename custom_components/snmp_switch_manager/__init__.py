@@ -46,7 +46,7 @@ from .const import (
     CONF_HIDE_IP_ON_PHYSICAL_INTERFACES,
 )
 from .snmp import SwitchSnmpClient
-from .helpers import SnmpAuthError
+from .snmp_compat import SnmpAuthError
 from .helpers import get_snmp_connection_settings
 
 _LOGGER = logging.getLogger(__name__)

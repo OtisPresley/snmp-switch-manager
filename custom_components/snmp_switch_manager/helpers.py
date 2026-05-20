@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import ipaddress
 import re
-from typing import Any, Optional, Dict, Tuple, List
+from typing import Any, Optional
 
 from .const import (
     CONF_OVERRIDE_COMMUNITY,
@@ -16,19 +16,8 @@ from .const import (
     CONF_SNMPV3_AUTH_PASSWORD,
     CONF_SNMPV3_PRIV_PROTOCOL,
     CONF_SNMPV3_PRIV_PASSWORD,
-    OID_ifAlias,
-    OID_ifAdminStatus,
 )
 
-from .snmp_compat import (
-    get_cmd,
-    next_cmd,
-    set_cmd,
-    ObjectType,
-    ObjectIdentity,
-    OctetString,
-    Integer,
-)
 
 
 # ---------- connection settings ----------
@@ -400,111 +389,4 @@ def _entity_sensor_value_to_float(raw: Any, scale: int | None, precision: int | 
         return None
 
 
-# ---------- SNMP error detection ----------
 
-_AUTH_ERROR_PHRASES = (
-    "authorizationerror",
-    "authentication failure",
-    "decryption error",
-    "usm: unknown security name",
-    "usm: authentication failure",
-    "unsupportedsecuritylevel",
-)
-
-
-def _is_auth_error(err_ind: Any) -> bool:
-    """Return True when err_ind indicates an SNMP authentication/security failure."""
-    if err_ind is None:
-        return False
-    return any(phrase in str(err_ind).lower() for phrase in _AUTH_ERROR_PHRASES)
-
-
-class SnmpAuthError(Exception):
-    """Raised when SNMP authentication fails."""
-
-
-# ---------- low-level async SNMP operations ----------
-
-async def _do_get_one(engine, community, target, context, oid: str) -> Optional[str]:
-    err_ind, err_stat, _err_idx, vbs = await get_cmd(
-        engine, community, target, context, ObjectType(ObjectIdentity(oid)), lookupMib=False
-    )
-    if err_ind:
-        if _is_auth_error(err_ind):
-            raise SnmpAuthError(str(err_ind))
-        return None
-    if err_stat:
-        return None
-    return str(vbs[0][1]) if vbs else None
-
-
-async def _do_get_many(engine, community, target, context, oids: list[str]) -> Dict[str, Optional[str]]:
-    import asyncio
-    # Batch OID lists to prevent tooBig SNMP packet errors and MTU fragmentation issues.
-    chunk_size = 32
-    results = {}
-
-    chunks = [oids[i : i + chunk_size] for i in range(0, len(oids), chunk_size)]
-
-    async def _fetch_chunk(chunk):
-        obs = [ObjectType(ObjectIdentity(oid)) for oid in chunk]
-        err_ind, err_stat, _err_idx, vbs = await get_cmd(
-            engine, community, target, context, *obs, lookupMib=False
-        )
-        if err_ind:
-            if _is_auth_error(err_ind):
-                raise SnmpAuthError(str(err_ind))
-            return {oid: None for oid in chunk}
-        if err_stat:
-            return {oid: None for oid in chunk}
-        return {oid: (str(vbs[i][1]) if i < len(vbs) else None) for i, oid in enumerate(chunk)}
-
-    chunk_results = await asyncio.gather(*[_fetch_chunk(c) for c in chunks])
-    for r in chunk_results:
-        results.update(r)
-
-    return results
-
-
-async def _do_next_walk(engine, community, target, context, base_oid: str) -> List[Tuple[str, Any]]:
-    results = []
-    current_oid = base_oid
-    while True:
-        err_ind, err_stat, _err_idx, vbs = await next_cmd(
-            engine, community, target, context, ObjectType(ObjectIdentity(current_oid)), lookupMib=False
-        )
-        if err_ind:
-            if _is_auth_error(err_ind):
-                raise SnmpAuthError(str(err_ind))
-            break
-        if err_stat or not vbs:
-            break
-        oid, val = vbs[0]
-        oid_str = str(oid)
-        if not oid_str.startswith(base_oid):
-            break
-        results.append((oid_str, val))
-        current_oid = oid_str
-    return results
-
-
-async def _do_set_alias(engine, community, target, context, if_index: int, alias: str) -> bool:
-    err_ind, err_stat, _err_idx, _vbs = await set_cmd(
-        engine, community, target, context,
-        ObjectType(ObjectIdentity(f"{OID_ifAlias}.{if_index}"), OctetString(alias)),
-        lookupMib=False,
-    )
-    if err_ind and _is_auth_error(err_ind):
-        raise SnmpAuthError(str(err_ind))
-    return (not err_ind) and (not err_stat)
-
-
-async def _do_set_admin_status(engine, community, target, context, if_index: int, state: int) -> bool:
-    err_ind, err_stat, _err_idx, _vbs = await set_cmd(
-        engine, community, target, context,
-        ObjectType(ObjectIdentity(f"{OID_ifAdminStatus}.{if_index}"), Integer(state)),
-        lookupMib=False,
-    )
-    if err_ind and _is_auth_error(err_ind):
-        raise SnmpAuthError(str(err_ind))
-    return (not err_ind) and (not err_stat)

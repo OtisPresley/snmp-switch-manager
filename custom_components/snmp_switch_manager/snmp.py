@@ -25,16 +25,13 @@ from .features.engine import ensure_engine
 from .features.device_info import initialize_device_info, refresh_device_info
 from .features.auth import build_auth_data
 
-from .helpers import (
+from .snmp_compat import (
+    UdpTransportTarget,
+    ContextData,
     _do_get_one,
     _do_next_walk,
     _do_set_alias,
     _do_set_admin_status,
-)
-
-from .snmp_compat import (
-    UdpTransportTarget,
-    ContextData,
 )
 
 

@@ -19,6 +19,15 @@ from ..const import (
 )
 
 
+def _slugify(text: str) -> str:
+    """Slugify display label into a unique rule ID."""
+    import re
+    text = text.lower().strip()
+    text = re.sub(r"[^\w\s-]", "", text)
+    text = re.sub(r"[-\s]+", "_", text)
+    return text
+
+
 class InterfacesOptionsMixin:
     """Mixin for OptionsFlowHandler to handle interface-related steps."""
 
@@ -335,7 +344,6 @@ class InterfacesOptionsMixin:
             if user_input.get("back_to_menu"):
                 return await self.async_step_manage_interfaces()
 
-            fid = (user_input.get("id") or "").strip()
             label = (user_input.get("label") or "").strip()
             vendors_str = (user_input.get("vendors") or "").strip()
             rule_type = (user_input.get("rule_type") or "").strip()
@@ -344,8 +352,6 @@ class InterfacesOptionsMixin:
             attest = user_input.get("attestation", False)
             beneficial = user_input.get("beneficial_for_everyone", False)
 
-            if not fid:
-                errors["id"] = "required"
             if not label:
                 errors["label"] = "required"
             if not vendors_str:
@@ -358,6 +364,7 @@ class InterfacesOptionsMixin:
                     errors["share_with_community"] = "required_all_attestations_to_share"
 
             if not errors:
+                fid = _slugify(label)
                 vendors = [v.strip() for v in vendors_str.split(",") if v.strip()]
                 self._community_pr_feature = "interface_filters"
                 self._community_pr_data = {
@@ -370,10 +377,17 @@ class InterfacesOptionsMixin:
 
         schema = vol.Schema(
             {
-                vol.Required("id"): str,
-                vol.Required("label"): str,
-                vol.Required("vendors"): str,
-                vol.Required("rule_type"): str,
+                vol.Optional("label"): str,
+                vol.Optional("vendors"): str,
+                vol.Optional("rule_type", default="exclude"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="include", label="Include"),
+                            selector.SelectOptionDict(value="exclude", label="Exclude"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
                 vol.Optional("share_with_community", default=False): cv.boolean,
                 vol.Optional("attestation", default=False): cv.boolean,
                 vol.Optional("beneficial_for_everyone", default=False): cv.boolean,
@@ -426,7 +440,7 @@ class InterfacesOptionsMixin:
                         mode=selector.SelectSelectorMode.DROPDOWN,
                     )
                 ),
-                vol.Required("token"): str,
+                vol.Optional("token"): str,
                 vol.Optional("share_with_community", default=False): cv.boolean,
                 vol.Optional("attestation", default=False): cv.boolean,
                 vol.Optional("beneficial_for_everyone", default=False): cv.boolean,
