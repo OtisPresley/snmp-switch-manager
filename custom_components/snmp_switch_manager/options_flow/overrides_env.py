@@ -7,7 +7,6 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 
 from ..const import (
-    CONF_FEATURE_OVERRIDES,
     CONF_ENV_ENABLE,
     CONF_ENV_MODE,
     ENV_MODE_SENSORS,
@@ -146,19 +145,11 @@ class OverridesEnvMixin:
         )
 
     async def async_step_submit_pr(self, user_input=None) -> FlowResult:
-        """Submit override as PR."""
+        """Show GitHub device auth code and wait for user to confirm they have authorized."""
         errors: dict[str, str] = {}
-        
-        if user_input is not None:
-            from ..github import poll_for_token, GITHUB_CLIENT_ID
-            token = await poll_for_token(GITHUB_CLIENT_ID, getattr(self, "_device_code", ""), interval=1)
-            if token:
-                self._github_token = token
-                return await self.async_step_create_pr()
-            else:
-                errors["base"] = "authorization_pending"
-                
-        if not hasattr(self, "_device_code"):
+
+        # Ensure we have a device code
+        if not hasattr(self, "_device_code") or not self._device_code:
             from ..github import request_device_code, GITHUB_CLIENT_ID
             data = await request_device_code(GITHUB_CLIENT_ID)
             if data:
@@ -167,38 +158,66 @@ class OverridesEnvMixin:
                 self._verification_uri = data.get("verification_uri")
             else:
                 return await self.async_step_github_connection_error()
-                
+
+        if user_input is not None:
+            if user_input.get("back_to_menu"):
+                # Clear auth state and return
+                self._device_code = None
+                if hasattr(self, "_community_pr_feature"):
+                    return await self.async_step_manage_interfaces()
+                return await self.async_step_feature_overrides()
+
+            if user_input.get("authorized"):
+                from ..github import poll_for_token, GITHUB_CLIENT_ID
+                token = await poll_for_token(
+                    GITHUB_CLIENT_ID,
+                    getattr(self, "_device_code", ""),
+                    interval=1,
+                )
+                if token:
+                    self._github_token = token
+                    self._device_code = None
+                    return await self.async_step_create_pr()
+                else:
+                    errors["authorized"] = "authorization_pending"
+
         return self.async_show_form(
             step_id="submit_pr",
-            data_schema=vol.Schema({}),
+            data_schema=vol.Schema({
+                vol.Optional("authorized", default=False): cv.boolean,
+                vol.Optional("back_to_menu", default=False): cv.boolean,
+            }),
             description_placeholders={
                 "code": getattr(self, "_user_code", "ERROR"),
-                "url": getattr(self, "_verification_uri", "https://github.com"),
+                "url": getattr(self, "_verification_uri", "https://github.com/login/device"),
             },
             errors=errors,
         )
 
     async def async_step_create_pr(self, user_input=None) -> FlowResult:
-        """Create PR."""
+        """Create PR and show result. user_input dismisses the result screen."""
         if user_input is not None:
-            if hasattr(self, "_community_pr_feature"):
-                return await self.async_step_manage_interfaces()
-            return await self.async_step_feature_overrides()
+            # Clear community PR state
+            self._community_pr_feature = None
+            self._community_pr_data = None
+            if hasattr(self, "_last_override_feature") and self._last_override_feature:
+                return await self.async_step_feature_overrides()
+            return await self.async_step_manage_interfaces()
 
-        feature = getattr(self, "_community_pr_feature", getattr(self, "_last_override_feature", None))
+        feature = getattr(self, "_community_pr_feature", None) or getattr(self, "_last_override_feature", None)
         token = getattr(self, "_github_token", None)
-        
+
         if not feature or not token:
             return self.async_show_form(
                 step_id="create_pr",
                 data_schema=vol.Schema({}),
                 description_placeholders={"status": "Missing feature or token!"},
             )
-            
-        if hasattr(self, "_community_pr_data"):
+
+        if hasattr(self, "_community_pr_data") and self._community_pr_data:
             overrides = self._community_pr_data
         else:
-            overrides = self._options.get(CONF_FEATURE_OVERRIDES, {}).get(feature)
+            overrides = (self._options.get("feature_overrides") or {}).get(feature)
 
         if not overrides:
             return self.async_show_form(
@@ -206,15 +225,15 @@ class OverridesEnvMixin:
                 data_schema=vol.Schema({}),
                 description_placeholders={"status": "No override data found for feature!"},
             )
-            
+
         from ..github import submit_override
         success = await submit_override(token, feature, overrides)
-        
+
         if success:
-            status = "Successfully created Pull Request on GitHub!"
+            status = "Successfully created Pull Request on GitHub! Thank you for contributing."
         else:
-            status = "Failed to create Pull Request. Check logs for details."
-            
+            status = "Failed to create Pull Request. Please check the Home Assistant logs for details."
+
         return self.async_show_form(
             step_id="create_pr",
             data_schema=vol.Schema({}),

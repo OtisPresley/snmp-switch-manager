@@ -2,6 +2,7 @@
 import asyncio
 import os
 import logging
+import re
 from typing import Any, Dict, Optional
 import aiohttp
 import base64
@@ -15,6 +16,14 @@ _LOGGER = logging.getLogger(__name__)
 GITHUB_CLIENT_ID = "Ov23liTlBABZlhQen9QI"
 GITHUB_REPO = "OtisPresley/snmp-switch-manager"
 GITHUB_BASE_BRANCH = "feature/modular-refactor"
+
+
+def _slugify_branch(text: str) -> str:
+    """Slugify text into a git-safe branch name segment."""
+    text = text.lower().strip()
+    text = re.sub(r"[^\w\s-]", "", text)
+    text = re.sub(r"[\s_]+", "-", text)
+    return text[:40]
 
 async def request_device_code(client_id: str) -> Optional[Dict[str, Any]]:
     """Request a device code from GitHub."""
@@ -257,8 +266,15 @@ async def submit_override(token: str, feature: str, override_data: Dict[str, Any
     sha = ref_data["object"]["sha"]
     
     # 4. Create a new branch in the fork
-    vendor = override_data.get("vendor", "unknown").lower().replace(" ", "-")
-    branch_name = f"override-{feature}-{vendor}-{int(time.time())}"
+    if feature == "interface_filters":
+        slug = _slugify_branch(override_data.get("label", "filter"))
+        branch_name = f"override-{feature}-{slug}-{int(time.time())}"
+    elif feature == "interface_classification":
+        tok = override_data.get("token", "token").lower().replace(" ", "-")
+        branch_name = f"override-{feature}-{tok}-{int(time.time())}"
+    else:
+        vendor = override_data.get("vendor", "unknown").lower().replace(" ", "-")
+        branch_name = f"override-{feature}-{vendor}-{int(time.time())}"
     fork_full_name = f"{username}/snmp-switch-manager"
     
     ref_created = await create_ref(token, fork_full_name, branch_name, sha)
@@ -424,7 +440,12 @@ async def submit_override(token: str, feature: str, override_data: Dict[str, Any
         return False
         
     # 7. Create Pull Request
-    pr_title = f"Add {feature} override for {override_data.get('vendor')}"
+    if feature == "interface_filters":
+        pr_title = f"Add interface_filters rule: {override_data.get('label', 'new filter')}"
+    elif feature == "interface_classification":
+        pr_title = f"Add interface_classification token: {override_data.get('token', 'new token')}"
+    else:
+        pr_title = f"Add {feature} override for {override_data.get('vendor', 'Unknown')}"
     pr_body = f"Automated PR from SNMP Switch Manager.\n\nAdded override:\n```json\n{json.dumps(override_data, indent=2)}\n```"
     
     pr_created = await create_pull_request(token, repo, base_branch, f"{username}:{branch_name}", pr_title, pr_body)

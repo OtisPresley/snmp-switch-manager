@@ -347,7 +347,9 @@ class InterfacesOptionsMixin:
             label = (user_input.get("label") or "").strip()
             vendors_str = (user_input.get("vendors") or "").strip()
             rule_type = (user_input.get("rule_type") or "").strip()
-            
+            match_type = (user_input.get("match_type") or "").strip()
+            match_value = (user_input.get("match_value") or "").strip()
+
             share = user_input.get("share_with_community", False)
             attest = user_input.get("attestation", False)
             beneficial = user_input.get("beneficial_for_everyone", False)
@@ -356,8 +358,10 @@ class InterfacesOptionsMixin:
                 errors["label"] = "required"
             if not vendors_str:
                 errors["vendors"] = "required"
-            if not rule_type:
-                errors["rule_type"] = "required"
+            if not match_type:
+                errors["match_type"] = "required"
+            if not match_value:
+                errors["match_value"] = "required"
 
             if share or attest or beneficial:
                 if not (share and attest and beneficial):
@@ -371,7 +375,9 @@ class InterfacesOptionsMixin:
                     "id": fid,
                     "label": label,
                     "vendors": vendors,
-                    "rule_type": rule_type
+                    "rule_type": rule_type,
+                    "match_type": match_type,
+                    "match_value": match_value,
                 }
                 return await self.async_step_submit_pr()
 
@@ -388,6 +394,17 @@ class InterfacesOptionsMixin:
                         mode=selector.SelectSelectorMode.DROPDOWN,
                     )
                 ),
+                vol.Optional("match_type", default="starts_with"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            selector.SelectOptionDict(value="starts_with", label="Starts With"),
+                            selector.SelectOptionDict(value="contains", label="Contains"),
+                            selector.SelectOptionDict(value="ends_with", label="Ends With"),
+                        ],
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional("match_value"): str,
                 vol.Optional("share_with_community", default=False): cv.boolean,
                 vol.Optional("attestation", default=False): cv.boolean,
                 vol.Optional("beneficial_for_everyone", default=False): cv.boolean,
