@@ -115,7 +115,8 @@
       "required_share": "Dato che hai verificato l'OID, seleziona anche l'opzione per condividerlo con la community per aiutare gli altri.",
       "required_attestation_to_share": "Devi attestare di aver testato l'OID prima di condividerlo con la community.",
       "duplicate_oid": "Questo OID esiste già nel database per questo fornitore.",
-      "invalid_float": "Fattore di scala numerico non valido (deve essere un float come 1.0 o 0.1)"
+      "invalid_float": "Fattore di scala numerico non valido (deve essere un float come 1.0 o 0.1)",
+      "required_all_attestations_to_share": "È necessario selezionare tutte e tre le caselle di attestazione per inviare a GitHub."
     },
     "step": {
       "bandwidth_enable": {
@@ -401,7 +402,8 @@
           "excluded_interfaces": "Interfacce escluse",
           "included_interfaces": "Interfacce incluse",
           "interface_name_rules": "Regole nome interfaccia",
-          "interface_ip_display": "Visualizzazione IP interfaccia"
+          "interface_ip_display": "Visualizzazione IP interfaccia",
+          "submit_community_interface_rule": "Invia filtro/token alla community"
         },
         "title": "Gestisci interfacce"
       },
@@ -534,6 +536,38 @@
       "github_connection_error": {
         "title": "Errore di connessione a GitHub",
         "description": "Impossibile comunicare con GitHub. Verifica la tua connessione Internet e riprova."
+      },
+      "submit_community_interface_rule": {
+        "title": "Scegli il tipo di contributo",
+        "description": "Invia un nuovo filtro di interfaccia o un token di classificazione fisico/virtuale al repository della community a vantaggio di tutti gli utenti.",
+        "data": {
+          "contrib_type": "Tipo di contributo"
+        }
+      },
+      "submit_community_filter": {
+        "title": "Invia filtro interfaccia",
+        "description": "Definisci un filtro di interfaccia a livello di sistema. Tutte e 3 le caselle devono essere selezionate per autorizzare l'invio.",
+        "data": {
+          "label": "Etichetta visualizzata (es. Cisco: Salta VLAN)",
+          "vendors": "Produttori separati da virgole (es. Cisco, Dell)",
+          "rule_type": "Tipo di regola / Azione",
+          "share_with_community": "Condividi con la community",
+          "attestation": "Attesto di aver testato e verificato che queste regole/token funzionino come previsto.",
+          "beneficial_for_everyone": "Attesto che questi filtri/token siano vantaggiosi per tutti, siano generici e non contengano preferenze personali.",
+          "back_to_menu": "Torna indietro (annulla modifiche)"
+        }
+      },
+      "submit_community_token": {
+        "title": "Invia token di classificazione",
+        "description": "Definisci un token di classificazione fisico/virtuale. Tutte e 3 le caselle devono essere selezionate per autorizzare l'invio.",
+        "data": {
+          "type": "Elenco token",
+          "token": "Stringa token (es. irb, bdi, lag)",
+          "share_with_community": "Condividi con la community",
+          "attestation": "Attesto di aver testato e verificato che queste regole/token funzionino come previsto.",
+          "beneficial_for_everyone": "Attesto che questi filtri/token siano vantaggiosi per tutti, siano generici e non contengano preferenze personali.",
+          "back_to_menu": "Torna indietro (annulla modifiche)"
+        }
       }
     }
   },

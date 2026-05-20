@@ -115,7 +115,8 @@
       "required_share": "Aangezien u de OID hebt geverifieerd, selecteert u ook de optie om deze met de community te delen om anderen te helpen.",
       "required_attestation_to_share": "U moet verklaren dat u de OID hebt getest voordat u deze met de community deelt.",
       "duplicate_oid": "Deze OID bestaat al in de database voor deze leverancier.",
-      "invalid_float": "Ongeldige numerieke schaalfactor (moet een float zijn zoals 1.0 of 0.1)"
+      "invalid_float": "Ongeldige numerieke schaalfactor (moet een float zijn zoals 1.0 of 0.1)",
+      "required_all_attestations_to_share": "U moet alle drie de attestation-vakjes aanvinken om naar GitHub te verzenden."
     },
     "step": {
       "bandwidth_enable": {
@@ -401,7 +402,8 @@
           "excluded_interfaces": "Uitgesloten interfaces",
           "included_interfaces": "Ingesloten interfaces",
           "interface_name_rules": "Interfacenaamregels",
-          "interface_ip_display": "Interface IP-weergave"
+          "interface_ip_display": "Interface IP-weergave",
+          "submit_community_interface_rule": "Community-filter/token indienen"
         },
         "title": "Interfaces beheren"
       },
@@ -534,6 +536,38 @@
       "github_connection_error": {
         "title": "GitHub-verbindingsfout",
         "description": "Fout bij de communicatie met GitHub. Controleer uw internetverbinding en probeer het opnieuw."
+      },
+      "submit_community_interface_rule": {
+        "title": "Kies bijdragetype",
+        "description": "Dien een nieuw interfacefilter of fysiek/virtueel classificatietoken in bij de community-repository ten behoeve van alle gebruikers.",
+        "data": {
+          "contrib_type": "Bijdragetype"
+        }
+      },
+      "submit_community_filter": {
+        "title": "Interfacefilter indienen",
+        "description": "Definieer een interfacefilter op systeemniveau. Alle 3 de vakjes moeten worden aangevinkt om verzending toe te staan.",
+        "data": {
+          "label": "Weergavelabel (bijv. Cisco: VLAN's overslaan)",
+          "vendors": "Komma-gescheiden fabrikanten (bijv. Cisco, Dell)",
+          "rule_type": "Regeltype / Actie",
+          "share_with_community": "Delen met de community",
+          "attestation": "Ik verklaar dat ik deze regels/tokens heb getest en geverifieerd dat ze naar behoren werken.",
+          "beneficial_for_everyone": "Ik verklaar dat deze filters/tokens nuttig zijn voor iedereen, generiek zijn en geen persoonlijke voorkeuren bevatten.",
+          "back_to_menu": "Teruggaan (wijzigingen negeren)"
+        }
+      },
+      "submit_community_token": {
+        "title": "Classificatietoken indienen",
+        "description": "Definieer een fysiek/virtueel classificatietoken. Alle 3 de vakjes moeten worden aangevinkt om verzending toe te staan.",
+        "data": {
+          "type": "Tokenlijst",
+          "token": "Tokenreeks (bijv. irb, bdi, lag)",
+          "share_with_community": "Delen met de community",
+          "attestation": "Ik verklaar dat ik deze regels/tokens heb getest en geverifieerd dat ze naar behoren werken.",
+          "beneficial_for_everyone": "Ik verklaar dat deze filters/tokens nuttig zijn voor iedereen, generiek zijn en geen persoonlijke voorkeuren bevatten.",
+          "back_to_menu": "Teruggaan (wijzigingen negeren)"
+        }
       }
     }
   },

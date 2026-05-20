@@ -114,6 +114,7 @@
       "github_error": "Kommunikation mit GitHub fehlgeschlagen. Bitte versuchen Sie es später noch einmal.",
       "required_share": "Da Sie die OID verifiziert haben, wählen Sie bitte auch die Option, sie mit der Community zu teilen, um anderen zu helfen.",
       "required_attestation_to_share": "Sie müssen bestätigen, dass Sie die OID getestet haben, bevor Sie sie mit der Community teilen.",
+      "required_all_attestations_to_share": "Sie müssen alle drei Bestätigungskontrollkästchen aktivieren, um an GitHub zu senden.",
       "duplicate_oid": "Diese OID existiert bereits in der Datenbank für diesen Anbieter.",
       "invalid_float": "Ungültiger numerischer Skalierungsfaktor (muss eine Fließkommazahl wie 1.0 oder 0.1 sein)"
     },
@@ -401,7 +402,8 @@
           "excluded_interfaces": "Ausgeschlossene Schnittstellen",
           "included_interfaces": "Eingeschlossene Schnittstellen",
           "interface_name_rules": "Schnittstellennamensregeln",
-          "interface_ip_display": "IP-Anzeige der Schnittstelle"
+          "interface_ip_display": "IP-Anzeige der Schnittstelle",
+          "submit_community_interface_rule": "Community-Filter/Token senden"
         },
         "title": "Schnittstellen verwalten"
       },
@@ -529,6 +531,38 @@
           "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
           "attestation": "Ich bestätige, dass ich diese OIDs getestet und verifiziert habe.",
           "share_with_community": "Teilen Sie dies mit der Community"
+        }
+      },
+      "submit_community_interface_rule": {
+        "title": "Beitragstyp wählen",
+        "description": "Senden Sie einen neuen Schnittstellenfilter oder ein physisches/virtuelles Klassifizierungs-Token an das Community-Repository, um allen Benutzern zu helfen.",
+        "data": {
+          "contrib_type": "Beitragstyp"
+        }
+      },
+      "submit_community_filter": {
+        "title": "Schnittstellenfilter senden",
+        "description": "Definieren Sie einen Schnittstellenfilter auf Systemebene. Alle 3 Kontrollkästchen müssen aktiviert sein, um das Senden zu autorisieren.",
+        "data": {
+          "label": "Anzeigebezeichnung (z. B. Cisco: VLANs überspringen)",
+          "vendors": "Kommagetrennte Hersteller (z. B. Cisco, Dell)",
+          "rule_type": "Regeltyp / Aktion",
+          "share_with_community": "Mit der Community teilen",
+          "attestation": "Ich bestätige, dass ich diese Regeln/Token getestet und verifiziert habe und sie wie erwartet funktionieren.",
+          "beneficial_for_everyone": "Ich bestätige, dass diese Filter/Token für alle nützlich und allgemein gültig sind und keine persönlichen Vorlieben enthalten.",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
+        }
+      },
+      "submit_community_token": {
+        "title": "Klassifizierungs-Token senden",
+        "description": "Definieren Sie ein physisches/virtuelles Klassifizierungs-Token. Alle 3 Kontrollkästchen müssen aktiviert sein, um das Senden zu autorisieren.",
+        "data": {
+          "type": "Token-Liste",
+          "token": "Token-Zeichenfolge (z. B. irb, bdi, lag)",
+          "share_with_community": "Mit der Community teilen",
+          "attestation": "Ich bestätige, dass ich diese Regeln/Token getestet und verifiziert habe und sie wie erwartet funktionieren.",
+          "beneficial_for_everyone": "Ich bestätige, dass diese Filter/Token für alle nützlich und allgemein gültig sind und keine persönlichen Vorlieben enthalten.",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
         }
       },
       "github_connection_error": {

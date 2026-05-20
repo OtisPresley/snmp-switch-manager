@@ -115,7 +115,8 @@
       "required_share": "Puisque vous avez vérifié l'OID, veuillez également sélectionner l'option de le partager avec la communauté pour aider les autres.",
       "required_attestation_to_share": "Vous devez attester que vous avez testé l'OID avant de le partager avec la communauté.",
       "duplicate_oid": "Cet OID existe déjà dans la base de données pour ce fournisseur.",
-      "invalid_float": "Facteur d'échelle numérique invalide (doit être un float comme 1.0 ou 0.1)"
+      "invalid_float": "Facteur d'échelle numérique invalide (doit être un float comme 1.0 ou 0.1)",
+      "required_all_attestations_to_share": "Vous devez cocher les trois cases d'attestation pour soumettre à GitHub."
     },
     "step": {
       "bandwidth_enable": {
@@ -401,7 +402,8 @@
           "excluded_interfaces": "Interfaces exclues",
           "included_interfaces": "Interfaces incluses",
           "interface_name_rules": "Règles de nom d’interface",
-          "interface_ip_display": "Affichage IP de l’interface"
+          "interface_ip_display": "Affichage IP de l’interface",
+          "submit_community_interface_rule": "Soumettre filtre/jeton à la communauté"
         },
         "title": "Gérer les interfaces"
       },
@@ -534,6 +536,38 @@
       "github_connection_error": {
         "title": "Erreur de connexion GitHub",
         "description": "Échec de la communication avec GitHub. Veuillez vérifier votre connexion Internet et réessayer."
+      },
+      "submit_community_interface_rule": {
+        "title": "Choisir le type de contribution",
+        "description": "Soumettez un nouveau filtre d'interface ou un jeton de classification physique/virtuel au référentiel de la communauté au profit de tous les utilisateurs.",
+        "data": {
+          "contrib_type": "Type de contribution"
+        }
+      },
+      "submit_community_filter": {
+        "title": "Soumettre filtre d'interface",
+        "description": "Définissez un filtre d'interface au niveau du système. Les 3 cases doivent être cochées pour autoriser la soumission.",
+        "data": {
+          "label": "Nom d'affichage (ex. Cisco: Ignorer VLANs)",
+          "vendors": "Fournisseurs séparés par des virgules (ex. Cisco, Dell)",
+          "rule_type": "Type de règle / Action",
+          "share_with_community": "Partager avec la communauté",
+          "attestation": "J'atteste avoir testé et vérifié que ces règles/jetons fonctionnent comme prévu.",
+          "beneficial_for_everyone": "J'atteste que ces filtres/jetons sont bénéfiques pour tous, sont génériques et ne contiennent pas de préférences personnelles.",
+          "back_to_menu": "Retour (abandonner les modifications)"
+        }
+      },
+      "submit_community_token": {
+        "title": "Soumettre le jeton de classification",
+        "description": "Définissez un jeton de classification physique/virtuel. Les 3 cases doivent être cochées pour autoriser la soumission.",
+        "data": {
+          "type": "Liste de jetons",
+          "token": "Chaîne de jeton (ex. irb, bdi, lag)",
+          "share_with_community": "Partager avec la communauté",
+          "attestation": "J'atteste avoir testé et vérifié que ces règles/jetons fonctionnent comme prévu.",
+          "beneficial_for_everyone": "J'atteste que ces filtres/jetons sont bénéfiques pour tous, sont génériques et ne contiennent pas de préférences personnelles.",
+          "back_to_menu": "Retour (abandonner les modifications)"
+        }
       }
     }
   },
