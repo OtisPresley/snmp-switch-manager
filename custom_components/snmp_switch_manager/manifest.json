@@ -16,5 +16,5 @@
   "requirements": [
     "pysnmp>=6.2.6"
   ],
-  "version": "0.6.0"
+  "version": "0.6.0-beta.1"
 }

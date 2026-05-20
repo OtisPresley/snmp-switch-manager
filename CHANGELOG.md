@@ -7,19 +7,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0] - 2026-05-19
+## [0.6.0-beta.1] - 2026-05-20
 
-This major release delivers extreme performance optimizations and a fully modular options flow featuring direct OID overrides and crowdsourced community sharing.
+This beta release delivers dynamic telemetry scaling overrides, automated background database auto-updating, direct OID overrides, crowdsourced community sharing, and a fully modular options flow with extreme startup performance optimizations.
 
 ### Added
 
+* 🕒 **Scheduled Background Database Auto-Updater:** Automates downloading of system OIDs, filters, and classifications for all **12 database files** from the main repository branch every 6 hours. Performs structural JSON validation and immediately applies updates to running switch/sensor entities within 2 seconds without an HA restart.
+* 📏 **Dynamic Telemetry Scaling Factors:** Enabled fully custom numeric multipliers (e.g., `0.1` or `1.0`) across all hardware sensors (CPU, Memory, PSU, Fans, PoE, Temp) dynamically from the Home Assistant options flow overrides.
 * 🎛️ **Advanced Feature OID Overrides:** A brand new, beautifully structured overrides panel under **Device Options**. You can now override custom OIDs for CPU, Memory, Temperature, Fans, PSUs, PoE, and Device Diagnostics, with built-in validation.
 * ⚡ **GitHub Community Submissions:** Submit your verified custom OID overrides directly to the public repository from the Home Assistant UI via simple GitHub device authentication to help others.
+* 🛡️ **Community PR Attestation Pipelines:** Added three Attestation Checkbox confirmations requiring users to verify their filters/tokens are generic, tested, and beneficial to all users before submitting to the repository.
 * 📦 **Modular Refactored Settings:** The options flow is now fully split into responsive submenus (Interfaces, Bandwidth, Environmentals, Connection & Name, and Feature Overrides) for an incredibly fast and clean configuration experience.
+* 🌐 **Perfect Translation Sync:** Localized all new community filter and classification token options flows across **German, Spanish, French, Italian, and Dutch**.
 
 ### Improved
 
 * 🚀 **Extreme Startup & Reload Speeds:** Optimized SNMP walks, cached engine bindings, and parallel metadata polling reduce integration loading and reload times by over 80% on high-port switches (such as 24-port and 52-port devices).
+* 🧩 **100% Modularity & Code containment:** Decoupled networking by moving PySNMP asynchronous operations to a unified compat module, strictly bringing **every single file in the repository under a 500-line limit**.
+* 🛡️ **Device Registry Stability:** Restored legacy device identifier mapping to guarantee backwards compatibility and prevent Home Assistant from creating duplicate device entries when connection settings are updated.
 * 🛡️ **Stack Robustness:** Resilient environmental and PoE discovery isolated on mixed-hardware stacks.
 
 ## \[0.5.3-beta.3\] - 2026-05-17
