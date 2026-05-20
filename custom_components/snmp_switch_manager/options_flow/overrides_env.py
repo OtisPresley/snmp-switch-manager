@@ -180,6 +180,9 @@ class OverridesEnvMixin:
 
     async def async_step_create_pr(self, user_input=None) -> FlowResult:
         """Create PR."""
+        if user_input is not None:
+            return await self.async_step_feature_overrides()
+
         feature = getattr(self, "_last_override_feature", None)
         token = getattr(self, "_github_token", None)
         
