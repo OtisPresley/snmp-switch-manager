@@ -10,7 +10,8 @@
     "bridge",
     "port-channel",
     "bond",
-    "lag"
+    "lag",
+    "my"
   ],
   "physical_tokens": [
     "gigabit",
