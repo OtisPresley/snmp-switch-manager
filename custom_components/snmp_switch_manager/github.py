@@ -281,99 +281,132 @@ async def submit_override(token: str, feature: str, override_data: Dict[str, Any
     if not isinstance(db, dict):
         db = {}
         
-    items = db.setdefault(feature, [])
-    if not isinstance(items, list):
-        items = []
-        db[feature] = items
+    if feature != "interface_classification":
+        items = db.setdefault(feature, [])
+        if not isinstance(items, list):
+            items = []
+            db[feature] = items
 
-    new_vendor = override_data.get("vendor", "").strip()
-    
-    def normalize(o: str | None) -> str:
-        if not o:
-            return ""
-        o_str = str(o).strip()
-        if o_str.startswith("."):
-            return o_str[1:]
-        return o_str
-
-    # Format the item for DB
-    db_item = {}
-    if feature in ["cpu", "temperature", "power"]:
-        db_item["oid"] = normalize(override_data.get("oid"))
-    elif feature == "memory":
-        db_item["type"] = override_data.get("type", "free_total")
-        if db_item["type"] == "percentage":
-            db_item["oid"] = normalize(override_data.get("oid"))
-        else:
-            db_item["oid_free"] = normalize(override_data.get("oid_free"))
-            db_item["oid_total"] = normalize(override_data.get("oid_total"))
-    elif feature == "fans":
-        db_item["oid_rpm"] = normalize(override_data.get("oid_rpm"))
-        db_item["oid_status"] = normalize(override_data.get("oid_status"))
-    elif feature == "psu":
-        db_item["oid_status"] = normalize(override_data.get("oid_status"))
-    elif feature == "poe":
-        db_item["oid_budget"] = normalize(override_data.get("oid_budget"))
-        db_item["oid_used"] = normalize(override_data.get("oid_used"))
-        db_item["oid_port_power"] = normalize(override_data.get("oid_port_power"))
-    elif feature == "device_info":
-        db_item["oid_mfg"] = normalize(override_data.get("manufacturer"))
-        db_item["oid_model"] = normalize(override_data.get("model"))
-        db_item["oid_firmware"] = normalize(override_data.get("firmware"))
-        db_item["oid_hostname"] = normalize(override_data.get("hostname"))
-        db_item["oid_uptime"] = normalize(override_data.get("uptime"))
-
-    db_item["vendors"] = [new_vendor]
-    db_item["method"] = override_data.get("method", "get")
-    
-    for k in ["scale", "unit", "description", "oid_state", "oid_label", "filter"]:
-        if k in override_data and override_data[k] is not None:
-            if k == "oid_label" or k == "oid_state":
-                db_item[k] = normalize(override_data[k])
-            else:
-                db_item[k] = override_data[k]
-
-    # Find if OID already exists
-    found_item = None
-    for item in items:
-        if feature in ["cpu", "temperature", "power"]:
-            match = normalize(item.get("oid")) == db_item.get("oid")
-        elif feature == "memory":
-            if item.get("type", "free_total") == "percentage":
-                match = normalize(item.get("oid")) == db_item.get("oid")
-            else:
-                match = (normalize(item.get("oid_free")) == db_item.get("oid_free") and 
-                         normalize(item.get("oid_total")) == db_item.get("oid_total"))
-        elif feature == "fans":
-            match = (normalize(item.get("oid_rpm")) == db_item.get("oid_rpm") or 
-                     normalize(item.get("oid_status")) == db_item.get("oid_status"))
-        elif feature == "psu":
-            match = normalize(item.get("oid_status")) == db_item.get("oid_status")
-        elif feature == "poe":
-            match = (normalize(item.get("oid_budget")) == db_item.get("oid_budget") or 
-                     normalize(item.get("oid_used")) == db_item.get("oid_used") or 
-                     normalize(item.get("oid_port_power")) == db_item.get("oid_port_power"))
-        elif feature == "device_info":
-            match = (normalize(item.get("oid_mfg")) == db_item.get("oid_mfg") or
-                     normalize(item.get("oid_model")) == db_item.get("oid_model") or
-                     normalize(item.get("oid_firmware")) == db_item.get("oid_firmware") or
-                     normalize(item.get("oid_hostname")) == db_item.get("oid_hostname") or
-                     normalize(item.get("oid_uptime")) == db_item.get("oid_uptime"))
-        else:
-            match = False
-
-        if match:
-            found_item = item
-            break
-
-    if found_item:
-        existing_vendors = [v.lower() for v in found_item.get("vendors", [])]
-        if new_vendor.lower() in existing_vendors:
-            _LOGGER.error("Duplicate override detected for feature %s: OID and vendor %s already exists", feature, new_vendor)
+    if feature == "interface_classification":
+        token_type = override_data.get("type", "virtual_tokens")
+        new_token = override_data.get("token", "").strip().lower()
+        if token_type not in ["virtual_tokens", "physical_tokens"]:
+            _LOGGER.error("Invalid token type for interface classification: %s", token_type)
             return False
-        found_item.setdefault("vendors", []).append(new_vendor)
-    else:
+        if not new_token:
+            _LOGGER.error("Empty token for interface classification")
+            return False
+            
+        tokens_list = db.setdefault(token_type, [])
+        if new_token in tokens_list:
+            _LOGGER.error("Token '%s' already exists in '%s'", new_token, token_type)
+            return False
+        tokens_list.append(new_token)
+    elif feature == "interface_filters":
+        db_item = {
+            "id": override_data.get("id"),
+            "label": override_data.get("label"),
+            "vendors": override_data.get("vendors", []),
+            "rule_type": override_data.get("rule_type")
+        }
+        found_item = None
+        for item in items:
+            if item.get("id") == db_item["id"]:
+                found_item = item
+                break
+        if found_item:
+            _LOGGER.error("Duplicate interface filter ID detected: %s", db_item["id"])
+            return False
         items.append(db_item)
+    else:
+        new_vendor = override_data.get("vendor", "").strip()
+        
+        def normalize(o: str | None) -> str:
+            if not o:
+                return ""
+            o_str = str(o).strip()
+            if o_str.startswith("."):
+                return o_str[1:]
+            return o_str
+
+        # Format the item for DB
+        db_item = {}
+        if feature in ["cpu", "temperature", "power"]:
+            db_item["oid"] = normalize(override_data.get("oid"))
+        elif feature == "memory":
+            db_item["type"] = override_data.get("type", "free_total")
+            if db_item["type"] == "percentage":
+                db_item["oid"] = normalize(override_data.get("oid"))
+            else:
+                db_item["oid_free"] = normalize(override_data.get("oid_free"))
+                db_item["oid_total"] = normalize(override_data.get("oid_total"))
+        elif feature == "fans":
+            db_item["oid_rpm"] = normalize(override_data.get("oid_rpm"))
+            db_item["oid_status"] = normalize(override_data.get("oid_status"))
+        elif feature == "psu":
+            db_item["oid_status"] = normalize(override_data.get("oid_status"))
+        elif feature == "poe":
+            db_item["oid_budget"] = normalize(override_data.get("oid_budget"))
+            db_item["oid_used"] = normalize(override_data.get("oid_used"))
+            db_item["oid_port_power"] = normalize(override_data.get("oid_port_power"))
+        elif feature == "device_info":
+            db_item["oid_mfg"] = normalize(override_data.get("manufacturer"))
+            db_item["oid_model"] = normalize(override_data.get("model"))
+            db_item["oid_firmware"] = normalize(override_data.get("firmware"))
+            db_item["oid_hostname"] = normalize(override_data.get("hostname"))
+            db_item["oid_uptime"] = normalize(override_data.get("uptime"))
+
+        db_item["vendors"] = [new_vendor]
+        db_item["method"] = override_data.get("method", "get")
+        
+        for k in ["scale", "unit", "description", "oid_state", "oid_label", "filter"]:
+            if k in override_data and override_data[k] is not None:
+                if k == "oid_label" or k == "oid_state":
+                    db_item[k] = normalize(override_data[k])
+                else:
+                    db_item[k] = override_data[k]
+
+        # Find if OID already exists
+        found_item = None
+        for item in items:
+            if feature in ["cpu", "temperature", "power"]:
+                match = normalize(item.get("oid")) == db_item.get("oid")
+            elif feature == "memory":
+                if item.get("type", "free_total") == "percentage":
+                    match = normalize(item.get("oid")) == db_item.get("oid")
+                else:
+                    match = (normalize(item.get("oid_free")) == db_item.get("oid_free") and 
+                             normalize(item.get("oid_total")) == db_item.get("oid_total"))
+            elif feature == "fans":
+                match = (normalize(item.get("oid_rpm")) == db_item.get("oid_rpm") or 
+                         normalize(item.get("oid_status")) == db_item.get("oid_status"))
+            elif feature == "psu":
+                match = normalize(item.get("oid_status")) == db_item.get("oid_status")
+            elif feature == "poe":
+                match = (normalize(item.get("oid_budget")) == db_item.get("oid_budget") or 
+                         normalize(item.get("oid_used")) == db_item.get("oid_used") or 
+                         normalize(item.get("oid_port_power")) == db_item.get("oid_port_power"))
+            elif feature == "device_info":
+                match = (normalize(item.get("oid_mfg")) == db_item.get("oid_mfg") or
+                         normalize(item.get("oid_model")) == db_item.get("oid_model") or
+                         normalize(item.get("oid_firmware")) == db_item.get("oid_firmware") or
+                         normalize(item.get("oid_hostname")) == db_item.get("oid_hostname") or
+                         normalize(item.get("oid_uptime")) == db_item.get("oid_uptime"))
+            else:
+                match = False
+
+            if match:
+                found_item = item
+                break
+
+        if found_item:
+            existing_vendors = [v.lower() for v in found_item.get("vendors", [])]
+            if new_vendor.lower() in existing_vendors:
+                _LOGGER.error("Duplicate override detected for feature %s: OID and vendor %s already exists", feature, new_vendor)
+                return False
+            found_item.setdefault("vendors", []).append(new_vendor)
+        else:
+            items.append(db_item)
     
     # Encode back
     new_content = json.dumps(db, indent=2)
