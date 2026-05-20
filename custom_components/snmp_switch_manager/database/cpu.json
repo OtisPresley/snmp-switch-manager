@@ -20,6 +20,16 @@
       "scale": 1.0,
       "unit": "%",
       "description": "Dell OS6 CPU usage percentage"
+    },
+    {
+      "oid": "1.3.6.1.4.1.25506.2.6.1.1.1.1.7",
+      "vendors": [
+        "pfSense"
+      ],
+      "method": "walk",
+      "scale": 1.0,
+      "unit": "%",
+      "description": "pfSense CPU usage percentage"
     }
   ]
 }
