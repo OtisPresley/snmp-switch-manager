@@ -12,6 +12,8 @@ _LOGGER = logging.getLogger(__name__)
 # Placeholder Client ID - User will need to provide their own or we use a default one for the app.
 # For now, we use a placeholder.
 GITHUB_CLIENT_ID = "Ov23liTlBABZlhQen9QI"
+GITHUB_REPO = "OtisPresley/snmp-switch-manager"
+GITHUB_BASE_BRANCH = "feature/modular-refactor"
 
 async def request_device_code(client_id: str) -> Optional[Dict[str, Any]]:
     """Request a device code from GitHub."""
@@ -214,8 +216,8 @@ async def create_pull_request(token: str, repo: str, base: str, head: str, title
 
 async def submit_override(token: str, feature: str, override_data: Dict[str, Any]) -> bool:
     """Full flow to submit an override as a PR."""
-    repo = "OtisPresley/snmp-switch-manager"
-    base_branch = "feature/modular-refactor"
+    repo = GITHUB_REPO
+    base_branch = GITHUB_BASE_BRANCH
     
     # 1. Get user info
     user_info = await get_user(token)
