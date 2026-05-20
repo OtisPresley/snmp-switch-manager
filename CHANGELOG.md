@@ -28,6 +28,15 @@ This beta release delivers dynamic telemetry scaling overrides, automated backgr
 * 🛡️ **Device Registry Stability:** Restored legacy device identifier mapping to guarantee backwards compatibility and prevent Home Assistant from creating duplicate device entries when connection settings are updated.
 * 🛡️ **Stack Robustness:** Resilient environmental and PoE discovery isolated on mixed-hardware stacks.
 
+## [0.5.3-beta.4] - 2026-05-19
+
+### Fixed
+
+* ⚡ **now_mono Scoping Bug:** Eliminated a fatal `UnboundLocalError` inside `async_poll` occurring when Power-over-Ethernet (PoE) polling was disabled.
+* 🌡️ **Comware/H3C Environmental Support:** Resolved a severe status mapping bug where normal hardware was reported as `FAILED` inside the Home Assistant GUI.
+* 🏷️ **Sequential Index Mapping & Fallback Names:** Added sequential index mapping for Temperature, Fans, and PSU sensors to ensure clean names in the GUI, falling back on `entPhysicalDescr` if `entPhysicalName` returns empty strings.
+* 🔋 **Environmental Isolation:** Guaranteed that CPU, Memory, Temperature, Fan, and PSU metrics are completely isolated and only processed when Environmental monitoring is enabled.
+
 ## \[0.5.3-beta.3\] - 2026-05-17
 
 ### Fixed
