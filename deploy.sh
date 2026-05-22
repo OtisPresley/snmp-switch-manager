@@ -20,6 +20,7 @@ rsync -avzh --delete \
   --exclude='__pycache__/' \
   --exclude='*.pyc' \
   --exclude='.DS_Store' \
+  --exclude='.ruff_cache/' \
   custom_components/snmp_switch_manager/ \
   "${HA_USER}@${HA_HOST}:${TARGET_DIR}"
 

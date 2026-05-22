@@ -9,13 +9,15 @@ import base64
 import json
 import time
 
+from .const import GITHUB_BRANCH
+
 _LOGGER = logging.getLogger(__name__)
 
 # Placeholder Client ID - User will need to provide their own or we use a default one for the app.
 # For now, we use a placeholder.
 GITHUB_CLIENT_ID = "Ov23liTlBABZlhQen9QI"
 GITHUB_REPO = "OtisPresley/snmp-switch-manager"
-GITHUB_BASE_BRANCH = "feature/modular-refactor"
+GITHUB_BASE_BRANCH = GITHUB_BRANCH
 
 
 def _slugify_branch(text: str) -> str:

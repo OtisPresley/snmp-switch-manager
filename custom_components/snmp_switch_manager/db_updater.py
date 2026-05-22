@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.config_entries import ConfigEntry
-from .const import DOMAIN
+from .const import DOMAIN, GITHUB_BRANCH
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ DB_FILES = [
     "vendors.json"
 ]
 
-RAW_URL_ROOT = "https://raw.githubusercontent.com/OtisPresley/snmp-switch-manager/main/custom_components/snmp_switch_manager/database/"
+RAW_URL_ROOT = f"https://raw.githubusercontent.com/OtisPresley/snmp-switch-manager/{GITHUB_BRANCH}/custom_components/snmp_switch_manager/database/"
 
 
 async def async_check_and_update_db(hass: HomeAssistant) -> bool:

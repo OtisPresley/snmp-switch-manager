@@ -8,6 +8,9 @@ from typing import Any as Any
 
 DOMAIN = "snmp_switch_manager"
 
+# Target GitHub branch for downloading database files and creating PRs
+GITHUB_BRANCH = "feature/modular-refactor"
+
 CONF_HOST = "host"
 CONF_PORT = "port"
 CONF_COMMUNITY = "community" 
@@ -240,6 +243,7 @@ CONF_BW_TX_TOTAL_ICON = "bw_tx_total_icon"
 __all__ = [
     "Any",
     "DOMAIN",
+    "GITHUB_BRANCH",
     "PLATFORMS",
     # Add your specific OID variable names here as well
 ]
