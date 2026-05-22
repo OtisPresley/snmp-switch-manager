@@ -41,6 +41,11 @@
       "sys_object_id_prefix": "1.3.6.1.4.1.14988"
     },
     {
+      "name": "pfSense",
+      "enterprise_number": "",
+      "sys_object_id_prefix": ""
+    },
+    {
       "name": "Standard",
       "enterprise_number": "",
       "sys_object_id_prefix": ""
