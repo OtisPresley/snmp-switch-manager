@@ -551,6 +551,8 @@
           "label": "Weergavelabel (bijv. Cisco: VLAN's overslaan)",
           "vendors": "Komma-gescheiden fabrikanten (bijv. Cisco, Dell)",
           "rule_type": "Regeltype / Actie",
+          "match_type": "Vergelijkingstype",
+          "match_value": "Vergelijkingswaarde",
           "share_with_community": "Delen met de community",
           "attestation": "Ik verklaar dat ik deze regels/tokens heb getest en geverifieerd dat ze naar behoren werken.",
           "beneficial_for_everyone": "Ik verklaar dat deze filters/tokens nuttig zijn voor iedereen, generiek zijn en geen persoonlijke voorkeuren bevatten.",

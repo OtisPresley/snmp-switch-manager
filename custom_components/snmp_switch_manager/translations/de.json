@@ -547,6 +547,8 @@
           "label": "Anzeigebezeichnung (z. B. Cisco: VLANs überspringen)",
           "vendors": "Kommagetrennte Hersteller (z. B. Cisco, Dell)",
           "rule_type": "Regeltyp / Aktion",
+          "match_type": "Abgleichtyp",
+          "match_value": "Abgleichwert",
           "share_with_community": "Mit der Community teilen",
           "attestation": "Ich bestätige, dass ich diese Regeln/Token getestet und verifiziert habe und sie wie erwartet funktionieren.",
           "beneficial_for_everyone": "Ich bestätige, dass diese Filter/Token für alle nützlich und allgemein gültig sind und keine persönlichen Vorlieben enthalten.",

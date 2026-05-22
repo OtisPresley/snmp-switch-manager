@@ -81,7 +81,10 @@ def main():
     
     # Step 1: Scan and validate all feature database files
     for filename in os.listdir(DB_DIR):
-        if not filename.endswith(".json") or filename == "vendors.json":
+        if not filename.endswith(".json"):
+            continue
+        feature = filename[:-5]
+        if feature not in ["cpu", "temperature", "power", "memory", "fans", "psu", "poe", "device_info"]:
             continue
             
         file_path = os.path.join(DB_DIR, filename)

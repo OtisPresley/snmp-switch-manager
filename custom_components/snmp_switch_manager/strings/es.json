@@ -551,6 +551,8 @@
           "label": "Etiqueta de visualización (p. ej., Cisco: Omitir VLAN)",
           "vendors": "Fabricantes separados por comas (p. ej., Cisco, Dell)",
           "rule_type": "Tipo de regla / Acción",
+          "match_type": "Tipo de coincidencia",
+          "match_value": "Valor de coincidencia",
           "share_with_community": "Compartir con la comunidad",
           "attestation": "Doy fe de que he probado y verificado que estas reglas/tokens funcionan como se espera.",
           "beneficial_for_everyone": "Doy fe de que estos filtros/tokens son beneficiosos para todos, son genéricos y no contienen preferencias personales.",

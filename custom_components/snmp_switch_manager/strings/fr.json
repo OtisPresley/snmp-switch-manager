@@ -551,6 +551,8 @@
           "label": "Nom d'affichage (ex. Cisco: Ignorer VLANs)",
           "vendors": "Fournisseurs séparés par des virgules (ex. Cisco, Dell)",
           "rule_type": "Type de règle / Action",
+          "match_type": "Type de correspondance",
+          "match_value": "Valeur de correspondance",
           "share_with_community": "Partager avec la communauté",
           "attestation": "J'atteste avoir testé et vérifié que ces règles/jetons fonctionnent comme prévu.",
           "beneficial_for_everyone": "J'atteste que ces filtres/jetons sont bénéfiques pour tous, sont génériques et ne contiennent pas de préférences personnelles.",

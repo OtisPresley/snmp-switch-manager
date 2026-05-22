@@ -547,6 +547,8 @@
           "label": "Display Label (e.g., Cisco: Skip VLANs)",
           "vendors": "Comma-separated Vendors (e.g., Cisco, Dell)",
           "rule_type": "Rule Type / Action",
+          "match_type": "Match Type",
+          "match_value": "Match Value",
           "share_with_community": "Share this with the community",
           "attestation": "I attest that I have tested and verified that these rules/tokens work as expected.",
           "beneficial_for_everyone": "I attest that these filters/tokens are beneficial for everyone, are generic, and do not contain personal preferences.",

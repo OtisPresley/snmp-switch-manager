@@ -105,6 +105,31 @@ def verify_file(file_path: str, feature: str) -> bool:
                 print(f"Error: Invalid PoE port power OID at index {idx}.")
                 return False
             oid_key = f"budget:{budget}|used:{used}|port_power:{port_power}"
+        elif feature == "device_info":
+            mfg = item.get("oid_mfg")
+            model = item.get("oid_model")
+            firmware = item.get("oid_firmware")
+            hostname = item.get("oid_hostname")
+            uptime = item.get("oid_uptime")
+            if not mfg and not model and not firmware and not hostname and not uptime:
+                print(f"Error: Device Info item at index {idx} must have at least one diagnostic OID.")
+                return False
+            if mfg and not is_valid_numeric_oid(mfg):
+                print(f"Error: Invalid Device Info manufacturer OID at index {idx}.")
+                return False
+            if model and not is_valid_numeric_oid(model):
+                print(f"Error: Invalid Device Info model OID at index {idx}.")
+                return False
+            if firmware and not is_valid_numeric_oid(firmware):
+                print(f"Error: Invalid Device Info firmware OID at index {idx}.")
+                return False
+            if hostname and not is_valid_numeric_oid(hostname):
+                print(f"Error: Invalid Device Info hostname OID at index {idx}.")
+                return False
+            if uptime and not is_valid_numeric_oid(uptime):
+                print(f"Error: Invalid Device Info uptime OID at index {idx}.")
+                return False
+            oid_key = f"mfg:{mfg}|model:{model}|firmware:{firmware}|hostname:{hostname}|uptime:{uptime}"
         else: # cpu, temperature, power
             oid = item.get("oid")
             if not oid:
@@ -302,7 +327,7 @@ def verify_interface_classification(file_path: str) -> bool:
 
 def main():
     db_dir = "custom_components/snmp_switch_manager/database"
-    features = ["cpu", "memory", "fans", "psu", "temperature", "power", "poe"]
+    features = ["cpu", "memory", "fans", "psu", "temperature", "power", "poe", "device_info"]
     
     success = True
     for feature in features:

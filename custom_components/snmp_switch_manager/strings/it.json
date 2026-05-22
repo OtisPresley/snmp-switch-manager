@@ -551,6 +551,8 @@
           "label": "Etichetta visualizzata (es. Cisco: Salta VLAN)",
           "vendors": "Produttori separati da virgole (es. Cisco, Dell)",
           "rule_type": "Tipo di regola / Azione",
+          "match_type": "Tipo di corrispondenza",
+          "match_value": "Valore di corrispondenza",
           "share_with_community": "Condividi con la community",
           "attestation": "Attesto di aver testato e verificato che queste regole/token funzionino come previsto.",
           "beneficial_for_everyone": "Attesto che questi filtri/token siano vantaggiosi per tutti, siano generici e non contengano preferenze personali.",

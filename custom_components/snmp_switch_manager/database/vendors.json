@@ -31,6 +31,11 @@
       "sys_object_id_prefix": ""
     },
     {
+      "name": "Junos",
+      "enterprise_number": "",
+      "sys_object_id_prefix": ""
+    },
+    {
       "name": "Mikrotik",
       "enterprise_number": "14988",
       "sys_object_id_prefix": "1.3.6.1.4.1.14988"
