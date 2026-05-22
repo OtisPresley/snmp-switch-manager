@@ -181,6 +181,9 @@ class OverridesEnvMixin:
                 else:
                     errors["authorized"] = "authorization_pending"
 
+        user_code = getattr(self, "_user_code", "ERROR")
+        verification_uri = getattr(self, "_verification_uri", "https://github.com/login/device")
+
         return self.async_show_form(
             step_id="submit_pr",
             data_schema=vol.Schema({
@@ -188,8 +191,8 @@ class OverridesEnvMixin:
                 vol.Optional("back_to_menu", default=False): cv.boolean,
             }),
             description_placeholders={
-                "code": getattr(self, "_user_code", "ERROR"),
-                "url": getattr(self, "_verification_uri", "https://github.com/login/device"),
+                "code": user_code,
+                "url": verification_uri,
             },
             errors=errors,
         )

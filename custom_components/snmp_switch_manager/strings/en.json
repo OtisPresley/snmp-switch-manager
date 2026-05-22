@@ -309,8 +309,12 @@
         "title": "Submit to GitHub?"
       },
       "submit_pr": {
-        "description": "To submit your override, please authenticate with GitHub:\n\n1. Go to {url}\n2. Enter code: **{code}**\n3. Once you get the green check on GitHub, click Submit.",
-        "title": "Authenticate with GitHub"
+        "description": "To submit your override, please authenticate with GitHub:\n\n1. Go to [github.com/login/device]({url}) (opens in a new tab)\n2. Copy and enter code: `{code}`\n3. Once you get the green check on GitHub, click Submit.",
+        "title": "Authenticate with GitHub",
+        "data": {
+          "authorized": "I have authorized this on GitHub",
+          "back_to_menu": "Go back (discard changes)"
+        }
       },
       "create_pr": {
         "description": "{status}",
@@ -545,7 +549,7 @@
         "description": "Define a system-level interface filter. All 3 checkboxes must be checked to authorize submission.",
         "data": {
           "label": "Display Label (e.g., Cisco: Skip VLANs)",
-          "vendors": "Comma-separated Vendors (e.g., Cisco, Dell)",
+          "vendor": "Vendor (Brand)",
           "rule_type": "Rule Type / Action",
           "match_type": "Match Type",
           "match_value": "Match Value",

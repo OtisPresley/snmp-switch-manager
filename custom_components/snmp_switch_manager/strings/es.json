@@ -309,8 +309,12 @@
         "title": "¿Enviar a GitHub?"
       },
       "submit_pr": {
-        "description": "Para enviar tu anulación, autentícate en GitHub:\n\n1. Ve a {url}\n2. Introduce el código: **{code}**\n3. Una vez que obtenga la marca de verificación verde en GitHub, haga clic en Enviar.",
-        "title": "Autenticarse en GitHub"
+        "description": "Para enviar tu anulación, autentícate en GitHub:\n\n1. Ve a [github.com/login/device]({url}) (se abre en una nueva pestaña)\n2. Copia e introduce el código: `{code}`\n3. Una vez que obtengas la marca de verificación verde en GitHub, haz clic en Enviar.",
+        "title": "Autenticarse en GitHub",
+        "data": {
+          "authorized": "He autorizado esto en GitHub",
+          "back_to_menu": "Volver (descartar cambios)"
+        }
       },
       "create_pr": {
         "description": "{status}",
@@ -549,7 +553,7 @@
         "description": "Defina un filtro de interfaz a nivel de sistema. Se deben marcar las 3 casillas para autorizar el envío.",
         "data": {
           "label": "Etiqueta de visualización (p. ej., Cisco: Omitir VLAN)",
-          "vendors": "Fabricantes separados por comas (p. ej., Cisco, Dell)",
+          "vendor": "Proveedor (Marca)",
           "rule_type": "Tipo de regla / Acción",
           "match_type": "Tipo de coincidencia",
           "match_value": "Valor de coincidencia",

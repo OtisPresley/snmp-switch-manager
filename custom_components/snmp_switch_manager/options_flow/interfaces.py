@@ -340,12 +340,25 @@ class InterfacesOptionsMixin:
     async def async_step_submit_community_filter(self, user_input=None) -> FlowResult:
         """Form for submitting a community interface filter."""
         errors = {}
+        db = self._get_database()
+        db_vendors = db.get("vendors", {}).get("vendors", [])
+        vendor_options = [
+            selector.SelectOptionDict(value=v["name"], label=v["name"])
+            for v in db_vendors
+        ]
+        if not vendor_options:
+            vendor_options = [
+                selector.SelectOptionDict(value="Dell", label="Dell"),
+                selector.SelectOptionDict(value="Cisco", label="Cisco"),
+                selector.SelectOptionDict(value="H3C", label="H3C"),
+            ]
+
         if user_input is not None:
             if user_input.get("back_to_menu"):
                 return await self.async_step_manage_interfaces()
 
             label = (user_input.get("label") or "").strip()
-            vendors_str = (user_input.get("vendors") or "").strip()
+            vendor = (user_input.get("vendor") or "").strip()
             rule_type = (user_input.get("rule_type") or "").strip()
             match_type = (user_input.get("match_type") or "").strip()
             match_value = (user_input.get("match_value") or "").strip()
@@ -356,8 +369,8 @@ class InterfacesOptionsMixin:
 
             if not label:
                 errors["label"] = "required"
-            if not vendors_str:
-                errors["vendors"] = "required"
+            if not vendor:
+                errors["vendor"] = "required"
             if not match_type:
                 errors["match_type"] = "required"
             if not match_value:
@@ -369,7 +382,7 @@ class InterfacesOptionsMixin:
 
             if not errors:
                 fid = _slugify(label)
-                vendors = [v.strip() for v in vendors_str.split(",") if v.strip()]
+                vendors = [vendor]
                 self._community_pr_feature = "interface_filters"
                 self._community_pr_data = {
                     "id": fid,
@@ -384,7 +397,13 @@ class InterfacesOptionsMixin:
         schema = vol.Schema(
             {
                 vol.Optional("label"): str,
-                vol.Optional("vendors"): str,
+                vol.Optional("vendor"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=vendor_options,
+                        custom_value=True,
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
                 vol.Optional("rule_type", default="exclude"): selector.SelectSelector(
                     selector.SelectSelectorConfig(
                         options=[

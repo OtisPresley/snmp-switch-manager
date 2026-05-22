@@ -309,8 +309,12 @@
         "title": "Soumettre à GitHub ?"
       },
       "submit_pr": {
-        "description": "Pour soumettre votre remplacement, veuillez vous authentifier auprès de GitHub :\n\n1. Allez sur {url}\n2. Entrez le code : **{code}**\n3. Une fois que vous avez le crochet vert sur GitHub, cliquez sur Soumettre.",
-        "title": "S'authentifier auprès de GitHub"
+        "description": "Pour soumettre votre remplacement, veuillez vous authentifier auprès de GitHub :\n\n1. Allez sur [github.com/login/device]({url}) (s'ouvre dans un nouvel onglet)\n2. Copiez et entrez le code : `{code}`\n3. Une fois que vous avez le crochet vert sur GitHub, cliquez sur Soumettre.",
+        "title": "S'authentifier auprès de GitHub",
+        "data": {
+          "authorized": "J'ai autorisé cela sur GitHub",
+          "back_to_menu": "Retourner (ignorer les modifications)"
+        }
       },
       "create_pr": {
         "description": "{status}",
@@ -549,7 +553,7 @@
         "description": "Définissez un filtre d'interface au niveau du système. Les 3 cases doivent être cochées pour autoriser la soumission.",
         "data": {
           "label": "Nom d'affichage (ex. Cisco: Ignorer VLANs)",
-          "vendors": "Fournisseurs séparés par des virgules (ex. Cisco, Dell)",
+          "vendor": "Fournisseur (Marque)",
           "rule_type": "Type de règle / Action",
           "match_type": "Type de correspondance",
           "match_value": "Valeur de correspondance",

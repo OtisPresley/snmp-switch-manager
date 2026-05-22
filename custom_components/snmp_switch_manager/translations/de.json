@@ -309,8 +309,12 @@
         "title": "An GitHub senden?"
       },
       "submit_pr": {
-        "description": "Um Ihre Überschreibung zu senden, authentifizieren Sie sich bitte bei GitHub:\n\n1. Gehen Sie zu {url}\n2. Geben Sie den Code ein: **{code}**\n3. Sobald Sie das grüne Häkchen auf GitHub erhalten, klicken Sie auf Absenden.",
-        "title": "Mit GitHub authentifizieren"
+        "description": "Um Ihre Überschreibung zu senden, authentifizieren Sie sich bitte bei GitHub:\n\n1. Gehen Sie zu [github.com/login/device]({url}) (öffnet in neuem Tab)\n2. Kopieren Sie den Code und geben Sie ihn ein: `{code}`\n3. Sobald Sie das grüne Häkchen auf GitHub erhalten, klicken Sie auf Absenden.",
+        "title": "Mit GitHub authentifizieren",
+        "data": {
+          "authorized": "Ich habe dies auf GitHub autorisiert",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
+        }
       },
       "create_pr": {
         "description": "{status}",
@@ -545,7 +549,7 @@
         "description": "Definieren Sie einen Schnittstellenfilter auf Systemebene. Alle 3 Kontrollkästchen müssen aktiviert sein, um das Senden zu autorisieren.",
         "data": {
           "label": "Anzeigebezeichnung (z. B. Cisco: VLANs überspringen)",
-          "vendors": "Kommagetrennte Hersteller (z. B. Cisco, Dell)",
+          "vendor": "Hersteller (Marke)",
           "rule_type": "Regeltyp / Aktion",
           "match_type": "Abgleichtyp",
           "match_value": "Abgleichwert",

@@ -309,8 +309,12 @@
         "title": "Inviare a GitHub ?"
       },
       "submit_pr": {
-        "description": "Per inviare il tuo override, autenticati su GitHub :\n\n1. Vai su {url}\n2. Inserisci il codice : **{code}**\n3. Una volta ottenuta la spunta verde su GitHub, fai clic su Invia.",
-        "title": "Autenticati su GitHub"
+        "description": "Per inviare il tuo override, autenticati su GitHub :\n\n1. Vai su [github.com/login/device]({url}) (si apre in una nuova scheda)\n2. Copia e inserisci il codice: `{code}`\n3. Una volta ottenuta la spunta verde su GitHub, fai clic su Invia.",
+        "title": "Autenticati su GitHub",
+        "data": {
+          "authorized": "Ho autorizzato questo su GitHub",
+          "back_to_menu": "Torna indietro (annulla modifiche)"
+        }
       },
       "create_pr": {
         "description": "{status}",
@@ -549,7 +553,7 @@
         "description": "Definisci un filtro di interfaccia a livello di sistema. Tutte e 3 le caselle devono essere selezionate per autorizzare l'invio.",
         "data": {
           "label": "Etichetta visualizzata (es. Cisco: Salta VLAN)",
-          "vendors": "Produttori separati da virgole (es. Cisco, Dell)",
+          "vendor": "Fornitore (Marca)",
           "rule_type": "Tipo di regola / Azione",
           "match_type": "Tipo di corrispondenza",
           "match_value": "Valore di corrispondenza",

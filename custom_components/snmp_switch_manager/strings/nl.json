@@ -309,8 +309,12 @@
         "title": "Indienen bij GitHub?"
       },
       "submit_pr": {
-        "description": "Om je overschrijving in te dienen, authenticeer je bij GitHub:\n\n1. Ga naar {url}\n2. Voer de code in: **{code}**\n3. Zodra je het groene vinkje op GitHub krijgt, klik je op Verzenden.",
-        "title": "Authenticeren bij GitHub"
+        "description": "Om je overschrijving in te dienen, authenticeer je bij GitHub:\n\n1. Ga naar [github.com/login/device]({url}) (opent in een nieuw tabblad)\n2. Kopieer en voer de code in: `{code}`\n3. Zodra je het groene vinkje op GitHub krijgt, klik je op Verzenden.",
+        "title": "Authenticeren bij GitHub",
+        "data": {
+          "authorized": "Ik heb dit geautoriseerd op GitHub",
+          "back_to_menu": "Teruggaan (wijzigingen negeren)"
+        }
       },
       "create_pr": {
         "description": "{status}",
@@ -549,7 +553,7 @@
         "description": "Definieer een interfacefilter op systeemniveau. Alle 3 de vakjes moeten worden aangevinkt om verzending toe te staan.",
         "data": {
           "label": "Weergavelabel (bijv. Cisco: VLAN's overslaan)",
-          "vendors": "Komma-gescheiden fabrikanten (bijv. Cisco, Dell)",
+          "vendor": "Leverancier (Merk)",
           "rule_type": "Regeltype / Actie",
           "match_type": "Vergelijkingstype",
           "match_value": "Vergelijkingswaarde",
