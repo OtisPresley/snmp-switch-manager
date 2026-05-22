@@ -71,6 +71,14 @@
         "pfSense"
       ],
       "rule_type": "exclude"
+    },
+    {
+      "id": "skip_pfsense_pf_interfaces",
+      "label": "Skip pfSense Pf Interfaces",
+      "vendors": [
+        "pfSense"
+      ],
+      "rule_type": "exclude"
     }
   ]
 }
