@@ -133,7 +133,7 @@
           "enable_bandwidth_sensors": "Abilita raccolta banda",
           "back_to_menu": "Torna indietro (annulla modifiche)"
         },
-        "description": "Abilita la raccolta della banda per questo dispositivo.\n\nSe scegli **Attributi**, i valori di banda vengono aggiunti alle entità porta (senza cronologia).\nSe scegli **Sensori**, vengono creati sensori di banda separati (con cronologia).",
+        "description": "👉 **[📘 Read Bandwidth Configuration Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#3-bandwidth-sensors)**\n\nAbilita la raccolta della banda per questo dispositivo.\n\nSe scegli **Attributi**, i valori di banda vengono aggiunti alle entità porta (senza cronologia).\nSe scegli **Sensori**, vengono creati sensori di banda separati (con cronologia).",
         "title": "Sensori di banda"
       },
       "bandwidth_exclude_rules": {
@@ -145,7 +145,7 @@
           "rule_value": "Valore",
           "back_to_menu": "Torna indietro (annulla modifiche)"
         },
-        "description": "Aggiungi o rimuovi regole di esclusione. Le regole di esclusione hanno sempre la precedenza.",
+        "description": "👉 **[📘 Read Bandwidth Configuration Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#3-bandwidth-sensors)**\n\nAggiungi o rimuovi regole di esclusione. Le regole di esclusione hanno sempre la precedenza.",
         "title": "Regole di esclusione sensori di banda"
       },
       "bandwidth_icons": {
@@ -168,7 +168,7 @@
           "rule_value": "Valore",
           "back_to_menu": "Torna indietro (annulla modifiche)"
         },
-        "description": "Aggiungi o rimuovi regole di inclusione. Se sono impostate regole di inclusione, solo le interfacce corrispondenti avranno sensori di banda.",
+        "description": "👉 **[📘 Read Bandwidth Configuration Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#3-bandwidth-sensors)**\n\nAggiungi o rimuovi regole di inclusione. Se sono impostate regole di inclusione, solo le interfacce corrispondenti avranno sensori di banda.",
         "title": "Regole di inclusione sensori di banda"
       },
       "bandwidth_poll_interval": {
@@ -180,7 +180,7 @@
         "title": "Sensori di banda"
       },
       "bandwidth_sensors": {
-        "description": "Abilita sensori opzionali di throughput RX/TX e traffico totale per le interfacce selezionate.",
+        "description": "👉 **[📘 Read Bandwidth Configuration Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#3-bandwidth-sensors)**\n\nAbilita sensori opzionali di throughput RX/TX e traffico totale per le interfacce selezionate.",
         "menu_options": {
           "back": "Indietro",
           "bandwidth_enable_disable": "Abilita / Disabilita",
@@ -212,11 +212,11 @@
           "snmpv3_priv_password": "SNMP v3 — Password privacy (opzionale)",
           "back_to_menu": "Torna indietro (annulla modifiche)"
         },
-        "description": "Override opzionali per dispositivo. Lascia vuoto per usare i valori della configurazione iniziale.\n\n### Versione SNMP\nTutti i campi sono sempre visibili a causa delle limitazioni di Home Assistant. Solo la **versione SNMP** selezionata determina quali campi vengono usati.\n\n### SNMP v2c\nUsa **override community SNMP** e **override porta SNMP** solo se devi sovrascrivere i valori della configurazione iniziale.\n\n### SNMP v3\nCompila **nome utente SNMPv3** e le impostazioni di autenticazione/privacy quando è selezionato SNMP v3. Molti dispositivi richiedono password tra 8 e 31 caratteri e possono rifiutare caratteri speciali.",
+        "description": "👉 **[📘 Read Connection & Name Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#1-connection--name)**\n\nOverride opzionali per dispositivo. Lascia vuoto per usare i valori della configurazione iniziale.\n\n### Versione SNMP\nTutti i campi sono sempre visibili a causa delle limitazioni di Home Assistant. Solo la **versione SNMP** selezionata determina quali campi vengono usati.\n\n### SNMP v2c\nUsa **override community SNMP** e **override porta SNMP** solo se devi sovrascrivere i valori della configurazione iniziale.\n\n### SNMP v3\nCompila **nome utente SNMPv3** e le impostazioni di autenticazione/privacy quando è selezionato SNMP v3. Molti dispositivi richiedono password tra 8 e 31 caratteri e possono rifiutare caratteri speciali.",
         "title": "Connessione e nome"
       },
       "feature_overrides": {
-        "description": "Gestisci gli override degli OID personalizzati per funzionalità specifiche.",
+        "description": "👉 **[📘 Read Custom OID Overrides Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nGestisci gli override degli OID personalizzati per funzionalità specifiche.",
         "menu_options": {
           "override_power": "Sovrascrivi alimentazione",
           "back": "Indietro",
@@ -242,7 +242,7 @@
           "share_with_community": "Condividi con la community",
           "back_to_menu": "Torna indietro (annulla modifiche)"
         },
-        "description": "Ignora l'OID della CPU per questo dispositivo. Lascia questo campo vuoto per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read CPU Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nIgnora l'OID della CPU per questo dispositivo. Lascia questo campo vuoto per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Sovrascrivi CPU"
       },
       "override_memory": {
@@ -256,7 +256,7 @@
           "back_to_menu": "Torna indietro (annulla modifiche)",
           "scale": "Scala"
         },
-        "description": "Ignora gli OID di memoria per questo dispositivo. Lascia entrambi i campi vuoti per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Memory Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nIgnora gli OID di memoria per questo dispositivo. Lascia entrambi i campi vuoti per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Sovrascrivi memoria"
       },
       "override_fans": {
@@ -270,7 +270,7 @@
           "back_to_menu": "Torna indietro (annulla modifiche)",
           "scale": "Scala"
         },
-        "description": "Ignora gli OID della ventola per questo dispositivo. Lascia entrambi i campi vuoti per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Fans Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nIgnora gli OID della ventola per questo dispositivo. Lascia entrambi i campi vuoti per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Sovrascrivi ventilatori"
       },
       "override_psu": {
@@ -284,7 +284,7 @@
           "share_with_community": "Condividi con la community",
           "back_to_menu": "Torna indietro (annulla modifiche)"
         },
-        "description": "Ignora gli OID dell'alimentatore per questo dispositivo. Lascia questo campo vuoto per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read PSU Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nIgnora gli OID dell'alimentatore per questo dispositivo. Lascia questo campo vuoto per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Sovrascrivi alimentatore"
       },
       "override_temperature": {
@@ -299,7 +299,7 @@
           "back_to_menu": "Torna indietro (annulla modifiche)",
           "scale": "Scala"
         },
-        "description": "Ignora gli OID della temperatura per questo dispositivo. Lascia il campo OID principale della temperatura vuoto per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Temperature Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nIgnora gli OID della temperatura per questo dispositivo. Lascia il campo OID principale della temperatura vuoto per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Sovrascrivi temperatura"
       },
       "ask_pr": {
@@ -310,7 +310,7 @@
         "title": "Inviare a GitHub ?"
       },
       "submit_pr": {
-        "description": "Per inviare il tuo override, autenticati su GitHub :\n\n1. Vai su [github.com/login/device]({url}) (si apre in una nuova scheda)\n2. Copia e inserisci il codice: `{code}`\n3. Una volta ottenuta la spunta verde su GitHub, fai clic su Invia.",
+        "description": "👉 **[📘 Read Community Submissions Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Community-Submissions)**\n\nPer inviare il tuo override, autenticati su GitHub :\n\n1. Vai su [github.com/login/device]({url}) (si apre in una nuova scheda)\n2. Copia e inserisci il codice: `{code}`\n3. Una volta ottenuta la spunta verde su GitHub, fai clic su Invia.",
         "title": "Autenticati su GitHub",
         "data": {
           "authorized": "Ho autorizzato questo su GitHub",
@@ -354,7 +354,7 @@
           "back_to_menu": "Torna indietro (annulla modifiche)",
           "poe_control_loops": "Loop di controllo PoE"
         },
-        "description": "Scegli se i dati ambientali/PoE vengono memorizzati come attributi (senza cronologia) o come sensori separati (con cronologia).",
+        "description": "👉 **[📘 Read Environmental Sensors Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#4-environmental-sensors)**\n\nScegli se i dati ambientali/PoE vengono memorizzati come attributi (senza cronologia) o come sensori separati (con cronologia).",
         "title": "Sensori ambientali"
       },
       "environmental_poll_interval": {
@@ -366,7 +366,7 @@
         "title": "Intervallo di polling ambientale"
       },
       "environmental_sensors": {
-        "description": "Abilita il monitoraggio ambientale e PoE opzionale per questo dispositivo.",
+        "description": "👉 **[📘 Read Environmental Sensors Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#4-environmental-sensors)**\n\nAbilita il monitoraggio ambientale e PoE opzionale per questo dispositivo.",
         "menu_options": {
           "back": "Indietro",
           "environmental_enable_disable": "Abilita / Disabilita",
@@ -400,7 +400,7 @@
         "title": "Regole di inclusione"
       },
       "manage_interfaces": {
-        "description": "Gestisci quali interfacce vengono create come entità Home Assistant.",
+        "description": "👉 **[📘 Read Manage Interfaces Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#2-manage-interfaces)**\n\nGestisci quali interfacce vengono create come entità Home Assistant.",
         "menu_options": {
           "back": "Indietro",
           "builtin_vendor_filters": "Filtri fornitore integrati",
@@ -422,7 +422,7 @@
         "title": "Intervallo di polling PoE"
       },
       "port_name_rules": {
-        "description": "Personalizza come i nomi delle interfacce vengono mostrati nell’UI e nella card.\n\nLe regole integrate sono fornite come esempi e possono essere disattivate per dispositivo.",
+        "description": "👉 **[📘 Read Interface Naming Rules Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#interface-name-rules)**\n\nPersonalizza come i nomi delle interfacce vengono mostrati nell’UI e nella card.\n\nLe regole integrate sono fornite come esempi e possono essere disattivate per dispositivo.",
         "menu_options": {
           "manage_interfaces": "Indietro",
           "port_rename_custom": "Regole di rinomina personalizzate",
@@ -433,7 +433,7 @@
       },
       "port_rename_custom": {
         "title": "Regole di rinomina personalizzate",
-        "description": "Aggiungi, modifica o rimuovi regole di rinomina personalizzate.\n\nLe regole vengono applicate in ordine e hanno priorità sulle regole integrate.\n\nSuggerimento: durante la modifica, lascia “Sostituzione” vuoto per mantenere la sostituzione esistente (usa Rimuovi + Aggiungi per impostare una sostituzione vuota).",
+        "description": "👉 **[📘 Read Interface Naming Rules Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#interface-name-rules)**\n\nAggiungi, modifica o rimuovi regole di rinomina personalizzate.\n\nLe regole vengono applicate in ordine e hanno priorità sulle regole integrate.\n\nSuggerimento: durante la modifica, lascia “Sostituzione” vuoto per mantenere la sostituzione esistente (usa Rimuovi + Aggiungi per impostare una sostituzione vuota).",
         "data": {
           "rule_action": "Azione",
           "rule_existing": "Regola esistente",
@@ -480,12 +480,12 @@
           "port_rename_disabled_default_ids": "Regole di rinomina integrate (disattiva)",
           "back_to_menu": "Torna indietro (annulla modifiche)"
         },
-        "description": "Abilita o disabilita le regole integrate del nome visualizzato per questo dispositivo.\n\nRegole integrate correnti:\n{rules}",
+        "description": "👉 **[📘 Read Interface Naming Rules Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#interface-name-rules)**\n\nAbilita o disabilita le regole integrate del nome visualizzato per questo dispositivo.\n\nRegole integrate correnti:\n{rules}",
         "title": "Regole di rinomina integrate"
       },
       "interface_ip_display": {
         "title": "Visualizzazione IP interfaccia",
-        "description": "Controlla come vengono mostrate le indirizzi IP sulle interfacce.",
+        "description": "👉 **[📘 Read Interface IP Display Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#interface-ip-display)**\n\nControlla come vengono mostrate le indirizzi IP sulle interfacce.",
         "data": {
           "hide_ip_on_physical_interfaces": "Nascondi campo IP sulle interfacce fisiche",
           "back_to_menu": "Torna indietro (annulla modifiche)"
@@ -505,12 +505,12 @@
           "back_to_menu": "Torna indietro (annulla modifiche)",
           "scale": "Scala"
         },
-        "description": "Ignora l'OID di potenza per questo dispositivo. Lascia questo campo vuoto per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Power Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nIgnora l'OID di potenza per questo dispositivo. Lascia questo campo vuoto per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Sovrascrivi alimentazione"
       },
       "override_poe": {
         "title": "Ignora PoE",
-        "description": "Ignora gli OID Power over Ethernet (PoE) per questo dispositivo. Lascia tutti i campi vuoti per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read PoE Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nIgnora gli OID Power over Ethernet (PoE) per questo dispositivo. Lascia tutti i campi vuoti per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
         "data": {
           "oid_budget": "OID budget totale",
           "oid_used": "OID potenza utilizzata",
@@ -528,7 +528,7 @@
       },
       "override_device_info": {
         "title": "Ignora le info sul dispositivo",
-        "description": "Ignora gli OID del sensore diagnostico per questo dispositivo. Lascia tutti i campi vuoti per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Device Info Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nIgnora gli OID del sensore diagnostico per questo dispositivo. Lascia tutti i campi vuoti per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
         "data": {
           "manufacturer_oid": "OID produttore (opzionale)",
           "model_oid": "OID modello (opzionale)",
@@ -557,7 +557,7 @@
       },
       "submit_community_filter": {
         "title": "Invia filtro interfaccia",
-        "description": "Definisci un filtro di interfaccia a livello di sistema. Tutte e 3 le caselle devono essere selezionate per autorizzare l'invio.",
+        "description": "👉 **[📘 Read Community Submissions Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Community-Submissions)**\n\nDefinisci un filtro di interfaccia a livello di sistema. Tutte e 3 le caselle devono essere selezionate per autorizzare l'invio.",
         "data": {
           "label": "Etichetta visualizzata (es. Cisco: Salta VLAN)",
           "vendor": "Fornitore (Marca)",
@@ -572,7 +572,7 @@
       },
       "submit_community_token": {
         "title": "Invia token di classificazione",
-        "description": "Definisci un token di classificazione fisico/virtuale. Tutte e 3 le caselle devono essere selezionate per autorizzare l'invio.",
+        "description": "👉 **[📘 Read Community Submissions Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Community-Submissions)**\n\nDefinisci un token di classificazione fisico/virtuale. Tutte e 3 le caselle devono essere selezionate per autorizzare l'invio.",
         "data": {
           "type": "Elenco token",
           "token": "Stringa token (es. irb, bdi, lag)",

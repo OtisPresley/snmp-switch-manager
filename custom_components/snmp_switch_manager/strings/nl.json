@@ -133,7 +133,7 @@
           "enable_bandwidth_sensors": "Bandbreedtemeting inschakelen",
           "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
-        "description": "Schakel bandbreedtemeting in voor dit apparaat.\n\nAls je **Attributen** kiest, worden bandbreedtewaarden toegevoegd aan poortentiteiten (geen geschiedenis).\nAls je **Sensoren** kiest, worden aparte bandbreedtesensoren gemaakt (geschiedenis).",
+        "description": "👉 **[📘 Read Bandwidth Configuration Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#3-bandwidth-sensors)**\n\nSchakel bandbreedtemeting in voor dit apparaat.\n\nAls je **Attributen** kiest, worden bandbreedtewaarden toegevoegd aan poortentiteiten (geen geschiedenis).\nAls je **Sensoren** kiest, worden aparte bandbreedtesensoren gemaakt (geschiedenis).",
         "title": "Bandbreedtesensoren"
       },
       "bandwidth_exclude_rules": {
@@ -145,7 +145,7 @@
           "rule_value": "Waarde",
           "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
-        "description": "Voeg uitsluitregels toe of verwijder ze. Uitsluitregels hebben altijd voorrang.",
+        "description": "👉 **[📘 Read Bandwidth Configuration Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#3-bandwidth-sensors)**\n\nVoeg uitsluitregels toe of verwijder ze. Uitsluitregels hebben altijd voorrang.",
         "title": "Uitsluitregels voor bandbreedtesensoren"
       },
       "bandwidth_icons": {
@@ -168,7 +168,7 @@
           "rule_value": "Waarde",
           "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
-        "description": "Voeg insluitregels toe of verwijder ze. Als er insluitregels zijn ingesteld, krijgen alleen overeenkomende interfaces bandbreedtesensoren.",
+        "description": "👉 **[📘 Read Bandwidth Configuration Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#3-bandwidth-sensors)**\n\nVoeg insluitregels toe of verwijder ze. Als er insluitregels zijn ingesteld, krijgen alleen overeenkomende interfaces bandbreedtesensoren.",
         "title": "Insluitregels voor bandbreedtesensoren"
       },
       "bandwidth_poll_interval": {
@@ -180,7 +180,7 @@
         "title": "Bandbreedtesensoren"
       },
       "bandwidth_sensors": {
-        "description": "Schakel optionele RX/TX-doorvoersensoren en totaalverkeerssensoren in voor geselecteerde interfaces.",
+        "description": "👉 **[📘 Read Bandwidth Configuration Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#3-bandwidth-sensors)**\n\nSchakel optionele RX/TX-doorvoersensoren en totaalverkeerssensoren in voor geselecteerde interfaces.",
         "menu_options": {
           "back": "Terug",
           "bandwidth_enable_disable": "Inschakelen / Uitschakelen",
@@ -212,11 +212,11 @@
           "snmpv3_priv_password": "SNMP v3 — Privacywachtwoord (optioneel)",
           "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
-        "description": "Optionele overschrijvingen per apparaat. Laat leeg om waarden uit de initiële setup te gebruiken.\n\n### SNMP-versie\nAlle velden zijn altijd zichtbaar door beperkingen van Home Assistant. Alleen de geselecteerde **SNMP-versie** bepaalt welke velden worden gebruikt.\n\n### SNMP v2c\nGebruik **SNMP community-overschrijving** en **SNMP poort-overschrijving** alleen als je waarden uit de initiële setup moet overschrijven.\n\n### SNMP v3\nVul **SNMPv3 gebruikersnaam** en authenticatie-/privacy-instellingen in wanneer SNMP v3 is geselecteerd. Veel apparaten vereisen wachtwoorden tussen 8 en 31 tekens en kunnen speciale tekens weigeren.",
+        "description": "👉 **[📘 Read Connection & Name Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#1-connection--name)**\n\nOptionele overschrijvingen per apparaat. Laat leeg om waarden uit de initiële setup te gebruiken.\n\n### SNMP-versie\nAlle velden zijn altijd zichtbaar door beperkingen van Home Assistant. Alleen de geselecteerde **SNMP-versie** bepaalt welke velden worden gebruikt.\n\n### SNMP v2c\nGebruik **SNMP community-overschrijving** en **SNMP poort-overschrijving** alleen als je waarden uit de initiële setup moet overschrijven.\n\n### SNMP v3\nVul **SNMPv3 gebruikersnaam** en authenticatie-/privacy-instellingen in wanneer SNMP v3 is geselecteerd. Veel apparaten vereisen wachtwoorden tussen 8 en 31 tekens en kunnen speciale tekens weigeren.",
         "title": "Verbinding en naam"
       },
       "feature_overrides": {
-        "description": "Beheer aangepaste OID-overschrijvingen voor specifieke functies.",
+        "description": "👉 **[📘 Read Custom OID Overrides Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nBeheer aangepaste OID-overschrijvingen voor specifieke functies.",
         "menu_options": {
           "override_power": "Power overschrijven",
           "back": "Terug",
@@ -242,7 +242,7 @@
           "share_with_community": "Deel dit met de community",
           "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
-        "description": "Overschrijf de CPU OID voor dit apparaat. Laat dit veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read CPU Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nOverschrijf de CPU OID voor dit apparaat. Laat dit veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "CPU overschrijven"
       },
       "override_memory": {
@@ -256,7 +256,7 @@
           "back_to_menu": "Teruggaan (wijzigingen weggooien)",
           "scale": "Schaal"
         },
-        "description": "Overschrijf de Geheugen OID’s voor dit apparaat. Laat beide velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Memory Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nOverschrijf de Geheugen OID’s voor dit apparaat. Laat beide velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Geheugen overschrijven"
       },
       "override_fans": {
@@ -270,7 +270,7 @@
           "back_to_menu": "Teruggaan (wijzigingen weggooien)",
           "scale": "Schaal"
         },
-        "description": "Overschrijf de Ventilator OID’s voor dit apparaat. Laat beide velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Fans Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nOverschrijf de Ventilator OID’s voor dit apparaat. Laat beide velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Ventilatoren overschrijven"
       },
       "override_psu": {
@@ -284,7 +284,7 @@
           "share_with_community": "Deel dit met de community",
           "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
-        "description": "Overschrijf de PSU OID’s voor dit apparaat. Laat dit veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read PSU Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nOverschrijf de PSU OID’s voor dit apparaat. Laat dit veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Voeding overschrijven"
       },
       "override_temperature": {
@@ -299,7 +299,7 @@
           "back_to_menu": "Teruggaan (wijzigingen weggooien)",
           "scale": "Schaal"
         },
-        "description": "Overschrijf de Temperatuur OID’s voor dit apparaat. Laat het hoofd-temperatuur OID veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Temperature Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nOverschrijf de Temperatuur OID’s voor dit apparaat. Laat het hoofd-temperatuur OID veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Temperatuur overschrijven"
       },
       "ask_pr": {
@@ -310,7 +310,7 @@
         "title": "Indienen bij GitHub?"
       },
       "submit_pr": {
-        "description": "Om je overschrijving in te dienen, authenticeer je bij GitHub:\n\n1. Ga naar [github.com/login/device]({url}) (opent in een nieuw tabblad)\n2. Kopieer en voer de code in: `{code}`\n3. Zodra je het groene vinkje op GitHub krijgt, klik je op Verzenden.",
+        "description": "👉 **[📘 Read Community Submissions Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Community-Submissions)**\n\nOm je overschrijving in te dienen, authenticeer je bij GitHub:\n\n1. Ga naar [github.com/login/device]({url}) (opent in een nieuw tabblad)\n2. Kopieer en voer de code in: `{code}`\n3. Zodra je het groene vinkje op GitHub krijgt, klik je op Verzenden.",
         "title": "Authenticeren bij GitHub",
         "data": {
           "authorized": "Ik heb dit geautoriseerd op GitHub",
@@ -354,7 +354,7 @@
           "back_to_menu": "Teruggaan (wijzigingen weggooien)",
           "poe_control_loops": "PoE-besturingslussen"
         },
-        "description": "Kies of omgevings-/PoE-gegevens worden opgeslagen als attributen (geen geschiedenis) of als aparte sensoren (geschiedenis).",
+        "description": "👉 **[📘 Read Environmental Sensors Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#4-environmental-sensors)**\n\nKies of omgevings-/PoE-gegevens worden opgeslagen als attributen (geen geschiedenis) of als aparte sensoren (geschiedenis).",
         "title": "Omgevingssensoren"
       },
       "environmental_poll_interval": {
@@ -366,7 +366,7 @@
         "title": "Poll-interval voor omgevingswaarden"
       },
       "environmental_sensors": {
-        "description": "Schakel optionele omgevings- en PoE-monitoring in voor dit apparaat.",
+        "description": "👉 **[📘 Read Environmental Sensors Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#4-environmental-sensors)**\n\nSchakel optionele omgevings- en PoE-monitoring in voor dit apparaat.",
         "menu_options": {
           "back": "Terug",
           "environmental_enable_disable": "Inschakelen / Uitschakelen",
@@ -400,7 +400,7 @@
         "title": "Insluitregels"
       },
       "manage_interfaces": {
-        "description": "Beheer welke interfaces als Home Assistant-entiteiten worden aangemaakt.",
+        "description": "👉 **[📘 Read Manage Interfaces Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#2-manage-interfaces)**\n\nBeheer welke interfaces als Home Assistant-entiteiten worden aangemaakt.",
         "menu_options": {
           "back": "Terug",
           "builtin_vendor_filters": "Ingebouwde leveranciersfilters",
@@ -422,7 +422,7 @@
         "title": "PoE poll-interval"
       },
       "port_name_rules": {
-        "description": "Pas aan hoe interfacenamen in de UI en kaart worden weergegeven.\n\nIngebouwde regels worden als voorbeelden geleverd en kunnen per apparaat worden uitgeschakeld.",
+        "description": "👉 **[📘 Read Interface Naming Rules Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#interface-name-rules)**\n\nPas aan hoe interfacenamen in de UI en kaart worden weergegeven.\n\nIngebouwde regels worden als voorbeelden geleverd en kunnen per apparaat worden uitgeschakeld.",
         "menu_options": {
           "manage_interfaces": "Terug",
           "port_rename_custom": "Aangepaste hernoemregels",
@@ -433,7 +433,7 @@
       },
       "port_rename_custom": {
         "title": "Aangepaste hernoemregels",
-        "description": "Voeg aangepaste hernoemregels toe, bewerk of verwijder ze.\n\nRegels worden in volgorde toegepast en hebben prioriteit boven ingebouwde hernoemregels.\n\nTip: laat bij bewerken “Vervanging” leeg om de bestaande vervanging te behouden (gebruik Verwijderen + Toevoegen om een lege vervanging in te stellen).",
+        "description": "👉 **[📘 Read Interface Naming Rules Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#interface-name-rules)**\n\nVoeg aangepaste hernoemregels toe, bewerk of verwijder ze.\n\nRegels worden in volgorde toegepast en hebben prioriteit boven ingebouwde hernoemregels.\n\nTip: laat bij bewerken “Vervanging” leeg om de bestaande vervanging te behouden (gebruik Verwijderen + Toevoegen om een lege vervanging in te stellen).",
         "data": {
           "rule_action": "Actie",
           "rule_existing": "Bestaande regel",
@@ -480,12 +480,12 @@
           "port_rename_disabled_default_ids": "Ingebouwde hernoemregels (uitschakelen)",
           "back_to_menu": "Teruggaan (wijzigingen weggooien)"
         },
-        "description": "Schakel ingebouwde weergavenaamregels voor dit apparaat in of uit.\n\nHuidige ingebouwde regels:\n{rules}",
+        "description": "👉 **[📘 Read Interface Naming Rules Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#interface-name-rules)**\n\nSchakel ingebouwde weergavenaamregels voor dit apparaat in of uit.\n\nHuidige ingebouwde regels:\n{rules}",
         "title": "Ingebouwde hernoemregels"
       },
       "interface_ip_display": {
         "title": "Interface IP-weergave",
-        "description": "Bepaal hoe IP-adressen op interfaces worden weergegeven.",
+        "description": "👉 **[📘 Read Interface IP Display Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#interface-ip-display)**\n\nBepaal hoe IP-adressen op interfaces worden weergegeven.",
         "data": {
           "hide_ip_on_physical_interfaces": "IP-veld op fysieke interfaces verbergen",
           "back_to_menu": "Teruggaan (wijzigingen weggooien)"
@@ -505,12 +505,12 @@
           "back_to_menu": "Teruggaan (wijzigingen weggooien)",
           "scale": "Schaal"
         },
-        "description": "Overschrijf de Power OID voor dit apparaat. Laat dit veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Power Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nOverschrijf de Power OID voor dit apparaat. Laat dit veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Power overschrijven"
       },
       "override_poe": {
         "title": "PoE overschrijven",
-        "description": "Overschrijf de Power over Ethernet (PoE) OID’s voor dit apparaat. Laat alle velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read PoE Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nOverschrijf de Power over Ethernet (PoE) OID’s voor dit apparaat. Laat alle velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "data": {
           "oid_budget": "Totaal budget OID",
           "oid_used": "Gebruikt vermogen OID",
@@ -528,7 +528,7 @@
       },
       "override_device_info": {
         "title": "Apparaatinfo overschrijven",
-        "description": "Overschrijf de diagnostische sensor-OID’s voor dit apparaat. Laat alle velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Device Info Override Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nOverschrijf de diagnostische sensor-OID’s voor dit apparaat. Laat alle velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "data": {
           "manufacturer_oid": "Fabrikant-OID (optioneel)",
           "model_oid": "Model-OID (optioneel)",
@@ -557,7 +557,7 @@
       },
       "submit_community_filter": {
         "title": "Interfacefilter indienen",
-        "description": "Definieer een interfacefilter op systeemniveau. Alle 3 de vakjes moeten worden aangevinkt om verzending toe te staan.",
+        "description": "👉 **[📘 Read Community Submissions Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Community-Submissions)**\n\nDefinieer een interfacefilter op systeemniveau. Alle 3 de vakjes moeten worden aangevinkt om verzending toe te staan.",
         "data": {
           "label": "Weergavelabel (bijv. Cisco: VLAN's overslaan)",
           "vendor": "Leverancier (Merk)",
@@ -572,7 +572,7 @@
       },
       "submit_community_token": {
         "title": "Classificatietoken indienen",
-        "description": "Definieer een fysiek/virtueel classificatietoken. Alle 3 de vakjes moeten worden aangevinkt om verzending toe te staan.",
+        "description": "👉 **[📘 Read Community Submissions Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Community-Submissions)**\n\nDefinieer een fysiek/virtueel classificatietoken. Alle 3 de vakjes moeten worden aangevinkt om verzending toe te staan.",
         "data": {
           "type": "Tokenlijst",
           "token": "Tokenreeks (bijv. irb, bdi, lag)",
