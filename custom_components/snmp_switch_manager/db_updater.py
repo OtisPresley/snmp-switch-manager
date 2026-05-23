@@ -102,7 +102,7 @@ async def async_setup_db_updater(hass: HomeAssistant, entry: ConfigEntry) -> Non
         if updated:
             _LOGGER.info("Database updated! Reloading all active SNMP Switch Manager config entries...")
             for active_entry in list(entries.values()):
-                hass.async_create_task(
+                hass.async_add_job(
                     hass.config_entries.async_reload(active_entry.entry_id)
                 )
 
@@ -115,7 +115,7 @@ async def async_setup_db_updater(hass: HomeAssistant, entry: ConfigEntry) -> Non
     
     # Run immediate check shortly after start to avoid blocking initialization
     def deferred_start(_: Any) -> None:
-        hass.async_create_task(run_update())
+        hass.async_add_job(run_update())
         
     from homeassistant.helpers.event import async_call_later
     async_call_later(hass, 10, deferred_start)
