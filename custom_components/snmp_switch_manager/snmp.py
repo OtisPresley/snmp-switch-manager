@@ -270,21 +270,9 @@ class SwitchSnmpClient:
         await self._ensure_engine()
         await self._ensure_target()
 
-        # Issue a warm-up GET to flush any remaining lazy pysnmp internal state.
-        try:
-            await self._async_get_one(OID_sysDescr)
-        except Exception:
-            pass
-
-        # Build interface table and state first (names, alias, admin/oper)
-        await poll_interfaces(self, dynamic_only=False)
-
-        # Build IPv4 maps and attach to interfaces
-        await poll_ipv4(self)
-        self._last_ipv4_poll = time.monotonic()
-
-        # Populate manufacturer, firmware, model, vendor flags
-        await initialize_device_info(self)
+        # Issue a warm-up GET to flush any remaining lazy pysnmp internal state and verify auth/connection.
+        # This will propagate any SnmpAuthError directly to notify Home Assistant on invalid credentials.
+        await self._async_get_one(OID_sysDescr)
 
     async def _async_get_one(self, oid: str) -> Optional[str]:
         await self._ensure_engine()
@@ -308,7 +296,10 @@ class SwitchSnmpClient:
     async def async_refresh_dynamic(self) -> None:
         await self._ensure_engine()
         await self._ensure_target()
-        await poll_interfaces(self, dynamic_only=True)
+        if not self.cache.get("ifTable"):
+            await poll_interfaces(self, dynamic_only=False)
+        else:
+            await poll_interfaces(self, dynamic_only=True)
         # IPv4 data rarely changes; throttle separately (default 300 s).
         now_mono = time.monotonic()
         if (
@@ -360,8 +351,13 @@ class SwitchSnmpClient:
         if syslocation is not None:
             self.cache["sysLocation"] = syslocation
 
-        # Re-evaluate manufacturer/firmware from sysDescr on each poll
-        await refresh_device_info(self)
+        # Populate manufacturer, firmware, model, and vendor flags dynamically on first poll
+        if not self.cache.get("manufacturer"):
+            await initialize_device_info(self)
+        else:
+            # Re-evaluate manufacturer/firmware from sysDescr on each subsequent poll
+            await refresh_device_info(self)
+
         await self.async_refresh_dynamic()
 
         # Bandwidth counters (optional; per-device)

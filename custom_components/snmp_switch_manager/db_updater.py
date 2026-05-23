@@ -114,8 +114,8 @@ async def async_setup_db_updater(hass: HomeAssistant, entry: ConfigEntry) -> Non
     )
     
     # Run immediate check shortly after start to avoid blocking initialization
-    async def deferred_start(_: Any) -> None:
-        await run_update()
+    def deferred_start(_: Any) -> None:
+        hass.async_create_task(run_update())
         
     from homeassistant.helpers.event import async_call_later
     async_call_later(hass, 10, deferred_start)
