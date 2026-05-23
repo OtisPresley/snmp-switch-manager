@@ -58,7 +58,8 @@
     "hn",
     "bge",
     "bce",
-    "mlx"
+    "mlx",
+    "tst"
   ],
   "abbreviations": {
     "prefixes": {
