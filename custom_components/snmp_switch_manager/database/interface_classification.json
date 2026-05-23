@@ -17,7 +17,19 @@
     "bridge",
     "port-channel",
     "bond",
-    "lag"
+    "lag",
+    "gre",
+    "gif",
+    "faith",
+    "enc",
+    "pflog",
+    "pfsync",
+    "ovpn",
+    "openvpn",
+    "wg",
+    "wireguard",
+    "tun",
+    "tap"
   ],
   "physical_tokens": [
     "gigabit",
@@ -34,7 +46,19 @@
     "xe",
     "tw",
     "fi",
-    "hu"
+    "hu",
+    "em",
+    "igb",
+    "igc",
+    "ix",
+    "ax",
+    "re",
+    "vtnet",
+    "vmx",
+    "hn",
+    "bge",
+    "bce",
+    "mlx"
   ],
   "abbreviations": {
     "prefixes": {
