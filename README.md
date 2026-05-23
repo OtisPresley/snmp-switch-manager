@@ -8,162 +8,136 @@
 [![HACS](https://img.shields.io/github/actions/workflow/status/OtisPresley/snmp-switch-manager/hacs.yaml?branch=main&label=HACS)](https://github.com/OtisPresley/snmp-switch-manager/actions/workflows/hacs.yaml)
 [![CI](https://img.shields.io/github/actions/workflow/status/OtisPresley/snmp-switch-manager/ci.yaml?branch=main&event=push)](https://github.com/OtisPresley/snmp-switch-manager/actions/workflows/ci.yaml)
 
-SNMP Switch Manager discovers an SNMP-enabled switch and exposes each port to [Home Assistant](https://www.home-assistant.io/) with live status, descriptions, and administrative control. Pair it with the included Lovelace card for a rich dashboard visualisation of your hardware.
+SNMP Switch Manager discovers and monitors SNMP-enabled managed switches and network devices, exposing each port to **Home Assistant** with live administrative control, operational status, descriptions, VLAN identification, and active power management. 
 
 ---
 
-## Table of Contents
+## 📖 Table of Contents
 
-- [Highlights](#highlights)
-- [Requirements](#requirements)
-- [Installation](#installation)
-  - [HACS (recommended)](#hacs-recommended)
-  - [Manual install](#manual-install)
-- [Documentation](#documentation)
-- [Services](#services)
-  - [Update a port description](#update-a-port-description)
-  - [Toggle administrative state](#toggle-administrative-state)
-- [Troubleshooting](#troubleshooting)
-- [Support](#support)
-- [Changelog](https://github.com/OtisPresley/switch-manager/blob/main/CHANGELOG.md)
-- [Roadmap](https://github.com/OtisPresley/switch-manager/blob/main/ROADMAP.md)
+- [✨ Core Highlights](#-core-highlights)
+- [🛠️ Requirements](#️-requirements)
+- [📦 Installation](#-installation)
+  - [HACS (Recommended)](#hacs-recommended)
+  - [Manual Install](#manual-install)
+- [📘 Documentation](#-documentation)
+- [⚡ Active Port & PoE Control](#-active-port--poe-control)
+- [🏷️ Services](#️-services)
+- [🔧 Troubleshooting & Support](#-troubleshooting--support)
+- [🛣️ Roadmap & Changelog](#️-roadmap--changelog)
 
 ---
 
-## Highlights
+## ✨ Core Highlights
 
-- 🔍 Automatic discovery of port count, speed, VLAN ID (PVID), description, and operational status via SNMP (v2c or v3)
-- 🔄 Background polling that keeps Home Assistant entities and attributes in sync with live switch data
-- 🎚️ One `switch` entity per interface for toggling administrative state (up/down)
-- 🏷️ Service for updating the interface alias (`ifAlias`) directly from Home Assistant
-- 🖼️ Lovelace card that mirrors the physical switch layout with colour-coded port status and quick actions
-- 📶 Optional per-port bandwidth monitoring (RX / TX throughput & totals) with support for attributes or dedicated sensors
-- 🌡️ **Environment monitoring** (CPU, memory, system/chassis temperature) with support for attributes or dedicated sensors
-- ⚡ **Power over Ethernet (PoE) monitoring** (used and remaining power budget) with support for attributes or dedicated sensors
-- 🏎️ **Highly optimized Asyncio polling** using PySNMP 7.x, fully compliant with Home Assistant's strict event loop policies with zero blocking I/O
-
----
-
-## Requirements
-
-- Home Assistant 2025.11.2 or newer (recommended)
-- A switch (or SNMP-enabled network device) reachable via SNMP (UDP/161)
-- SNMP credentials with **read access** to interface tables
-- **Write access is optional** but required for:
-  - Updating `ifAlias` (port description)
-  - Toggling administrative state (if supported by the device)
-- pysnmp 7.x (the integration installs it automatically when needed)
+- 🎛️ **Active Port Control**: Direct administrative state management (Up/Down) via native Home Assistant `switch` entities.
+- ⚡ **Power over Ethernet (PoE)**: Switch-level budgets (total, used, remaining power) and per-port PoE power monitoring and toggles (reboot or disable PoE devices directly from HA!).
+- 🔑 **Robust SNMP v3 Support**: Secure connections with full SHA/MD5 authentication and CBC-DES privacy encryption. Seamlessly transition between SNMP v2c and v3 without losing your Home Assistant device and entity registry.
+- 🔄 **Dynamic OID Database**: Automatically pulls updated vendor definitions (CPU, Memory, Fans, PSUs, Temperature, Power, PoE) from the community database in the background every 6 hours—applying updates instantly without requiring a Home Assistant restart.
+- 🚀 **GitHub PR Integration**: Enter custom OIDs, interface filters, or port classification rules in the Options flow and easily submit them as a Pull Request back to the community repository using a secure **GitHub Device Flow** (`github.com/login/device`) built directly into the UI!
+- 📶 **Advanced Bandwidth Monitoring**: Real-time throughput (bits per second) and total traffic (bytes) for RX/TX with custom include/exclude rules to prevent entity registry bloat.
+- 🌡️ **Comprehensive Hardware Health**: Tracks chassis temperature, CPU load, memory utilization, fan speeds, power supply status, and chassis power draw.
+- 🧠 **Attributes Mode vs. Sensors Mode**: Choose between a lightweight, attributes-rich setup (highly recommended for the Lovelace card) or standalone sensors for every metric (ideal for history graphs and automation).
+- 🏷️ **Dynamic Port Renaming & Filters**: Built-in and user-defined regular expression rules to cleanly format port names (e.g., `Gi1/0/5` to `Gi-5`) and automatically filter out virtual or irrelevant interfaces.
+- 🏎️ **Ultra-Optimized Asynchronous Polling**: Built on PySNMP 7.x, fully compliant with Home Assistant's event loop with zero blocking I/O calls.
 
 ---
 
-## Installation
-
-### HACS (recommended)
-You can install this integration directly from HACS:
-
-[![Open your Home Assistant instance and show the repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=OtisPresley&repository=snmp-switch-manager)
-
-After installation, restart Home Assistant and add the integration:
-
-[![Open your Home Assistant instance and add this integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=snmp_switch_manager)
+> 📸 **[Screenshot Placeholder]**: *Interactive Lovelace Card showing physical port grids, color-coded status, PoE consumption bars, and active port toggles.*
 
 ---
 
-#### Manual steps (if you prefer not to use the buttons)
-1. In Home Assistant, open **HACS → Integrations**.  
-2. Click **Explore & Download Repositories**, search for **SNMP Switch Manager**, then click **Download**.  
-3. **Restart Home Assistant**.  
-4. Go to **Settings → Devices & Services → Add Integration → SNMP Switch Manager**.  
+## 🛠️ Requirements
 
-### Manual install
-1. Copy the folder `custom_components/snmp_switch_manager` into your HA `config/custom_components` directory.
-2. Restart Home Assistant.
-3. Go to **Settings → Devices & Services → Add Integration → SNMP Switch Manager**.
+- **Home Assistant**: version 2025.11.2 or newer (recommended).
+- **Network Access**: Port UDP/161 reachable on the switch from your Home Assistant host.
+- **SNMP Credentials**:
+  - **Read Access**: Required to poll port metrics, status, speed, VLANs, and health diagnostics.
+  - **Write Access**: Required for active control features (toggling port admin state, toggling PoE power, or writing new port descriptions/aliases).
+- **pysnmp 7.x**: Automatically installed by the integration when needed.
 
 ---
 
-## Documentation
+## 📦 Installation
 
-Comprehensive documentation for **SNMP Switch Manager** is available
-in the GitHub Wiki.
+### HACS (Recommended)
 
-The Wiki includes:
-- Installation and configuration guidance
-- Attributes vs Sensors explained
-- Diagnostics and PoE behavior
-- Lovelace card usage and customization
-- Supported switches and limitations
-- Troubleshooting and FAQ
-
-👉 **Read the full documentation:**  
-https://github.com/OtisPresley/snmp-switch-manager/wiki
+1. Open your Home Assistant instance and navigate to **HACS → Integrations**.
+2. Click the three dots in the top-right corner, select **Custom Repositories**, and add:
+   `https://github.com/OtisPresley/snmp-switch-manager` (Category: **Integration**).
+3. Search for **SNMP Switch Manager** and click **Download**.
+4. **Restart Home Assistant**.
+5. Go to **Settings → Devices & Services → Add Integration** and search for **SNMP Switch Manager**.
 
 ---
 
-## Services
+### Manual Install
 
-SNMP Switch Manager provides Home Assistant services for advanced
-use cases, such as interacting with or refreshing switch-related data.
+1. Copy the contents of `custom_components/snmp_switch_manager` into your Home Assistant installation folder under `/config/custom_components/snmp_switch_manager`.
+2. **Restart Home Assistant**.
+3. Go to **Settings → Devices & Services → Add Integration** and select **SNMP Switch Manager**.
 
-These services are optional and are typically used by:
-- Advanced users
-- Automations
-- Scripts
+---
 
-Most users will not need to use services directly.
+## 📘 Documentation
 
-👉 **See the GitHub Wiki for full usage guidance and examples:**
-https://github.com/OtisPresley/snmp-switch-manager/wiki
+Comprehensive, step-by-step guides are hosted in the **[GitHub Wiki](https://github.com/OtisPresley/snmp-switch-manager/wiki)**:
 
-### Example: Update a port description
+- 📦 **[Installation & Prerequisites](https://github.com/OtisPresley/snmp-switch-manager/wiki/Installation)** – Switch setup, write access permissions, and HACS discovery.
+- ⚙️ **[Integration Configuration](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration)** – Walkthrough of the multi-step options menus, SNMP v3, Bandwidth rules, port classification, and custom overrides.
+- 🌡️ **[Diagnostics & Health Metrics](https://github.com/OtisPresley/snmp-switch-manager/wiki/Diagnostics)** – Explaining environment, PoE budget data, and custom OIDs.
+- 🖧 **[Supported Switch Matrix](https://github.com/OtisPresley/snmp-switch-manager/wiki/Supported-Switches)** – Known working devices (Cisco, Dell, Juniper, MikroTik, Zyxel, pfSense, and more) and limitations.
+- 🛠️ **[Troubleshooting & FAQ](https://github.com/OtisPresley/snmp-switch-manager/wiki/Troubleshooting)** – Resolving SNMP v3 auth errors, missing OIDs, and optimizing bandwidth polling.
 
-Use the `snmp_switch_manager.set_port_description` service to change an interface alias:
+---
+
+## ⚡ Active Port & PoE Control
+
+With **SNMP write permissions** enabled on your switch, SNMP Switch Manager provides deep interactive control directly within Home Assistant:
+
+1. **Port Administrative Toggle**: Each physical port is exposed as a native `switch` entity. Turning the switch **Off** sends an SNMP write command to administrative-down the physical port. Turning it **On** administratively enables the port.
+2. **PoE Port Power Control**: When PoE is enabled on your switch and per-port controls are active, you can toggle the PoE power output of a specific port. This is perfect for power-cycling hung IP cameras, access points, or VoIP phones without disabling physical port links.
+3. **Port Description Synchronization**: Updating a port description using the integration's service writes the new description back to the switch's `ifAlias` table permanently.
+
+---
+
+## 🏷️ Services
+
+### Service: `snmp_switch_manager.set_port_description`
+Updates the interface alias (`ifAlias`) directly on the switch hardware and immediately syncs the name back to Home Assistant.
 
 ```yaml
 service: snmp_switch_manager.set_port_description
 data:
-  entity_id: switch_switch_study_gi1_0_5
-  description: Uplink to router
+  entity_id: switch.switch_study_gi1_0_5
+  description: "Uplink to Core Router"
 ```
 
 ---
 
-### Toggle administrative state
+## 🔧 Troubleshooting & Support
 
-The state of each port entity reflects the interface's administrative status. Turning it **on** sets the port to *up*; turning it **off** sets it to *down*. Entity attributes include both administrative and operational status direct from SNMP. Entity attributes include administrative status, operational status, port speed, VLAN ID (PVID), and IP configuration when available.
+### Common Issues Quick Guide
+
+- **Ports show up as Missing**: Check your SNMP credentials and ensure they permit reading the interface tables (`ifDescr`, `ifSpeed`, `ifOperStatus`). Verify that your interface inclusion/exclusion patterns are not filtering the ports.
+- **Port Administrative Toggle / Description Updates Fail**: Your SNMP community string or v3 user does not have **write permissions** (`read-write`) on the switch.
+- **Speeds are incorrect or non-standard**: Some switches report non-standard values (e.g. 10Gbps as 1Gbps or 0). You can easily define Custom Name or OID overrides in the integration options.
+
+### Reporting Issues & Contributing
+
+If your switch does not display hardware diagnostics (CPU, Memory, Fan, or PoE budgets) correctly, please consider defining OID overrides in the **Device Options** menu and sharing them directly back to the community via the built-in **GitHub Device Flow**!
+
+To report bugs, request features, or ask questions, please visit the **[GitHub Issues page](https://github.com/OtisPresley/snmp-switch-manager/issues)**.
 
 ---
 
-## Troubleshooting
+## 🛣️ Roadmap & Changelog
 
-### Common Issues
-
-- **Ports missing:** Ensure your SNMP credentials permit reads on the interface tables (`ifDescr`, `ifSpeed`, `ifOperStatus`).
-- **Description updates fail:** Confirm your SNMP credentials have write permission for `ifAlias` (`1.3.6.1.2.1.31.1.1.1.18`).
-- **Unexpected speeds:** Some devices report zero or vendor-specific rates for unused interfaces; check the device UI to confirm raw SNMP data.
+- Check the **[Roadmap](https://github.com/OtisPresley/snmp-switch-manager/blob/main/ROADMAP.md)** for planned features and architecture updates.
+- Check the **[Changelog](https://github.com/OtisPresley/snmp-switch-manager/blob/main/CHANGELOG.md)** for detailed release notes.
 
 ---
 
-## Support
-
-If your switch does not display correctly, then the integration may need device-specific support added for it.
-
-Please open an issue with:
-- A text file attachment containing `snmpwalk` output against your device (SNMP v2c **or** SNMP v3)
-- Any necessary screenshots
-- A description of what is incorrect and what it should look like
-
-> Tip: If you want port descriptions and administrative toggles to work, your SNMP credentials must allow writes to the required OIDs (device-dependent).
-
-### Supported Switches
-👉 **Read the full documentation:**  
-https://github.com/OtisPresley/snmp-switch-manager/wiki
-
-### Open an Issue
-- Open an issue on the [GitHub tracker](https://github.com/OtisPresley/snmp-switch-manager/issues) if you run into problems or have feature requests.
-- Contributions and feedback are welcome!
-
-If you find this integration useful and want to support development, you can:
+If you find this integration useful and want to support its ongoing development:
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Support-Buy%20Me%20a%20Coffee-orange)](https://www.buymeacoffee.com/OtisPresley)
 [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/OtisPresley)
