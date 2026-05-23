@@ -70,7 +70,7 @@ jobs:
             git checkout -B $BASE_BRANCH origin/$BASE_BRANCH
             
             # Merge the PR head branch locally
-            git merge origin/${{ github.event.pull_request.head.ref }} --no-edit
+            git merge origin/${{ github.event.pull_request.head.ref }} --no-edit --allow-unrelated-histories
             
             # Push the merged base branch back to origin
             if git push origin $BASE_BRANCH; then

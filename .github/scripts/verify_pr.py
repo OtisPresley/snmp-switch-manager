@@ -151,28 +151,34 @@ def main():
             for prev in normalized_items:
                 match = False
                 if feature in ["cpu", "temperature", "power"]:
-                    match = prev.get("oid") == item.get("oid")
+                    match = bool(item.get("oid")) and prev.get("oid") == item.get("oid")
                 elif feature == "memory":
                     if prev.get("type", "free_total") == "percentage":
-                        match = prev.get("oid") == item.get("oid")
+                        match = bool(item.get("oid")) and prev.get("oid") == item.get("oid")
                     else:
-                        match = (prev.get("oid_free") == item.get("oid_free") and 
-                                 prev.get("oid_total") == item.get("oid_total"))
+                        match = (bool(item.get("oid_free")) and prev.get("oid_free") == item.get("oid_free") and 
+                                 bool(item.get("oid_total")) and prev.get("oid_total") == item.get("oid_total"))
                 elif feature == "fans":
-                    match = (prev.get("oid_rpm") == item.get("oid_rpm") or 
-                             prev.get("oid_status") == item.get("oid_status"))
+                    match = (
+                        (bool(item.get("oid_rpm")) and prev.get("oid_rpm") == item.get("oid_rpm")) or 
+                        (bool(item.get("oid_status")) and prev.get("oid_status") == item.get("oid_status"))
+                    )
                 elif feature == "psu":
-                    match = prev.get("oid_status") == item.get("oid_status")
+                    match = bool(item.get("oid_status")) and prev.get("oid_status") == item.get("oid_status")
                 elif feature == "poe":
-                    match = (prev.get("oid_budget") == item.get("oid_budget") or 
-                             prev.get("oid_used") == item.get("oid_used") or 
-                             prev.get("oid_port_power") == item.get("oid_port_power"))
+                    match = (
+                        (bool(item.get("oid_budget")) and prev.get("oid_budget") == item.get("oid_budget")) or 
+                        (bool(item.get("oid_used")) and prev.get("oid_used") == item.get("oid_used")) or 
+                        (bool(item.get("oid_port_power")) and prev.get("oid_port_power") == item.get("oid_port_power"))
+                    )
                 elif feature == "device_info":
-                    match = (prev.get("oid_mfg") == item.get("oid_mfg") or
-                             prev.get("oid_model") == item.get("oid_model") or
-                             prev.get("oid_firmware") == item.get("oid_firmware") or
-                             prev.get("oid_hostname") == item.get("oid_hostname") or
-                             prev.get("oid_uptime") == item.get("oid_uptime"))
+                    match = (
+                        (bool(item.get("oid_mfg")) and prev.get("oid_mfg") == item.get("oid_mfg")) or
+                        (bool(item.get("oid_model")) and prev.get("oid_model") == item.get("oid_model")) or
+                        (bool(item.get("oid_firmware")) and prev.get("oid_firmware") == item.get("oid_firmware")) or
+                        (bool(item.get("oid_hostname")) and prev.get("oid_hostname") == item.get("oid_hostname")) or
+                        (bool(item.get("oid_uptime")) and prev.get("oid_uptime") == item.get("oid_uptime"))
+                    )
                              
                 if match:
                     # Duplicate OID detected! Let's combine vendor lists cleanly

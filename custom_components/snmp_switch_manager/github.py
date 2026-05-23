@@ -392,28 +392,34 @@ async def submit_override(token: str, feature: str, override_data: Dict[str, Any
         found_item = None
         for item in items:
             if feature in ["cpu", "temperature", "power"]:
-                match = normalize(item.get("oid")) == db_item.get("oid")
+                match = bool(db_item.get("oid")) and normalize(item.get("oid")) == normalize(db_item.get("oid"))
             elif feature == "memory":
                 if item.get("type", "free_total") == "percentage":
-                    match = normalize(item.get("oid")) == db_item.get("oid")
+                    match = bool(db_item.get("oid")) and normalize(item.get("oid")) == normalize(db_item.get("oid"))
                 else:
-                    match = (normalize(item.get("oid_free")) == db_item.get("oid_free") and 
-                             normalize(item.get("oid_total")) == db_item.get("oid_total"))
+                    match = (bool(db_item.get("oid_free")) and normalize(item.get("oid_free")) == normalize(db_item.get("oid_free")) and 
+                             bool(db_item.get("oid_total")) and normalize(item.get("oid_total")) == normalize(db_item.get("oid_total")))
             elif feature == "fans":
-                match = (normalize(item.get("oid_rpm")) == db_item.get("oid_rpm") or 
-                         normalize(item.get("oid_status")) == db_item.get("oid_status"))
+                match = (
+                    (bool(db_item.get("oid_rpm")) and normalize(item.get("oid_rpm")) == normalize(db_item.get("oid_rpm"))) or 
+                    (bool(db_item.get("oid_status")) and normalize(item.get("oid_status")) == normalize(db_item.get("oid_status")))
+                )
             elif feature == "psu":
-                match = normalize(item.get("oid_status")) == db_item.get("oid_status")
+                match = bool(db_item.get("oid_status")) and normalize(item.get("oid_status")) == normalize(db_item.get("oid_status"))
             elif feature == "poe":
-                match = (normalize(item.get("oid_budget")) == db_item.get("oid_budget") or 
-                         normalize(item.get("oid_used")) == db_item.get("oid_used") or 
-                         normalize(item.get("oid_port_power")) == db_item.get("oid_port_power"))
+                match = (
+                    (bool(db_item.get("oid_budget")) and normalize(item.get("oid_budget")) == normalize(db_item.get("oid_budget"))) or 
+                    (bool(db_item.get("oid_used")) and normalize(item.get("oid_used")) == normalize(db_item.get("oid_used"))) or 
+                    (bool(db_item.get("oid_port_power")) and normalize(item.get("oid_port_power")) == normalize(db_item.get("oid_port_power")))
+                )
             elif feature == "device_info":
-                match = (normalize(item.get("oid_mfg")) == db_item.get("oid_mfg") or
-                         normalize(item.get("oid_model")) == db_item.get("oid_model") or
-                         normalize(item.get("oid_firmware")) == db_item.get("oid_firmware") or
-                         normalize(item.get("oid_hostname")) == db_item.get("oid_hostname") or
-                         normalize(item.get("oid_uptime")) == db_item.get("oid_uptime"))
+                match = (
+                    (bool(db_item.get("oid_mfg")) and normalize(item.get("oid_mfg")) == normalize(db_item.get("oid_mfg"))) or
+                    (bool(db_item.get("oid_model")) and normalize(item.get("oid_model")) == normalize(db_item.get("oid_model"))) or
+                    (bool(db_item.get("oid_firmware")) and normalize(item.get("oid_firmware")) == normalize(db_item.get("oid_firmware"))) or
+                    (bool(db_item.get("oid_hostname")) and normalize(item.get("oid_hostname")) == normalize(db_item.get("oid_hostname"))) or
+                    (bool(db_item.get("oid_uptime")) and normalize(item.get("oid_uptime")) == normalize(db_item.get("oid_uptime")))
+                )
             else:
                 match = False
 
