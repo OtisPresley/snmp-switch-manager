@@ -2,57 +2,38 @@
   "temperature": [
     {
       "oid": "1.3.6.1.4.1.25506.2.6.1.1.1.1.12",
-      "vendors": [
-        "H3C"
-      ],
+      "vendors": ["H3C"],
       "method": "walk",
       "scale": 1.0,
-      "unit": "\u00b0C",
+      "unit": "°C",
       "description": "H3C Temperature sensor",
-      "invalid_values": [
-        65535
-      ],
+      "invalid_values": [65535],
       "oid_label": "1.3.6.1.2.1.47.1.1.1.1.7"
     },
     {
       "oid": "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.8.1.5.1",
-      "vendors": [
-        "Dell"
-      ],
+      "vendors": ["Dell"],
       "method": "walk",
       "scale": 1.0,
-      "unit": "\u00b0C",
+      "unit": "°C",
       "description": "Dell OS6 Temperature sensor table"
     },
     {
       "oid": "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.11",
-      "vendors": [
-        "Huawei"
-      ],
+      "vendors": ["Huawei"],
       "method": "walk",
       "scale": 1.0,
-      "unit": "\u00b0C",
+      "unit": "°C",
       "description": "Huawei hwEntityTemperature"
     },
     {
       "oid": "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.15.1.3.1",
       "oid_state": "1.3.6.1.4.1.674.10895.5000.2.6132.1.1.43.1.15.1.2.1",
-      "vendors": [
-        "Dell"
-      ],
+      "vendors": ["Dell"],
       "method": "get",
       "scale": 1.0,
-      "unit": "\u00b0C",
+      "unit": "°C",
       "description": "Dell OS6 Unit Temperature and State"
-    },
-    {
-      "oid": "1.3.6.1.4.1.25506.2.6.1.1.1.1.13",
-      "vendors": [
-        "H3C"
-      ],
-      "method": "walk",
-      "scale": 1.0,
-      "oid_label": "1.3.6.1.2.1.47.1.1.1.1.7"
     }
   ]
 }
