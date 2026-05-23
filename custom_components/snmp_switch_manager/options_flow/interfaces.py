@@ -476,7 +476,9 @@ class InterfacesOptionsMixin:
                         mode=selector.SelectSelectorMode.DROPDOWN,
                     )
                 ),
-                vol.Optional("token"): str,
+                vol.Optional("token"): selector.TextSelector(
+                    selector.TextSelectorConfig(type="text")
+                ),
                 vol.Optional("share_with_community", default=False): cv.boolean,
                 vol.Optional("attestation", default=False): cv.boolean,
                 vol.Optional("beneficial_for_everyone", default=False): cv.boolean,
