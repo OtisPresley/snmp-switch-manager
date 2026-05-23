@@ -2,3 +2,6 @@ __pycache__/
 venv/
 .ruff_cache/
 .DS_Store
+test_live.py
+check_poe_bonuscloset.py
+
