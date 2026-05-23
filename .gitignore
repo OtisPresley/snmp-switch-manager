@@ -4,4 +4,6 @@ venv/
 .DS_Store
 test_live.py
 check_poe_bonuscloset.py
+scratch.py
+
 
