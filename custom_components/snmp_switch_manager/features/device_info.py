@@ -83,8 +83,8 @@ async def initialize_device_info(client: "SwitchSnmpClient") -> None:
         if oid_mfg := item.get("oid_mfg"):
             manufacturer = await _fetch_oid_str(client, oid_mfg) or manufacturer
 
-    if vendor == "Mikrotik" and not manufacturer:
-        manufacturer = "MikroTik"
+    if not manufacturer:
+        manufacturer = vendor_info.get("manufacturer_fallback")
 
     # Custom OID overrides (highest precedence)
     if oid := client._custom_oid("manufacturer"):
@@ -129,15 +129,11 @@ async def refresh_device_info(client: "SwitchSnmpClient") -> None:
             if oid_mfg := item.get("oid_mfg"):
                 manufacturer = await _fetch_oid_str(client, oid_mfg) or manufacturer
 
-        if (model_hint and "CBS" in model_hint) or "CBS" in sd:
-            for item in client._get_database_oids("device_info", "Cisco"):
-                if oid_fw := item.get("oid_firmware"):
-                    firmware = await _fetch_oid_str(client, oid_fw) or firmware
-
         client._vendor_oids_fetched = True
 
-    if vendor == "Mikrotik" and not manufacturer:
-        manufacturer = "MikroTik"
+    if not manufacturer:
+        vendor_info = client._get_vendor_info()
+        manufacturer = vendor_info.get("manufacturer_fallback")
 
     # Custom OIDs (highest precedence)
     if oid := client._custom_oid("manufacturer"):

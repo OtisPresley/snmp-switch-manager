@@ -4,7 +4,8 @@
       "name": "Cisco",
       "enterprise_number": "9",
       "sys_object_id_prefix": "1.3.6.1.4.1.9",
-      "keywords": ["cisco"]
+      "keywords": ["cisco", "cbs"],
+      "keep_empty_port_channels_if_keyword": "sg"
     },
     {
       "name": "Dell",
@@ -48,7 +49,8 @@
       "name": "Mikrotik",
       "enterprise_number": "14988",
       "sys_object_id_prefix": "1.3.6.1.4.1.14988",
-      "keywords": ["mikrotik", "routeros"]
+      "keywords": ["mikrotik", "routeros"],
+      "manufacturer_fallback": "MikroTik"
     },
     {
       "name": "pfSense",

@@ -274,117 +274,25 @@ def uptime_human(ticks: Any) -> str:
 
 # ---------- vendor interface rules ----------
 
-LOCAL_INTERFACE_FILTERS = [
-    {
-        "id": "generic_skip_cpu_interface",
-        "label": "Generic: Skip CPU pseudo-interface (IF-MIB name 'CPU')",
-        "vendors": ["Standard"],
-        "rule_type": "exclude",
-        "match_type": "equals",
-        "match_value": "cpu"
-    },
-    {
-        "id": "cisco_sg_physical_fa_gi",
-        "label": "Cisco SG: Only create physical Fa*/Gi* interfaces",
-        "vendors": ["Cisco"],
-        "vendor_keywords": ["sg"],
-        "rule_type": "include",
-        "match_type": "starts_with",
-        "match_value": ["fa", "gi"],
-        "oper_not_equal": 6
-    },
-    {
-        "id": "cisco_sg_vlan_admin_or_oper",
-        "label": "Cisco SG: Create VLAN interfaces (oper up or admin down)",
-        "vendors": ["Cisco"],
-        "vendor_keywords": ["sg"],
-        "rule_type": "include",
-        "conditions": [
-            {
-                "match_type": "is_digit",
-                "oper_in": [1],
-                "admin_in": [2],
-                "oper_or_admin_match": True,
-                "require_ip": True,
-                "rename_prefix": "VLAN "
-            },
-            {
-                "match_type": "starts_with",
-                "match_value": "vlan",
-                "admin_in": [1, 2],
-                "oper_in": [1, 2, 6, 7]
-            },
-            {
-                "match_type": "starts_with",
-                "match_value": "po",
-                "oper_in": [1],
-                "admin_in": [2],
-                "oper_or_admin_match": True
-            }
-        ]
-    },
-    {
-        "id": "cisco_sg_other_has_ip",
-        "label": "Cisco SG: Create other interfaces when an IP is configured",
-        "vendors": ["Cisco"],
-        "vendor_keywords": ["sg"],
-        "rule_type": "include",
-        "require_ip": True
-    },
-    {
-        "id": "junos_physical_ge",
-        "label": "Junos: Create physical ge-0/0/X interfaces",
-        "vendors": ["Junos"],
-        "rule_type": "include",
-        "match_type": "starts_with",
-        "match_value": "ge-",
-        "exclude_contains": "."
-    },
-    {
-        "id": "junos_l3_subif_has_ip",
-        "label": "Junos: Create ge-0/0/X.Y subinterfaces with IP (non-.0)",
-        "vendors": ["Junos"],
-        "rule_type": "include",
-        "match_type": "starts_with",
-        "match_value": "ge-",
-        "require_contains": ".",
-        "exclude_ends_with": ".0",
-        "require_ip": True
-    },
-    {
-        "id": "junos_vlan_admin_or_oper",
-        "label": "Junos: Create VLAN interfaces (oper up or admin down)",
-        "vendors": ["Junos"],
-        "rule_type": "include",
-        "match_type": "starts_with",
-        "match_value": "vlan",
-        "admin_in": [1, 2],
-        "oper_in": [1, 2, 6, 7]
-    },
-    {
-        "id": "junos_other_has_ip",
-        "label": "Junos: Create other interfaces when an IP is configured",
-        "vendors": ["Junos"],
-        "rule_type": "include",
-        "require_ip": True
-    },
-    {
-        "id": "skip_pfsense_enc_interfaces",
-        "label": "Skip pfSense Enc Interfaces",
-        "vendors": ["pfSense"],
-        "rule_type": "exclude",
-        "match_type": "starts_with",
-        "match_value": "enc"
-    },
-    {
-        "id": "skip_pfsense_pf_interfaces",
-        "label": "Skip pfSense Pf Interfaces",
-        "vendors": ["pfSense"],
-        "rule_type": "exclude",
-        "match_type": "starts_with",
-        "match_value": "pf"
-    }
-]
+def _load_local_interface_filters() -> list:
+    """Load default interface filters dynamically from the database JSON to avoid hardcoding vendor details in python."""
+    import os
+    import json
+    db_path = os.path.join(os.path.dirname(__file__), "database", "interface_filters.json")
+    if os.path.exists(db_path):
+        try:
+            with open(db_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict) and "interface_filters" in data:
+                    return data["interface_filters"]
+                elif isinstance(data, list):
+                    return data
+        except Exception:
+            pass
+    return []
+
+LOCAL_INTERFACE_FILTERS = _load_local_interface_filters()
+
 
 
 def _match_condition(
@@ -568,38 +476,6 @@ def check_interface_filter_rules(
     return include, raw_name
 
 
-def check_vendor_interface_rules(
-    normalized_name: str,
-    raw_name: str,
-    admin: int | None,
-    oper: int | None,
-    has_ip: bool,
-    is_cisco_sg: bool,
-    is_junos: bool,
-    disabled_vendor_filter_ids: set[str],
-) -> tuple[bool, str]:
-    """Deprecated: check if an interface is included. Use check_interface_filter_rules instead."""
-    vendor = "Standard"
-    manufacturer = ""
-    sys_descr = ""
-    if is_cisco_sg:
-        vendor = "Cisco"
-        manufacturer = "sg"
-        sys_descr = "sg"
-    elif is_junos:
-        vendor = "Junos"
-
-    return check_interface_filter_rules(
-        normalized_name=normalized_name,
-        raw_name=raw_name,
-        admin=admin,
-        oper=oper,
-        has_ip=has_ip,
-        vendor=vendor,
-        manufacturer=manufacturer,
-        sys_descr=sys_descr,
-        disabled_vendor_filter_ids=disabled_vendor_filter_ids,
-    )
 
 
 # ---------- SNMP value parsing ----------

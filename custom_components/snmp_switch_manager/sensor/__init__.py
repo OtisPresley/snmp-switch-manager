@@ -172,8 +172,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
             is_port_channel = lower.startswith("po") or lower.startswith("port-channel") or lower.startswith("link aggregate")
             if is_port_channel and not (ip_str or alias):
-                is_cisco_sg = vendor.lower() == "cisco" and any(kw in manufacturer.lower() or kw in sys_descr.lower() for kw in ["sg"])
-                if not is_cisco_sg:
+                keep_empty = False
+                vendor_info = client._get_vendor_info() if hasattr(client, "_get_vendor_info") else {}
+                kw = vendor_info.get("keep_empty_port_channels_if_keyword")
+                if kw and (kw.lower() in (manufacturer or "").lower() or kw.lower() in (sys_descr or "").lower()):
+                    keep_empty = True
+                if not keep_empty:
                     continue
 
             admin = row.get("admin")
