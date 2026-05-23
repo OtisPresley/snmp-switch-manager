@@ -133,7 +133,7 @@
           "enable_bandwidth_sensors": "Enable bandwidth collection",
           "back_to_menu": "Go back (discard changes)"
         },
-        "description": "Enable bandwidth collection for this device.\n\nIf you choose **Attributes**, bandwidth values are added to port entities (no history).\nIf you choose **Sensors**, separate bandwidth sensors are created (history).",
+        "description": "👉 **[📘 Read Bandwidth Configuration Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#3-bandwidth-sensors)**\n\nEnable bandwidth collection for this device.\n\nIf you choose **Attributes**, bandwidth values are added to port entities (no history).\nIf you choose **Sensors**, separate bandwidth sensors are created (history).",
         "title": "Bandwidth Sensors"
       },
       "bandwidth_exclude_rules": {
@@ -180,7 +180,7 @@
         "title": "Bandwidth Sensors"
       },
       "bandwidth_sensors": {
-        "description": "Enable optional RX/TX throughput and total traffic sensors for selected interfaces.",
+        "description": "👉 **[📘 Read Bandwidth Configuration Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#3-bandwidth-sensors)**\n\nEnable optional RX/TX throughput and total traffic sensors for selected interfaces.",
         "menu_options": {
           "back": "Back",
           "bandwidth_enable_disable": "Enable / Disable",
@@ -212,11 +212,11 @@
           "snmpv3_priv_password": "SNMP v3 — Privacy password (optional)",
           "back_to_menu": "Go back (discard changes)"
         },
-        "description": "Optional per-device overrides. Leave blank to use values from initial setup.\n\n### SNMP Version\nAll fields are always visible due to Home Assistant limitations. Only the selected **SNMP version** determines which fields are used.\n\n### SNMP v2c\nUse **SNMP community override** and **SNMP port override** only if you need to override initial setup values.\n\n### SNMP v3\nFill in **SNMPv3 username** and authentication/privacy settings when SNMP v3 is selected. Many devices require passwords between 8 and 31 characters and may reject special characters.",
+        "description": "👉 **[📘 Read Connection & Name Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#1-connection--name)**\n\nOptional per-device overrides. Leave blank to use values from initial setup.\n\n### SNMP Version\nAll fields are always visible due to Home Assistant limitations. Only the selected **SNMP version** determines which fields are used.\n\n### SNMP v2c\nUse **SNMP community override** and **SNMP port override** only if you need to override initial setup values.\n\n### SNMP v3\nFill in **SNMPv3 username** and authentication/privacy settings when SNMP v3 is selected. Many devices require passwords between 8 and 31 characters and may reject special characters.",
         "title": "Connection & Name"
       },
       "feature_overrides": {
-        "description": "Manage custom OID overrides for specific features.",
+        "description": "👉 **[📘 Read Custom OID Overrides Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced)**\n\nManage custom OID overrides for specific features.",
         "menu_options": {
           "override_power": "Override Power",
           "back": "Back",
@@ -310,7 +310,7 @@
         "title": "Submit to GitHub?"
       },
       "submit_pr": {
-        "description": "To submit your override, please authenticate with GitHub:\n\n1. Go to [github.com/login/device]({url}) (opens in a new tab)\n2. Copy and enter code: `{code}`\n3. Once you get the green check on GitHub, click Submit.",
+        "description": "👉 **[📘 Read Community Submissions Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Community-Submissions)**\n\nTo submit your override, please authenticate with GitHub:\n\n1. Go to [github.com/login/device]({url}) (opens in a new tab)\n2. Copy and enter code: `{code}`\n3. Once you get the green check on GitHub, click Submit.",
         "title": "Authenticate with GitHub",
         "data": {
           "authorized": "I have authorized this on GitHub",
@@ -354,7 +354,7 @@
           "back_to_menu": "Go back (discard changes)",
           "poe_control_loops": "PoE Control Loops"
         },
-        "description": "Choose whether environmental/PoE data is stored as attributes (no history) or separate sensors (history).",
+        "description": "👉 **[📘 Read Environmental Sensors Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#4-environmental-sensors)**\n\nChoose whether environmental/PoE data is stored as attributes (no history) or separate sensors (history).",
         "title": "Environmental Sensors"
       },
       "environmental_poll_interval": {
@@ -366,7 +366,7 @@
         "title": "Environmental polling interval"
       },
       "environmental_sensors": {
-        "description": "Enable optional environmental and PoE monitoring for this device.",
+        "description": "👉 **[📘 Read Environmental Sensors Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#4-environmental-sensors)**\n\nEnable optional environmental and PoE monitoring for this device.",
         "menu_options": {
           "back": "Back",
           "environmental_enable_disable": "Enable / Disable",
@@ -400,7 +400,7 @@
         "title": "Include Rules"
       },
       "manage_interfaces": {
-        "description": "Manage which interfaces are created as Home Assistant entities.",
+        "description": "👉 **[📘 Read Manage Interfaces Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#2-manage-interfaces)**\n\nManage which interfaces are created as Home Assistant entities.",
         "menu_options": {
           "back": "Back",
           "builtin_vendor_filters": "Built-in Vendor Filters",
@@ -422,7 +422,7 @@
         "title": "PoE polling interval"
       },
       "port_name_rules": {
-        "description": "Customize how interface names are displayed in the UI and card.\n\nBuilt-in rules are provided as examples and can be disabled per device.",
+        "description": "👉 **[📘 Read Interface Naming Rules Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#interface-name-rules)**\n\nCustomize how interface names are displayed in the UI and card.\n\nBuilt-in rules are provided as examples and can be disabled per device.",
         "menu_options": {
           "manage_interfaces": "Back",
           "port_rename_custom": "Custom Rename Rules",
@@ -553,7 +553,7 @@
       },
       "submit_community_filter": {
         "title": "Submit Interface Filter",
-        "description": "Define a system-level interface filter. All 3 checkboxes must be checked to authorize submission.",
+        "description": "👉 **[📘 Read Community Submissions Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Community-Submissions)**\n\nDefine a system-level interface filter. All 3 checkboxes must be checked to authorize submission.",
         "data": {
           "label": "Display Label (e.g., Cisco: Skip VLANs)",
           "vendor": "Vendor (Brand)",
@@ -568,7 +568,7 @@
       },
       "submit_community_token": {
         "title": "Submit Classification Token",
-        "description": "Define a physical/virtual classification token. All 3 checkboxes must be checked to authorize submission.",
+        "description": "👉 **[📘 Read Community Submissions Guide](https://github.com/OtisPresley/snmp-switch-manager/wiki/Community-Submissions)**\n\nDefine a physical/virtual classification token. All 3 checkboxes must be checked to authorize submission.",
         "data": {
           "type": "Token List",
           "token": "Token String (e.g., irb, bdi, lag)",
