@@ -205,7 +205,8 @@ class SwitchSnmpClient:
             return [override]
             
         db = self._database.get(feature, {}).get(feature, [])
-        return [item for item in db if vendor in item.get("vendors", [])]
+        vendor_lower = vendor.lower()
+        return [item for item in db if any(v.lower() == vendor_lower for v in item.get("vendors", []))]
 
     def _custom_oid(self, key: str) -> Optional[str]:
         val = (self.custom_oids or {}).get(key)
