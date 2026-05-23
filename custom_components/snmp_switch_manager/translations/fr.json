@@ -38,7 +38,8 @@
           "env_mode": "Données environnementales en tant que",
           "poe_enabled": "Activer les capteurs PoE",
           "poe_mode": "Données PoE en tant que",
-          "poe_per_port_power": "Créer des capteurs de puissance PoE par port"
+          "poe_per_port_power": "Créer des capteurs de puissance PoE par port",
+          "poe_control_loops": "Boucles de contrôle PoE"
         },
         "description": "Activer la surveillance environnementale/PoE pour cet appareil.\n\nSi vous choisissez Attributs, les valeurs sont ajoutées aux entités de port (sans historique).\nSi vous choisissez Capteurs, des entités de capteur séparées sont créées (historique).",
         "title": "Capteurs environnementaux"
@@ -350,7 +351,8 @@
           "poe_enabled": "Activer les statistiques PoE",
           "poe_mode": "Données PoE en tant que",
           "poe_per_port_power": "Créer des capteurs de puissance PoE par port",
-          "back_to_menu": "Retourner (ignorer les modifications)"
+          "back_to_menu": "Retourner (ignorer les modifications)",
+          "poe_control_loops": "Boucles de contrôle PoE"
         },
         "description": "Choisissez si les données environnementales/PoE sont stockées comme attributs (sans historique) ou comme capteurs séparés (avec historique).",
         "title": "Capteurs environnementaux"
@@ -519,7 +521,9 @@
           "attestation": "J'atteste avoir testé et vérifié que ces OID fonctionnent comme prévu.",
           "share_with_community": "Partager avec la communauté",
           "back_to_menu": "Retourner (ignorer les modifications)",
-          "scale": "Échelle"
+          "scale": "Échelle",
+          "oid_port_admin": "OID d'activation de l'administration du port PoE (facultatif)",
+          "oid_port_priority": "OID de priorité d'alimentation du port PoE (facultatif)"
         }
       },
       "override_device_info": {
@@ -534,7 +538,10 @@
           "vendor": "Fournisseur (Marque)",
           "back_to_menu": "Retourner (ignorer les modifications)",
           "attestation": "J'atteste que j'ai testé et vérifié que ces OID fonctionnent comme prévu.",
-          "share_with_community": "Partager cela avec la communauté"
+          "share_with_community": "Partager cela avec la communauté",
+          "contact_oid": "OID de contact (facultatif)",
+          "name_oid": "OID de nom (facultatif)",
+          "location_oid": "OID de localisation (facultatif)"
         }
       },
       "github_connection_error": {

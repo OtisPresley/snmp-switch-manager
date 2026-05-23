@@ -38,7 +38,8 @@
           "env_mode": "Umgebungsdaten als",
           "poe_enabled": "PoE-Sensoren aktivieren",
           "poe_mode": "PoE-Daten als",
-          "poe_per_port_power": "PoE-Leistungssensoren pro Port erstellen"
+          "poe_per_port_power": "PoE-Leistungssensoren pro Port erstellen",
+          "poe_control_loops": "PoE-Regelkreise"
         },
         "description": "Umgebungs-/PoE-Überwachung für dieses Gerät aktivieren.\n\nWenn Sie Attribute wählen, werden Werte den Port-Entitäten hinzugefügt (keine Historie).\nWenn Sie Sensoren wählen, werden separate Sensor-Entitäten erstellt (Historie).",
         "title": "Umweltsensoren"
@@ -350,7 +351,8 @@
           "poe_enabled": "PoE-Statistiken aktivieren",
           "poe_mode": "PoE-Daten als",
           "poe_per_port_power": "PoE-Leistungssensoren pro Port erstellen",
-          "back_to_menu": "Zurückgehen (Änderungen verwerfen)"
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
+          "poe_control_loops": "PoE-Regelkreise"
         },
         "description": "Wählen Sie, ob Umgebungs-/PoE-Daten als Attribute (keine Historie) oder als separate Sensoren (Historie) gespeichert werden.",
         "title": "Umweltsensoren"
@@ -519,7 +521,9 @@
           "attestation": "Ich bestätige, dass ich diese OIDs getestet und verifiziert habe und sie wie erwartet funktionieren.",
           "share_with_community": "Mit der Community teilen",
           "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
-          "scale": "Skalierung"
+          "scale": "Skalierung",
+          "oid_port_admin": "PoE-Port-Admin-Freigabe-OID (optional)",
+          "oid_port_priority": "PoE-Port-Leistungspriorität-OID (optional)"
         }
       },
       "override_device_info": {
@@ -534,7 +538,10 @@
           "vendor": "Hersteller (Marke)",
           "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
           "attestation": "Ich bestätige, dass ich diese OIDs getestet und verifiziert habe.",
-          "share_with_community": "Teilen Sie dies mit der Community"
+          "share_with_community": "Teilen Sie dies mit der Community",
+          "contact_oid": "Kontakt-OID (optional)",
+          "name_oid": "Namens-OID (optional)",
+          "location_oid": "Standort-OID (optional)"
         }
       },
       "submit_community_interface_rule": {

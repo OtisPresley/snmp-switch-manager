@@ -159,19 +159,95 @@ async def run_tests():
         "homeassistant.helpers.selector",
         "homeassistant.const",
         "homeassistant.data_entry_flow",
+        "homeassistant.components",
+        "homeassistant.components.switch",
+        "homeassistant.components.select",
+        "homeassistant.components.sensor",
+        "homeassistant.helpers.entity",
+        "homeassistant.helpers.entity_registry",
+        "homeassistant.util",
         "homeassistant",
     ]:
         if mod not in sys.modules:
             _stub_module(mod)
 
     # Specific attributes needed by imports in snmp.py / helpers.py
+    class FakeEntity:
+        @property
+        def unique_id(self) -> str | None:
+            return getattr(self, "_attr_unique_id", None)
+        @property
+        def name(self) -> str | None:
+            return getattr(self, "_attr_name", None)
+        @property
+        def device_info(self) -> Any | None:
+            return getattr(self, "_attr_device_info", None)
+        @property
+        def icon(self) -> str | None:
+            return getattr(self, "_attr_icon", None)
+        def async_write_ha_state(self) -> None:
+            pass
+
+    class ConfigEntryStub:
+        def __init__(self, *args, **kwargs): pass
+    class DataUpdateCoordinatorStub:
+        def __init__(self, *args, **kwargs): pass
+    class CoordinatorEntityStub:
+        def __init__(self, coordinator, context=None):
+            self.coordinator = coordinator
+    class SwitchEntityStub(FakeEntity):
+        def __init__(self, *args, **kwargs): pass
+    class SelectEntityStub(FakeEntity):
+        def __init__(self, *args, **kwargs): pass
+    class SensorEntityStub(FakeEntity):
+        def __init__(self, *args, **kwargs): pass
+    class DeviceInfoStub:
+        def __init__(self, *args, **kwargs): pass
+
     sys.modules["homeassistant"].core = sys.modules["homeassistant.core"]
-    sys.modules["homeassistant.config_entries"].ConfigEntry = object
+    sys.modules["homeassistant.config_entries"].ConfigEntry = ConfigEntryStub
     sys.modules["homeassistant.exceptions"].ConfigEntryAuthFailed = Exception
-    sys.modules["homeassistant.helpers.update_coordinator"].DataUpdateCoordinator = object
+    sys.modules["homeassistant.helpers.update_coordinator"].DataUpdateCoordinator = DataUpdateCoordinatorStub
+    sys.modules["homeassistant.helpers.update_coordinator"].CoordinatorEntity = CoordinatorEntityStub
     sys.modules["homeassistant.const"].CONF_HOST = "host"
     sys.modules["homeassistant.const"].CONF_PORT = "port"
     sys.modules["homeassistant.data_entry_flow"].FlowResult = dict
+    
+    # Components / Sensor / Switch / Select stubs
+    sys.modules["homeassistant.components.switch"].SwitchEntity = SwitchEntityStub
+    sys.modules["homeassistant.components.select"].SelectEntity = SelectEntityStub
+    sys.modules["homeassistant.components.sensor"].SensorEntity = SensorEntityStub
+    class SensorDeviceClassStub:
+        DATA_RATE = "data_rate"
+        DATA_SIZE = "data_size"
+        POWER = "power"
+        TEMPERATURE = "temperature"
+    class SensorStateClassStub:
+        MEASUREMENT = "measurement"
+        TOTAL_INCREASING = "total_increasing"
+    sys.modules["homeassistant.components.sensor"].SensorStateClass = SensorStateClassStub
+    sys.modules["homeassistant.components.sensor"].SensorDeviceClass = SensorDeviceClassStub
+    sys.modules["homeassistant.helpers.entity"].DeviceInfo = DeviceInfoStub
+    sys.modules["homeassistant.helpers"].entity_registry = sys.modules["homeassistant.helpers.entity_registry"]
+    
+    from unittest.mock import MagicMock
+    sys.modules["homeassistant.helpers.entity_registry"].async_get = lambda hass: MagicMock()
+    
+    sys.modules["homeassistant.util"].slugify = lambda text: text.lower().replace(" ", "_").replace("/", "_").replace("-", "_")
+    
+    class EntityCategory:
+        DIAGNOSTIC = "diagnostic"
+        CONFIG = "config"
+    sys.modules["homeassistant.const"].EntityCategory = EntityCategory
+    sys.modules["homeassistant.const"].PERCENTAGE = "%"
+    
+    class UnitOfPower:
+        WATT = "W"
+    sys.modules["homeassistant.const"].UnitOfPower = UnitOfPower
+    
+    class UnitOfTemperature:
+        CELSIUS = "°C"
+    sys.modules["homeassistant.const"].UnitOfTemperature = UnitOfTemperature
 
     # voluptuous stub (used by config_flow, not snmp.py — but __init__ imports config_flow indirectly)
     if "voluptuous" not in sys.modules:
@@ -250,6 +326,45 @@ async def run_tests():
     # uptime_human
     check("uptime_human(36000)",  uptime_human(36000),  expect="0d 0h 6m 0s")
     check("uptime_human(8640000)", uptime_human(8640000), expect="1d 0h 0m 0s")
+
+    # format_interface_name tests (fallback and dynamic DB)
+    from custom_components.snmp_switch_manager.helpers import format_interface_name
+    check(
+        "format_interface_name static fallback Gi",
+        format_interface_name("gi1/0/1", unit=1, slot=0, port=1),
+        expect="Gi1/0/1",
+    )
+    check(
+        "format_interface_name static fallback Tw",
+        format_interface_name("tw2/0/4", unit=2, slot=0, port=4),
+        expect="Tw2/0/4",
+    )
+    
+    custom_abbrev_db = {
+        "abbreviations": {
+            "prefixes": {
+                "gi": "Gig",
+                "te": "Ten"
+            },
+            "startswith": {
+                "po": "Lag"
+            },
+            "contains": {
+                "100g": "Hu"
+            },
+            "default": "Gig"
+        }
+    }
+    check(
+        "format_interface_name dynamic DB prefixes",
+        format_interface_name("gi1/0/1", unit=1, slot=0, port=1, classification_db=custom_abbrev_db),
+        expect="Gig1/0/1",
+    )
+    check(
+        "format_interface_name dynamic DB startswith",
+        format_interface_name("po10", unit=1, slot=0, port=10, classification_db=custom_abbrev_db),
+        expect="Lag1/0/10",
+    )
 
     # parse_pfsense_sysdescr
     pfs = parse_pfsense_sysdescr("pfSense myhost 2.7.2-RELEASE FreeBSD 14.0-RELEASE-p6 amd64")
@@ -455,9 +570,387 @@ async def run_tests():
     # mutate the switch in an automated test to avoid disruption.
     check("set_alias exists",       callable(client.set_alias),        expect=True)
     check("set_admin_status exists", callable(client.set_admin_status), expect=True)
+    check("set_poe_admin exists",    callable(client.set_poe_admin),    expect=True)
+    check("set_poe_priority exists", callable(client.set_poe_priority), expect=True)
+    check("set_system_string exists",callable(client.set_system_string),expect=True)
 
     # -----------------------------------------------------------------------
-    section("12 · cleanup – async_close()")
+    section("12 · Unit tests using Mocks (PoE control loops & Consolidation)")
+    # -----------------------------------------------------------------------
+    from unittest.mock import AsyncMock
+
+    # 1. Test poll_poe parses standard OIDs correctly with poe_control_loops=True
+    mock_client = MagicMock()
+    mock_client._poe_options = {
+        "poe_enabled": True,
+        "poe_control_loops": True,
+        "poe_poll_interval": 0,
+        "poe_mode": "attributes",
+    }
+    mock_client._poe_last_poll = 0.0
+    mock_client.cache = {
+        "vendor": "Dell",
+        "ifindex_by_baseport": {13: 13},
+    }
+    mock_client._database = {"poe": {"poe": []}}
+    mock_client.feature_overrides = {}
+    mock_client._get_database_oids = lambda feature, vendor: []
+    mock_client._custom_oid = lambda key: None
+    mock_client.custom_oids = {}
+    
+    # Mock walk results
+    mock_walk = AsyncMock()
+    mock_walk.side_effect = lambda oid: {
+        "1.3.6.1.2.1.105.1.3.1.1.2": [("1.3.6.1.2.1.105.1.3.1.1.2.1", "370000")],
+        "1.3.6.1.2.1.105.1.3.1.1.4": [("1.3.6.1.2.1.105.1.3.1.1.4.1", "50000")],
+        "1.3.6.1.2.1.105.1.1.1.15": [("1.3.6.1.2.1.105.1.1.1.15.1.13", "0")],
+        "1.3.6.1.2.1.105.1.1.1.3": [("1.3.6.1.2.1.105.1.1.1.3.1.13", "1")],
+        "1.3.6.1.2.1.105.1.1.1.7": [("1.3.6.1.2.1.105.1.1.1.7.1.13", "2")],
+    }.get(oid, [])
+    mock_client._async_walk = mock_walk
+
+    await _f_poe.poll_poe(mock_client)
+    poe_ports = mock_client.cache.get("poe_ports", {})
+    check("PoE port Gi1/0/13 mapped", 13 in poe_ports, expect=True)
+    if 13 in poe_ports:
+        check("Gi1/0/13 admin is 1 (Auto)", poe_ports[13]["admin"], expect=1)
+        check("Gi1/0/13 priority is 2 (High)", poe_ports[13]["priority"], expect=2)
+
+    # 1b. Test custom system OID override resolution
+    mock_client.custom_oids = {
+        "name": "1.3.6.1.4.1.9.9.23.1.2.1.1.1",
+        "contact": "1.3.6.1.4.1.9.9.23.1.2.1.1.2",
+        "location": "1.3.6.1.4.1.9.9.23.1.2.1.1.3",
+    }
+    mock_client._custom_oid = lambda key: mock_client.custom_oids.get(key)
+    check("custom_oid resolves name override", mock_client._custom_oid("name"), expect="1.3.6.1.4.1.9.9.23.1.2.1.1.1")
+    check("custom_oid resolves contact override", mock_client._custom_oid("contact"), expect="1.3.6.1.4.1.9.9.23.1.2.1.1.2")
+    check("custom_oid resolves location override", mock_client._custom_oid("location"), expect="1.3.6.1.4.1.9.9.23.1.2.1.1.3")
+
+    # 1c. Test PoE custom OID override resolution in poll_poe
+    poe_override = {
+        "oid_budget": "1.3.6.1.4.1.9.9.23.1.2.2.1.1",
+        "oid_used": "1.3.6.1.4.1.9.9.23.1.2.2.1.2",
+        "oid_port_power": "1.3.6.1.4.1.9.9.23.1.2.2.1.3",
+        "oid_port_admin": "1.3.6.1.4.1.9.9.23.1.2.2.1.4",
+        "oid_port_priority": "1.3.6.1.4.1.9.9.23.1.2.2.1.5",
+        "scale": 1.0,
+    }
+    mock_client.feature_overrides = {"poe": poe_override}
+    mock_client._get_database_oids = lambda feature, vendor: [poe_override] if feature == "poe" else []
+    
+    mock_walk_override = AsyncMock()
+    mock_walk_override.side_effect = lambda oid: {
+        "1.3.6.1.4.1.9.9.23.1.2.2.1.1": [("1.3.6.1.4.1.9.9.23.1.2.2.1.1.1", "400.0")],
+        "1.3.6.1.4.1.9.9.23.1.2.2.1.2": [("1.3.6.1.4.1.9.9.23.1.2.2.1.2.1", "60.0")],
+        "1.3.6.1.4.1.9.9.23.1.2.2.1.3": [("1.3.6.1.4.1.9.9.23.1.2.2.1.3.1.13", "1200")],
+        "1.3.6.1.4.1.9.9.23.1.2.2.1.4": [("1.3.6.1.4.1.9.9.23.1.2.2.1.4.1.13", "1")],
+        "1.3.6.1.4.1.9.9.23.1.2.2.1.5": [("1.3.6.1.4.1.9.9.23.1.2.2.1.5.1.13", "1")],
+    }.get(oid, [])
+    mock_client._async_walk = mock_walk_override
+    mock_client.cache = {
+        "vendor": "Dell",
+        "ifindex_by_baseport": {13: 13},
+    }
+    mock_client._poe_last_poll = 0.0
+    
+    await _f_poe.poll_poe(mock_client)
+    check("PoE custom budget in cache", mock_client.cache.get("poe_budget_total_w"), expect=400.0)
+    check("PoE custom used in cache", mock_client.cache.get("poe_power_used_w"), expect=60.0)
+    check("PoE custom port power", mock_client.cache.get("poe_power_mw", {}).get(13), expect=1200.0)
+
+    # Restore standard mocks for the rest of tests
+    mock_client.feature_overrides = {}
+    mock_client._get_database_oids = lambda feature, vendor: []
+    mock_client._async_walk = mock_walk
+    mock_client.cache = {
+        "vendor": "Dell",
+        "ifindex_by_baseport": {13: 13},
+    }
+    mock_client._poe_last_poll = 0.0
+    await _f_poe.poll_poe(mock_client)
+
+    # 2. Test PoePortSwitch toggles and attributes
+    mock_coord = MagicMock()
+    mock_coord.async_request_refresh = AsyncMock()
+    mock_coord.data = mock_client.cache
+    mock_dev_info = MagicMock()
+    
+    import custom_components.snmp_switch_manager.switch as switch_mod
+    poe_switch = switch_mod.PoePortSwitch(
+        coordinator=mock_coord,
+        entry_id="test_entry",
+        if_index=13,
+        raw_name="Gi1/0/13",
+        display_name="Gi1/0/13",
+        group_idx=1,
+        port_idx=13,
+        device_info=mock_dev_info,
+        client=mock_client,
+        hostname="TestSwitch",
+    )
+    
+    check("PoePortSwitch unique_id", poe_switch.unique_id, expect="test_entry-poe-13")
+    check("PoePortSwitch name", poe_switch.name, expect="TestSwitch Gi1/0/13 PoE")
+    check("PoePortSwitch is_on", poe_switch.is_on, expect=True)
+    
+    mock_client.set_poe_admin = AsyncMock(return_value=True)
+    await poe_switch.async_turn_off()
+    mock_client.set_poe_admin.assert_called_with(1, 13, 2)
+    check("PoePortSwitch is_on after turn_off override", poe_switch.is_on, expect=False)
+
+    # 3. Test PoePortPrioritySelect options and attributes
+    import custom_components.snmp_switch_manager.select as select_mod
+    poe_select = select_mod.PoePortPrioritySelect(
+        coordinator=mock_coord,
+        entry_id="test_entry",
+        if_index=13,
+        raw_name="Gi1/0/13",
+        display_name="Gi1/0/13",
+        group_idx=1,
+        port_idx=13,
+        device_info=mock_dev_info,
+        client=mock_client,
+        hostname="TestSwitch",
+    )
+    
+    check("PoePortPrioritySelect unique_id", poe_select.unique_id, expect="test_entry-poe-priority-13")
+    check("PoePortPrioritySelect current_option", poe_select.current_option, expect="High")
+    
+    mock_client.set_poe_priority = AsyncMock(return_value=True)
+    await poe_select.async_select_option("Critical")
+    mock_client.set_poe_priority.assert_called_with(1, 13, 1)
+    check("PoePortPrioritySelect current_option after select override", poe_select.current_option, expect="Critical")
+
+    # 4. Test DeviceInformationSensor consolidation
+    import custom_components.snmp_switch_manager.sensor as sensor_mod
+    mock_client.cache.update({
+        "manufacturer": "Dell EMC",
+        "model": "N1524P",
+        "firmware": "6.6.3.3",
+        "sysName": "CoreSwitch-01",
+        "sysContact": "netops@example.com",
+        "sysLocation": "Rack B",
+    })
+    mock_coord.data = mock_client.cache
+    
+    dev_info_sensor = sensor_mod.DeviceInformationSensor(
+        coordinator=mock_coord,
+        entry=MagicMock(entry_id="test_entry"),
+        device_info=mock_dev_info,
+        hostname="TestSwitch",
+        client=mock_client,
+    )
+    
+    check("DeviceInformationSensor state", dev_info_sensor.native_value, expect="CoreSwitch-01")
+    attrs = dev_info_sensor.extra_state_attributes
+    check("DeviceInformationSensor manufacturer attr", attrs.get("Manufacturer"), expect="Dell EMC")
+    check("DeviceInformationSensor model attr", attrs.get("Model"), expect="N1524P")
+    check("DeviceInformationSensor firmware attr", attrs.get("Firmware Revision"), expect="6.6.3.3")
+    check("DeviceInformationSensor hostname attr", attrs.get("Hostname"), expect="CoreSwitch-01")
+    check("DeviceInformationSensor contact attr", attrs.get("System Contact"), expect="netops@example.com")
+    check("DeviceInformationSensor location attr", attrs.get("System Location"), expect="Rack B")
+
+    # 5. Test dynamic default icons for IfAdminSwitch
+    import custom_components.snmp_switch_manager.switch.admin as admin_switch_mod
+    
+    def make_switch(name):
+        return admin_switch_mod.IfAdminSwitch(
+            coordinator=mock_coord,
+            entry_id="test_entry",
+            if_index=1,
+            raw_name=name,
+            display_name=name,
+            alias="",
+            hostname="TestSwitch",
+            device_info=mock_dev_info,
+            client=mock_client,
+            icon_rules=[],
+        )
+    
+    check("VLAN default icon", make_switch("Vl1").icon, expect="mdi:lan")
+    check("Loopback default icon", make_switch("Lo0").icon, expect="mdi:lan-pending")
+    check("Port Channel default icon", make_switch("Po12").icon, expect="mdi:lan-connect")
+    check("Physical port default icon", make_switch("Gi1/0/1").icon, expect="mdi:ethernet")
+
+    # Direct classify_port_type tests
+    from custom_components.snmp_switch_manager.helpers import classify_port_type
+    check(
+        "classify_port_type returns physical when connector_present is True",
+        classify_port_type(if_type=6, name="Ethernet1", is_bridge_port=False, connector_present=True),
+        expect="physical",
+    )
+    check(
+        "classify_port_type returns virtual when connector_present is False",
+        classify_port_type(if_type=6, name="Intf999", is_bridge_port=False, connector_present=False),
+        expect="virtual",
+    )
+    check(
+        "classify_port_type falls back to physical via bridge-port rule when connector_present is None",
+        classify_port_type(if_type=6, name="Ethernet1", is_bridge_port=True, connector_present=None),
+        expect="physical",
+    )
+    check(
+        "classify_port_type falls back to virtual via VIRTUAL_IFTYPES rule when connector_present is None",
+        classify_port_type(if_type=135, name="Vlan1", is_bridge_port=False, connector_present=None),
+        expect="virtual",
+    )
+
+    # Dynamic Port Type Classification with DB override
+    custom_class_db = {
+        "virtual_iftypes": [999]
+    }
+    check(
+        "classify_port_type dynamic DB override virtual",
+        classify_port_type(if_type=999, name="Intf999", is_bridge_port=False, connector_present=None, classification_db=custom_class_db),
+        expect="virtual",
+    )
+
+    # Dynamic Filter Rules match engine
+    from custom_components.snmp_switch_manager.helpers import check_interface_filter_rules
+    custom_filters_db = {
+        "interface_filters": [
+            {
+                "id": "generic_skip_cpu_interface",
+                "vendors": ["Standard"],
+                "rule_type": "exclude",
+                "match_type": "equals",
+                "match_value": "cpu"
+            },
+            {
+                "id": "cisco_sg_vlan_admin_or_oper",
+                "vendors": ["Cisco"],
+                "vendor_keywords": ["sg"],
+                "rule_type": "include",
+                "conditions": [
+                    {
+                        "match_type": "is_digit",
+                        "oper_in": [1],
+                        "admin_in": [2],
+                        "oper_or_admin_match": True,
+                        "require_ip": True,
+                        "rename_prefix": "VLAN "
+                    }
+                ]
+            },
+            {
+                "id": "junos_physical_ge",
+                "vendors": ["Junos"],
+                "rule_type": "include",
+                "match_type": "starts_with",
+                "match_value": "ge-",
+                "exclude_contains": "."
+            },
+            {
+                "id": "skip_pfsense_enc_interfaces",
+                "vendors": ["pfSense"],
+                "rule_type": "exclude",
+                "match_type": "starts_with",
+                "match_value": "enc"
+            }
+        ]
+    }
+
+    # Test standard standard CPU exclude
+    inc, nm = check_interface_filter_rules(
+        normalized_name="cpu", raw_name="CPU", admin=1, oper=1, has_ip=False,
+        vendor="Standard", disabled_vendor_filter_ids=set(), classification_db=custom_filters_db
+    )
+    check("CPU exclude rule matches", inc, expect=False)
+
+    # Test Cisco SG VLAN digital rename include
+    inc, nm = check_interface_filter_rules(
+        normalized_name="12", raw_name="12", admin=2, oper=2, has_ip=True,
+        vendor="Cisco", manufacturer="sg350", sys_descr="sg350 switch",
+        disabled_vendor_filter_ids=set(), classification_db=custom_filters_db
+    )
+    check("Cisco SG VLAN digital rename include matches", inc, expect=True)
+    check("Cisco SG VLAN digital rename raw_name updated", nm, expect="VLAN 12")
+
+    # Test Junos physical GE include
+    inc, nm = check_interface_filter_rules(
+        normalized_name="ge-0/0/1", raw_name="ge-0/0/1", admin=1, oper=1, has_ip=False,
+        vendor="Junos", disabled_vendor_filter_ids=set(), classification_db=custom_filters_db
+    )
+    check("Junos physical GE include matches", inc, expect=True)
+
+    # Test Junos physical GE with dot (subinterface) should not match this rule
+    inc, nm = check_interface_filter_rules(
+        normalized_name="ge-0/0/1.0", raw_name="ge-0/0/1.0", admin=1, oper=1, has_ip=False,
+        vendor="Junos", disabled_vendor_filter_ids=set(), classification_db=custom_filters_db
+    )
+    check("Junos subinterface dot exclude matches", inc, expect=False)
+
+    # Test pfSense exclude enc interface
+    inc, nm = check_interface_filter_rules(
+        normalized_name="enc0", raw_name="enc0", admin=1, oper=1, has_ip=False,
+        vendor="pfSense", disabled_vendor_filter_ids=set(), classification_db=custom_filters_db
+    )
+    check("pfSense enc interface exclude matches", inc, expect=False)
+
+    # 6. Test PoE Service Handlers
+    from unittest.mock import patch
+    from custom_components.snmp_switch_manager import SnmpSwitchRuntimeData
+    
+    mock_registry = MagicMock()
+    mock_poe_entity = MagicMock(config_entry_id="test_entry", unique_id="test_entry-poe-13")
+    mock_priority_entity = MagicMock(config_entry_id="test_entry", unique_id="test_entry-poe-priority-13")
+    mock_physical_entity = MagicMock(config_entry_id="test_entry", unique_id="test_entry-if-13")
+    mock_registry.async_get.side_effect = lambda eid: {
+        "switch.poe_port": mock_poe_entity,
+        "select.poe_priority": mock_priority_entity,
+        "switch.physical_port": mock_physical_entity,
+    }.get(eid)
+    
+    import custom_components.snmp_switch_manager as integration_mod
+    
+    mock_ha_services = MagicMock()
+    mock_hass = MagicMock()
+    mock_hass.services = mock_ha_services
+    mock_entry = MagicMock()
+    mock_entry.runtime_data = SnmpSwitchRuntimeData(client=mock_client, coordinator=mock_coord)
+    mock_hass.config_entries.async_get_entry.return_value = mock_entry
+    
+    registered_handlers = {}
+    def fake_register(domain, name, handler):
+        registered_handlers[name] = handler
+    
+    mock_ha_services.has_service.return_value = False
+    mock_ha_services.async_register = fake_register
+    
+    with patch("homeassistant.helpers.entity_registry.async_get", return_value=mock_registry):
+        await integration_mod.async_register_services(mock_hass)
+    
+    check("set_poe_port_admin registered", "set_poe_port_admin" in registered_handlers, expect=True)
+    check("set_poe_port_priority registered", "set_poe_port_priority" in registered_handlers, expect=True)
+    check("set_port_admin_status registered", "set_port_admin_status" in registered_handlers, expect=True)
+    
+    mock_client.set_poe_admin = AsyncMock(return_value=True)
+    admin_call = MagicMock(data={"entity_id": "switch.poe_port", "state": "Off"})
+    
+    with patch("homeassistant.helpers.entity_registry.async_get", return_value=mock_registry):
+        await registered_handlers["set_poe_port_admin"](admin_call)
+    mock_client.set_poe_admin.assert_called_with(1, 13, 2)
+    check("PoE admin call executed", mock_client.set_poe_admin.called, expect=True)
+    
+    mock_client.set_poe_priority = AsyncMock(return_value=True)
+    priority_call = MagicMock(data={"entity_id": "select.poe_priority", "priority": "High"})
+    
+    with patch("homeassistant.helpers.entity_registry.async_get", return_value=mock_registry):
+        await registered_handlers["set_poe_port_priority"](priority_call)
+    mock_client.set_poe_priority.assert_called_with(1, 13, 2)
+    check("PoE priority call executed", mock_client.set_poe_priority.called, expect=True)
+
+    mock_client.set_admin_status = AsyncMock(return_value=True)
+    port_admin_call = MagicMock(data={"entity_id": "switch.physical_port", "state": "Down"})
+    
+    with patch("homeassistant.helpers.entity_registry.async_get", return_value=mock_registry):
+        await registered_handlers["set_port_admin_status"](port_admin_call)
+    mock_client.set_admin_status.assert_called_with(13, 2)
+    check("Port admin status call executed", mock_client.set_admin_status.called, expect=True)
+
+    # -----------------------------------------------------------------------
+    section("13 · cleanup – async_close()")
     # -----------------------------------------------------------------------
     await client.async_close()
     check("engine cleared after close", client.engine is None, expect=True)

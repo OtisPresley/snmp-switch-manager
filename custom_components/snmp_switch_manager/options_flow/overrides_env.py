@@ -20,6 +20,7 @@ from ..const import (
     DEFAULT_POE_POLL_INTERVAL,
     CONF_ENV_POLL_INTERVAL,
     DEFAULT_ENV_POLL_INTERVAL,
+    CONF_POE_CONTROL_LOOPS,
 )
 
 
@@ -49,6 +50,7 @@ class OverridesEnvMixin:
             self._options[CONF_POE_ENABLE] = user_input.get(CONF_POE_ENABLE, False)
             self._options[CONF_POE_MODE] = user_input.get(CONF_POE_MODE, POE_MODE_ATTRIBUTES)
             self._options[CONF_POE_PER_PORT_POWER] = user_input.get(CONF_POE_PER_PORT_POWER, False)
+            self._options[CONF_POE_CONTROL_LOOPS] = user_input.get(CONF_POE_CONTROL_LOOPS, False)
             self._apply_options()
             return await self.async_step_environmental_sensors()
 
@@ -85,6 +87,10 @@ class OverridesEnvMixin:
                 vol.Optional(
                     CONF_POE_PER_PORT_POWER,
                     default=self._options.get(CONF_POE_PER_PORT_POWER, False),
+                ): cv.boolean,
+                vol.Optional(
+                    CONF_POE_CONTROL_LOOPS,
+                    default=self._options.get(CONF_POE_CONTROL_LOOPS, False),
                 ): cv.boolean,
                 vol.Optional("back_to_menu", default=False): cv.boolean,
             }

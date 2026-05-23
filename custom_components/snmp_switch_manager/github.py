@@ -327,6 +327,10 @@ async def submit_override(token: str, feature: str, override_data: Dict[str, Any
             "vendors": override_data.get("vendors", []),
             "rule_type": override_data.get("rule_type")
         }
+        if "match_type" in override_data:
+            db_item["match_type"] = override_data["match_type"]
+        if "match_value" in override_data:
+            db_item["match_value"] = override_data["match_value"]
         found_item = None
         for item in items:
             if item.get("id") == db_item["id"]:

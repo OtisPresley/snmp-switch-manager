@@ -13,18 +13,35 @@ This beta release delivers dynamic telemetry scaling overrides, automated backgr
 
 ### Added
 
+* 🎛️ **100% Modular, Database-Driven Interface Filters:** Migrated all built-in vendor interface filter rules (Cisco SG, Junos, pfSense, CPU pseudo-interfaces) from hardcoded Python code into the dynamic `interface_filters.json` database. A fully vendor-agnostic match engine dynamically interprets these filters based on interface names, state, and IP configurations, enabling seamless community-driven filter contributions and automatic updates without code changes.
+* 🔌 **Dynamic Port Classification Schema:** Shifted absolute standard MIB type virtual indicators into `interface_classification.json` under `"virtual_iftypes"`, enabling dynamic customization of hardware port classification rules.
 * 🕒 **Scheduled Background Database Auto-Updater:** Automates downloading of system OIDs, filters, and classifications for all **12 database files** from the main repository branch every 6 hours. Performs structural JSON validation and immediately applies updates to running switch/sensor entities within 2 seconds without an HA restart.
+* 🔌 **Power over Ethernet (PoE) Control Loops & overrides:** Introduced admin-control toggles for PoE power allocation per physical interface using standard MIB structures. Added full support for custom PoE OID overrides (`Admin state OID` and `Power priority OID`) via the Options Flow forms and database overrides inside `poe.json`.
 * 📏 **Dynamic Telemetry Scaling Factors:** Enabled fully custom numeric multipliers (e.g., `0.1` or `1.0`) across all hardware sensors (CPU, Memory, PSU, Fans, PoE, Temp) dynamically from the Home Assistant options flow overrides.
-* 🎛️ **Advanced Feature OID Overrides:** A brand new, beautifully structured overrides panel under **Device Options**. You can now override custom OIDs for CPU, Memory, Temperature, Fans, PSUs, PoE, and Device Diagnostics, with built-in validation.
+* 🎛️ **Advanced Feature & System OID Overrides:** A brand new, beautifully structured overrides panel under **Device Options**. You can now override custom OIDs for CPU, Memory, Temperature, Fans, PSUs, PoE, and Device Diagnostics (including `Contact`, `Name`, and `Location` OIDs cached inside `device_info.json`) with built-in validation.
 * ⚡ **GitHub Community Submissions:** Submit your verified custom OID overrides directly to the public repository from the Home Assistant UI via simple GitHub device authentication to help others.
+* 🛠️ **System Mutation & Port Control Services:** Added new administrative control services to manage switch parameters directly from Home Assistant:
+  * `set_port_admin_status`: Set standard interface admin status (Up/Down) via target switches.
+  * `set_poe_port_admin`: Set PoE port admin status (Auto/Off) on PoE switches.
+  * `set_poe_port_priority`: Set PoE power priority allocation (Critical/High/Low) on PoE select entities.
+  * `set_system_name`, `set_system_contact`, and `set_system_location`: Modify SNMP system identifiers dynamically, fully integrated with custom OID overrides.
 * 🛡️ **Community PR Attestation Pipelines:** Added three Attestation Checkbox confirmations requiring users to verify their filters/tokens are generic, tested, and beneficial to all users before submitting to the repository.
 * 📦 **Modular Refactored Settings:** The options flow is now fully split into responsive submenus (Interfaces, Bandwidth, Environmentals, Connection & Name, and Feature Overrides) for an incredibly fast and clean configuration experience.
-* 🌐 **Perfect Translation Sync:** Localized all new community filter and classification token options flows across **German, Spanish, French, Italian, and Dutch**.
+* 🌐 **Perfect Translation Sync:** Localized all new community filter, classification token options flows, custom PoE overrides, and system OID override settings across **German, Spanish, French, Italian, and Dutch** inside both `strings/` and `translations/` subdirectories.
+* 🔌 **Standard MIB-Based Interface Classification:** Integrated parallel polling of standard MIB-II `ifConnectorPresent` (`1.3.6.1.2.1.31.1.1.1.10`) TruthValues to automatically and accurately classify physical (RJ45/SFP) hardware ports vs virtual interfaces (VLANs, Tunnels, Loopbacks, LAGs), with immediate, robust fallback to rule-matching and database classifications when legacy hardware is encountered.
+
+### Fixed
+
+* 🔌 **Standard PoE OIDs:** Corrected a critical typo in standard `POWER-ETHERNET-MIB` OIDs (`OID_pethPsePortAdminEnable`, `OID_pethPsePortActualPower`, `OID_pethPsePortPowerPriority`) which queried with an extra `.1` segment. This was preventing PoE control loops and switches from being successfully discovered and registered on standard switches.
 
 ### Improved
 
 * 🚀 **Extreme Startup & Reload Speeds:** Optimized SNMP walks, cached engine bindings, and parallel metadata polling reduce integration loading and reload times by over 80% on high-port switches (such as 24-port and 52-port devices).
-* 🧩 **100% Modularity & Code containment:** Decoupled networking by moving PySNMP asynchronous operations to a unified compat module, strictly bringing **every single file in the repository under a 500-line limit**.
+* 📦 **Dynamic Database-Driven Naming & Classification:** Migrated static, hardcoded interface naming abbreviations and hardware-port virtual classifications into `interface_classification.json`. Naming formatting, abbreviation lookup, and classification now run 100% modularly via dynamic database configurations, falling back cleanly to static local rules only if the database is unloaded.
+* 🎛️ **Device-Targeted Configuration Services:** Refactored new system mutation services to target physical **devices** instead of individual entities, with strict filtering to `snmp_switch_manager` integration instances for a highly intuitive and standard management workflow.
+* 🎛️ **Consolidated Device Diagnostics:** Collapsed obsolete individual diagnostic sensors (Firmware, Manufacturer, Hostname, Model) into a single, unified Device Information sensor entity. Expanded metadata tracking to retrieve and display system `sysName`, `sysContact`, and `sysLocation` as rich attributes, significantly reducing Home Assistant entity clutter and keeping dashboards clean.
+* 🧩 **100% Dynamic Database-Driven Vendor Engine:** Replaced all hardcoded vendor checks (`_is_h3c`, `_is_jtcom`, `_is_zyxel`) with a dynamic keyword and sysObjectID metadata matching system powered by `vendors.json`. This enables adding support for new vendors and custom-scaling logic dynamically without integration code modifications.
+* 📦 **Modular Platform Restructuring:** Modularized switch and sensor platforms (moving entity implementations to `switch_admin.py`, `switch_poe.py`, and `sensor/info.py`), keeping files cohesive, lightweight, and strictly below the 500-line limit.
 * 🛡️ **Device Registry Stability:** Restored legacy device identifier mapping to guarantee backwards compatibility and prevent Home Assistant from creating duplicate device entries when connection settings are updated.
 * 🛡️ **Stack Robustness:** Resilient environmental and PoE discovery isolated on mixed-hardware stacks.
 

@@ -1,4 +1,11 @@
 {
+  "virtual_iftypes": [
+    24,
+    53,
+    135,
+    161,
+    131
+  ],
   "virtual_tokens": [
     "vlan",
     "loopback",
@@ -24,6 +31,32 @@
     "ten",
     "te",
     "ge",
-    "xe"
-  ]
+    "xe",
+    "tw",
+    "fi",
+    "hu"
+  ],
+  "abbreviations": {
+    "prefixes": {
+      "gi": "Gi",
+      "te": "Te",
+      "tw": "Tw",
+      "fa": "Fa",
+      "fi": "Fi",
+      "hu": "Hu",
+      "lo": "Lo",
+      "vl": "Vl"
+    },
+    "startswith": {
+      "po": "Po",
+      "port-channel": "Po",
+      "portchannel": "Po"
+    },
+    "contains": {
+      "100g": "Hu",
+      "10g": "Te",
+      "20g": "Tw"
+    },
+    "default": "Gi"
+  }
 }

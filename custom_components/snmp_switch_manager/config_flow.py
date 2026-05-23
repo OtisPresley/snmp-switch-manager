@@ -29,7 +29,7 @@ from .const import (
     SNMPV3_PRIV_DES,
     CONF_LEGACY_DEVICE_ID,
 )
-from .snmp import test_connection, get_sysname
+from .helpers import test_connection, get_sysname
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -222,6 +222,9 @@ OID_FIELDS = [
     ("firmware", "Firmware OID"),
     ("hostname", "Hostname OID"),
     ("uptime", "Uptime OID"),
+    ("contact", "Contact OID"),
+    ("name", "Name OID"),
+    ("location", "Location OID"),
 ]
 
 

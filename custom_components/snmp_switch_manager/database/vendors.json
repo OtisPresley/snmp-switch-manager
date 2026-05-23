@@ -3,57 +3,71 @@
     {
       "name": "Cisco",
       "enterprise_number": "9",
-      "sys_object_id_prefix": "1.3.6.1.4.1.9"
+      "sys_object_id_prefix": "1.3.6.1.4.1.9",
+      "keywords": ["cisco"]
     },
     {
       "name": "Dell",
       "enterprise_number": "674",
-      "sys_object_id_prefix": "1.3.6.1.4.1.674"
+      "sys_object_id_prefix": "1.3.6.1.4.1.674",
+      "keywords": ["dell"]
     },
     {
       "name": "H3C",
       "enterprise_number": "25506",
-      "sys_object_id_prefix": "1.3.6.1.4.1.25506"
+      "sys_object_id_prefix": "1.3.6.1.4.1.25506",
+      "keywords": ["h3c"],
+      "environment_driver": "h3c"
     },
     {
       "name": "HP",
       "enterprise_number": "25506",
-      "sys_object_id_prefix": "1.3.6.1.4.1.25506"
+      "sys_object_id_prefix": "1.3.6.1.4.1.25506",
+      "keywords": ["hp", "hewlett-packard"]
     },
     {
       "name": "Huawei",
       "enterprise_number": "2011",
-      "sys_object_id_prefix": "1.3.6.1.4.1.2011"
+      "sys_object_id_prefix": "1.3.6.1.4.1.2011",
+      "keywords": ["huawei"]
     },
     {
       "name": "Jt-Com",
       "enterprise_number": "",
-      "sys_object_id_prefix": ""
+      "sys_object_id_prefix": "",
+      "keywords": ["jt-com", "jtcom", "goodtop"],
+      "model_fallback": "Managed Switch"
     },
     {
       "name": "Junos",
       "enterprise_number": "",
-      "sys_object_id_prefix": ""
+      "sys_object_id_prefix": "",
+      "keywords": ["juniper", "junos", "ex2200"]
     },
     {
       "name": "Mikrotik",
       "enterprise_number": "14988",
-      "sys_object_id_prefix": "1.3.6.1.4.1.14988"
+      "sys_object_id_prefix": "1.3.6.1.4.1.14988",
+      "keywords": ["mikrotik", "routeros"]
     },
     {
       "name": "pfSense",
       "enterprise_number": "",
-      "sys_object_id_prefix": ""
+      "sys_object_id_prefix": "",
+      "keywords": ["pfsense"]
     },
     {
       "name": "Standard",
       "enterprise_number": "",
-      "sys_object_id_prefix": ""
+      "sys_object_id_prefix": "",
+      "keywords": []
     },
     {
       "name": "Zyxel",
       "enterprise_number": "890",
-      "sys_object_id_prefix": "1.3.6.1.4.1.890"
+      "sys_object_id_prefix": "1.3.6.1.4.1.890",
+      "keywords": ["zyxel"],
+      "poe_scale_heuristic": "zyxel"
     }
   ]
 }

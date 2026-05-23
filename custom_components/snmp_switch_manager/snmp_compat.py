@@ -113,13 +113,20 @@ __all__ = [
     "_do_next_walk",
     "_do_set_alias",
     "_do_set_admin_status",
+    "_do_set_poe_admin",
+    "_do_set_poe_priority",
+    "_do_set_system_string",
 ]
 
 from typing import Any, Optional, Dict, Tuple, List
 
 # OIDs required for sets
-OID_ifAlias = "1.3.6.1.2.1.31.1.1.1.18"
-OID_ifAdminStatus = "1.3.6.1.2.1.2.2.1.7"
+from .const import (
+    OID_ifAlias,
+    OID_ifAdminStatus,
+    OID_pethPsePortAdminEnable,
+    OID_pethPsePortPowerPriority,
+)
 
 _AUTH_ERROR_PHRASES = (
     "authorizationerror",
@@ -219,6 +226,41 @@ async def _do_set_admin_status(engine, community, target, context, if_index: int
     err_ind, err_stat, _err_idx, _vbs = await set_cmd(
         engine, community, target, context,
         ObjectType(ObjectIdentity(f"{OID_ifAdminStatus}.{if_index}"), Integer(state)),
+        lookupMib=False,
+    )
+    if err_ind and _is_auth_error(err_ind):
+        raise SnmpAuthError(str(err_ind))
+    return (not err_ind) and (not err_stat)
+
+
+async def _do_set_poe_admin(engine, community, target, context, group_index: int, port_index: int, state: int, oid: Optional[str] = None) -> bool:
+    base_oid = oid or OID_pethPsePortAdminEnable
+    err_ind, err_stat, _err_idx, _vbs = await set_cmd(
+        engine, community, target, context,
+        ObjectType(ObjectIdentity(f"{base_oid}.{group_index}.{port_index}"), Integer(state)),
+        lookupMib=False,
+    )
+    if err_ind and _is_auth_error(err_ind):
+        raise SnmpAuthError(str(err_ind))
+    return (not err_ind) and (not err_stat)
+
+
+async def _do_set_poe_priority(engine, community, target, context, group_index: int, port_index: int, priority: int, oid: Optional[str] = None) -> bool:
+    base_oid = oid or OID_pethPsePortPowerPriority
+    err_ind, err_stat, _err_idx, _vbs = await set_cmd(
+        engine, community, target, context,
+        ObjectType(ObjectIdentity(f"{base_oid}.{group_index}.{port_index}"), Integer(priority)),
+        lookupMib=False,
+    )
+    if err_ind and _is_auth_error(err_ind):
+        raise SnmpAuthError(str(err_ind))
+    return (not err_ind) and (not err_stat)
+
+
+async def _do_set_system_string(engine, community, target, context, oid: str, value: str) -> bool:
+    err_ind, err_stat, _err_idx, _vbs = await set_cmd(
+        engine, community, target, context,
+        ObjectType(ObjectIdentity(oid), OctetString(value)),
         lookupMib=False,
     )
     if err_ind and _is_auth_error(err_ind):

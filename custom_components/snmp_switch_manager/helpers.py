@@ -84,27 +84,47 @@ def get_snmp_connection_settings(entry_data: dict[str, Any], options: dict[str, 
 
 # ---------- interface naming ----------
 
-def _abbr_from_speed_or_name(name: str) -> str:
+def _abbr_from_speed_or_name(name: str, db: dict | None = None) -> str:
     n = (name or "").lower()
-    prefixes = {"gi": "Gi", "te": "Te", "tw": "Tw", "fa": "Fa", "fi": "Fi", "hu": "Hu", "lo": "Lo", "vl": "Vl"}
+
+    # Load mapping configuration from dynamic database, falling back to static local dicts
+    abbrev_config = (db or {}).get("abbreviations") if db else None
+    if not abbrev_config:
+        prefixes = {"gi": "Gi", "te": "Te", "tw": "Tw", "fa": "Fa", "fi": "Fi", "hu": "Hu", "lo": "Lo", "vl": "Vl"}
+        startswith = {"po": "Po", "port-channel": "Po", "portchannel": "Po"}
+        contains = {"100g": "Hu", "10g": "Te", "20g": "Tw"}
+        default = "Gi"
+    else:
+        prefixes = abbrev_config.get("prefixes", {})
+        startswith = abbrev_config.get("startswith", {})
+        contains = abbrev_config.get("contains", {})
+        default = abbrev_config.get("default", "Gi")
+
     for p, abbr in prefixes.items():
         if n.startswith(p):
             return abbr
-    if n.startswith(("po", "port-channel", "portchannel")):
-        return "Po"
-    if "100g" in n:
-        return "Hu"
-    if "10g" in n:
-        return "Te"
-    if "20g" in n:
-        return "Tw"
-    return "Gi"
+
+    for p, abbr in startswith.items():
+        if n.startswith(p):
+            return abbr
+
+    for p, abbr in contains.items():
+        if p in n:
+            return abbr
+
+    return default
 
 
-def format_interface_name(raw_name: str, unit: int = 1, slot: int = 0, port: Optional[int] = None) -> str:
+def format_interface_name(
+    raw_name: str,
+    unit: int = 1,
+    slot: int = 0,
+    port: Optional[int] = None,
+    classification_db: dict | None = None,
+) -> str:
     rn = (raw_name or "").strip()
     if port is not None:
-        abbr = _abbr_from_speed_or_name(rn)
+        abbr = _abbr_from_speed_or_name(rn, classification_db)
         return f"{abbr}{unit}/{slot}/{port}"
     return rn
 
@@ -139,6 +159,7 @@ _VIRTUAL_NAME_TOKENS = (
 _PHYSICAL_NAME_TOKENS = (
     "gigabit", "gige", "gi", "fastethernet", "fa",
     "ethernet", "eth", "tengig", "ten", "te", "ge", "xe",
+    "tw", "fi", "hu",
 )
 
 
@@ -147,6 +168,7 @@ def classify_port_type(
     if_type: int | None,
     name: str,
     is_bridge_port: bool,
+    connector_present: bool | None = None,
     classification_db: dict | None = None,
 ) -> str:
     """Classify an interface as physical, virtual, or unknown.
@@ -156,24 +178,43 @@ def classify_port_type(
     """
     nm = (name or "").strip().lower()
 
-    if isinstance(if_type, int) and if_type in VIRTUAL_IFTYPES:
-        return "virtual"
-
     virtual_tokens = _VIRTUAL_NAME_TOKENS
     physical_tokens = _PHYSICAL_NAME_TOKENS
+    virtual_iftypes = VIRTUAL_IFTYPES
 
     if classification_db:
-        virtual_tokens = classification_db.get("virtual_tokens", _VIRTUAL_NAME_TOKENS)
-        physical_tokens = classification_db.get("physical_tokens", _PHYSICAL_NAME_TOKENS)
+        db_tokens = classification_db
+        if "interface_classification" in classification_db:
+            db_tokens = classification_db.get("interface_classification") or {}
+        
+        virtual_tokens = db_tokens.get("virtual_tokens", _VIRTUAL_NAME_TOKENS)
+        physical_tokens = db_tokens.get("physical_tokens", _PHYSICAL_NAME_TOKENS)
+        db_iftypes = db_tokens.get("virtual_iftypes")
+        if isinstance(db_iftypes, list):
+            virtual_iftypes = set(db_iftypes)
 
+    # 1. Check absolute standard MIB type virtual indicators
+    if isinstance(if_type, int) and if_type in virtual_iftypes:
+        return "virtual"
+
+    # 2. Check virtual token rules (VLANs, loopbacks, Port-Channels)
     if any(tok in nm for tok in virtual_tokens) or nm.startswith(("br", "lo")):
         return "virtual"
 
+    # 3. Trust standard MIB connector_present if explicitly True
+    if connector_present is True:
+        return "physical"
+
+    # 4. Check absolute physical indicators (bridge port or standard physical tokens)
     if is_bridge_port:
         return "physical"
 
     if if_type == 6 and (nm.startswith("port") or any(tok in nm for tok in physical_tokens)):
         return "physical"
+
+    # 5. Fall back to connector_present being False
+    if connector_present is False:
+        return "virtual"
 
     return "unknown"
 
@@ -233,6 +274,300 @@ def uptime_human(ticks: Any) -> str:
 
 # ---------- vendor interface rules ----------
 
+LOCAL_INTERFACE_FILTERS = [
+    {
+        "id": "generic_skip_cpu_interface",
+        "label": "Generic: Skip CPU pseudo-interface (IF-MIB name 'CPU')",
+        "vendors": ["Standard"],
+        "rule_type": "exclude",
+        "match_type": "equals",
+        "match_value": "cpu"
+    },
+    {
+        "id": "cisco_sg_physical_fa_gi",
+        "label": "Cisco SG: Only create physical Fa*/Gi* interfaces",
+        "vendors": ["Cisco"],
+        "vendor_keywords": ["sg"],
+        "rule_type": "include",
+        "match_type": "starts_with",
+        "match_value": ["fa", "gi"],
+        "oper_not_equal": 6
+    },
+    {
+        "id": "cisco_sg_vlan_admin_or_oper",
+        "label": "Cisco SG: Create VLAN interfaces (oper up or admin down)",
+        "vendors": ["Cisco"],
+        "vendor_keywords": ["sg"],
+        "rule_type": "include",
+        "conditions": [
+            {
+                "match_type": "is_digit",
+                "oper_in": [1],
+                "admin_in": [2],
+                "oper_or_admin_match": True,
+                "require_ip": True,
+                "rename_prefix": "VLAN "
+            },
+            {
+                "match_type": "starts_with",
+                "match_value": "vlan",
+                "admin_in": [1, 2],
+                "oper_in": [1, 2, 6, 7]
+            },
+            {
+                "match_type": "starts_with",
+                "match_value": "po",
+                "oper_in": [1],
+                "admin_in": [2],
+                "oper_or_admin_match": True
+            }
+        ]
+    },
+    {
+        "id": "cisco_sg_other_has_ip",
+        "label": "Cisco SG: Create other interfaces when an IP is configured",
+        "vendors": ["Cisco"],
+        "vendor_keywords": ["sg"],
+        "rule_type": "include",
+        "require_ip": True
+    },
+    {
+        "id": "junos_physical_ge",
+        "label": "Junos: Create physical ge-0/0/X interfaces",
+        "vendors": ["Junos"],
+        "rule_type": "include",
+        "match_type": "starts_with",
+        "match_value": "ge-",
+        "exclude_contains": "."
+    },
+    {
+        "id": "junos_l3_subif_has_ip",
+        "label": "Junos: Create ge-0/0/X.Y subinterfaces with IP (non-.0)",
+        "vendors": ["Junos"],
+        "rule_type": "include",
+        "match_type": "starts_with",
+        "match_value": "ge-",
+        "require_contains": ".",
+        "exclude_ends_with": ".0",
+        "require_ip": True
+    },
+    {
+        "id": "junos_vlan_admin_or_oper",
+        "label": "Junos: Create VLAN interfaces (oper up or admin down)",
+        "vendors": ["Junos"],
+        "rule_type": "include",
+        "match_type": "starts_with",
+        "match_value": "vlan",
+        "admin_in": [1, 2],
+        "oper_in": [1, 2, 6, 7]
+    },
+    {
+        "id": "junos_other_has_ip",
+        "label": "Junos: Create other interfaces when an IP is configured",
+        "vendors": ["Junos"],
+        "rule_type": "include",
+        "require_ip": True
+    },
+    {
+        "id": "skip_pfsense_enc_interfaces",
+        "label": "Skip pfSense Enc Interfaces",
+        "vendors": ["pfSense"],
+        "rule_type": "exclude",
+        "match_type": "starts_with",
+        "match_value": "enc"
+    },
+    {
+        "id": "skip_pfsense_pf_interfaces",
+        "label": "Skip pfSense Pf Interfaces",
+        "vendors": ["pfSense"],
+        "rule_type": "exclude",
+        "match_type": "starts_with",
+        "match_value": "pf"
+    }
+]
+
+
+def _match_condition(
+    cond: dict,
+    normalized_name: str,
+    raw_name: str,
+    admin: int | None,
+    oper: int | None,
+    has_ip: bool,
+) -> bool:
+    match_type = cond.get("match_type")
+    match_val = cond.get("match_value")
+    
+    if match_val is not None:
+        vals = [str(v).lower() for v in match_val] if isinstance(match_val, list) else [str(match_val).lower()]
+        if match_type == "equals":
+            if not any(normalized_name == v for v in vals):
+                return False
+        elif match_type == "starts_with":
+            if not any(normalized_name.startswith(v) for v in vals):
+                return False
+        elif match_type == "ends_with":
+            if not any(normalized_name.endswith(v) for v in vals):
+                return False
+        elif match_type == "is_digit":
+            if not normalized_name.isdigit():
+                return False
+        else:  # contains
+            if not any(v in normalized_name for v in vals):
+                return False
+    elif match_type == "is_digit":
+        if not normalized_name.isdigit():
+            return False
+
+    req_contains = cond.get("require_contains")
+    if req_contains:
+        reqs = req_contains if isinstance(req_contains, list) else [req_contains]
+        if not all(r.lower() in normalized_name for r in reqs):
+            return False
+            
+    ex_contains = cond.get("exclude_contains")
+    if ex_contains:
+        exs = ex_contains if isinstance(ex_contains, list) else [ex_contains]
+        if any(e.lower() in normalized_name for e in exs):
+            return False
+            
+    ex_ends = cond.get("exclude_ends_with")
+    if ex_ends:
+        exs = ex_ends if isinstance(ex_ends, list) else [ex_ends]
+        if any(normalized_name.endswith(e.lower()) for e in exs):
+            return False
+
+    req_ip = cond.get("require_ip")
+    if req_ip is not None:
+        if has_ip != req_ip:
+            return False
+
+    admin_in = cond.get("admin_in")
+    oper_in = cond.get("oper_in")
+    oper_not_equal = cond.get("oper_not_equal")
+    oper_or_admin_match = cond.get("oper_or_admin_match", False)
+
+    if oper_not_equal is not None:
+        if oper == oper_not_equal:
+            return False
+
+    admin_match = True
+    if admin_in is not None:
+        admin_match = admin in admin_in
+
+    oper_match = True
+    if oper_in is not None:
+        oper_match = oper in oper_in
+
+    if oper_or_admin_match:
+        has_admin_spec = admin_in is not None
+        has_oper_spec = oper_in is not None
+        if has_admin_spec and has_oper_spec:
+            if not (admin_match or oper_match):
+                return False
+        elif has_admin_spec:
+            if not admin_match:
+                return False
+        elif has_oper_spec:
+            if not oper_match:
+                return False
+    else:
+        if not (admin_match and oper_match):
+            return False
+
+    return True
+
+
+def check_interface_filter_rules(
+    *,
+    normalized_name: str,
+    raw_name: str,
+    admin: int | None,
+    oper: int | None,
+    has_ip: bool,
+    vendor: str,
+    manufacturer: str = "",
+    sys_descr: str = "",
+    disabled_vendor_filter_ids: set[str],
+    classification_db: dict | None = None,
+) -> tuple[bool, str]:
+    """Check if an interface is included based on dynamic database rules.
+
+    Returns (include, modified_raw_name).
+    """
+    db_rules = None
+    if classification_db:
+        if "interface_filters" in classification_db:
+            val = classification_db.get("interface_filters")
+            if isinstance(val, list):
+                db_rules = val
+            elif isinstance(val, dict):
+                db_rules = val.get("interface_filters")
+        else:
+            db_rules = classification_db
+            
+    if not isinstance(db_rules, list):
+        db_rules = LOCAL_INTERFACE_FILTERS
+
+    vendor_l = (vendor or "").lower()
+    mfg_l = (manufacturer or "").lower()
+    sd_l = (sys_descr or "").lower()
+
+    active_rules = []
+    has_include_rule = False
+
+    for rule in db_rules:
+        rule_id = rule.get("id")
+        if rule_id in disabled_vendor_filter_ids:
+            continue
+
+        rule_vendors = rule.get("vendors", [])
+        vendor_match = False
+        for v in rule_vendors:
+            if v.lower() == "standard":
+                vendor_match = True
+            elif v.lower() == vendor_l:
+                vkws = rule.get("vendor_keywords")
+                if vkws:
+                    if any(kw.lower() in mfg_l or kw.lower() in sd_l for kw in vkws):
+                        vendor_match = True
+                else:
+                    vendor_match = True
+        
+        if vendor_match:
+            active_rules.append(rule)
+            if rule.get("rule_type") == "include":
+                has_include_rule = True
+
+    default_include = not has_include_rule
+    include = default_include
+
+    for rule in active_rules:
+        conditions = rule.get("conditions")
+        if not conditions:
+            conditions = [rule]
+
+        matched = False
+        matched_cond = None
+        for cond in conditions:
+            if _match_condition(cond, normalized_name, raw_name, admin, oper, has_ip):
+                matched = True
+                matched_cond = cond
+                break
+
+        if matched:
+            rule_type = rule.get("rule_type")
+            if rule_type == "exclude":
+                return False, raw_name
+            elif rule_type == "include":
+                include = True
+                rename_prefix = matched_cond.get("rename_prefix") or rule.get("rename_prefix")
+                if rename_prefix:
+                    raw_name = rename_prefix + raw_name
+
+    return include, raw_name
+
+
 def check_vendor_interface_rules(
     normalized_name: str,
     raw_name: str,
@@ -243,55 +578,28 @@ def check_vendor_interface_rules(
     is_junos: bool,
     disabled_vendor_filter_ids: set[str],
 ) -> tuple[bool, str]:
-    """Check if an interface is included based on vendor-specific rules.
-
-    Returns (include, modified_raw_name).
-    """
+    """Deprecated: check if an interface is included. Use check_interface_filter_rules instead."""
+    vendor = "Standard"
+    manufacturer = ""
+    sys_descr = ""
     if is_cisco_sg:
-        enable_physical = "cisco_sg_physical_fa_gi" not in disabled_vendor_filter_ids
-        enable_vlan = "cisco_sg_vlan_admin_or_oper" not in disabled_vendor_filter_ids
-        enable_has_ip = "cisco_sg_other_has_ip" not in disabled_vendor_filter_ids
-        include = False
+        vendor = "Cisco"
+        manufacturer = "sg"
+        sys_descr = "sg"
+    elif is_junos:
+        vendor = "Junos"
 
-        if enable_physical and (normalized_name.startswith("fa") or normalized_name.startswith("gi")) and oper != 6:
-            include = True
-        elif enable_vlan and (normalized_name.startswith("vlan") or normalized_name.isdigit()):
-            if normalized_name.isdigit():
-                if (oper == 1 or admin == 2) and has_ip:
-                    raw_name = "VLAN " + raw_name
-                    include = True
-            elif admin in (1, 2) and oper in (1, 2, 6, 7):
-                include = True
-        elif enable_vlan and normalized_name.startswith("po") and (oper == 1 or admin == 2):
-            include = True
-        elif enable_has_ip and has_ip:
-            include = True
-
-        return include, raw_name
-
-    if is_junos:
-        enable_physical = "junos_physical_ge" not in disabled_vendor_filter_ids
-        enable_l3_subif = "junos_l3_subif_has_ip" not in disabled_vendor_filter_ids
-        enable_vlan = "junos_vlan_admin_or_oper" not in disabled_vendor_filter_ids
-        enable_has_ip = "junos_other_has_ip" not in disabled_vendor_filter_ids
-        include = False
-
-        if enable_physical and normalized_name.startswith("ge-") and "." not in raw_name:
-            include = True
-        elif enable_l3_subif and normalized_name.startswith("ge-") and "." in raw_name:
-            try:
-                _, sub = raw_name.split(".", 1)
-                include = sub != "0" and has_ip
-            except Exception:
-                pass
-        elif enable_vlan and normalized_name.startswith("vlan") and admin in (1, 2) and oper in (1, 2, 6, 7):
-            include = True
-        elif enable_has_ip and has_ip:
-            include = True
-
-        return include, raw_name
-
-    return True, raw_name
+    return check_interface_filter_rules(
+        normalized_name=normalized_name,
+        raw_name=raw_name,
+        admin=admin,
+        oper=oper,
+        has_ip=has_ip,
+        vendor=vendor,
+        manufacturer=manufacturer,
+        sys_descr=sys_descr,
+        disabled_vendor_filter_ids=disabled_vendor_filter_ids,
+    )
 
 
 # ---------- SNMP value parsing ----------
@@ -390,3 +698,49 @@ def _entity_sensor_value_to_float(raw: Any, scale: int | None, precision: int | 
 
 
 
+
+def _make_settings(
+    host: str,
+    community: str,
+    port: int,
+    snmp_settings: Optional[dict[str, Any]],
+) -> dict[str, Any]:
+    """Return a merged SNMP settings dict, falling back to v2c community defaults."""
+    settings = dict(snmp_settings or {})
+    if not settings:
+        settings = {"host": host, "port": port, "version": SNMP_VERSION_V2C, "community": community}
+    return settings
+
+
+async def test_connection(
+    hass: Any,
+    host: str,
+    community: str,
+    port: int,
+    *,
+    snmp_settings: Optional[dict[str, Any]] = None,
+) -> bool:
+    """Test SNMP connectivity.
+
+    Backwards compatible with the original v2c signature, but also supports
+    passing a pre-merged settings dict for SNMPv3.
+    """
+    from .snmp import SwitchSnmpClient
+    from .const import OID_sysName
+    client = SwitchSnmpClient(hass, host, _make_settings(host, community, port, snmp_settings))
+    return await client._async_get_one(OID_sysName) is not None
+
+
+async def get_sysname(
+    hass: Any,
+    host: str,
+    community: str,
+    port: int,
+    *,
+    snmp_settings: Optional[dict[str, Any]] = None,
+) -> Optional[str]:
+    """Return sysName from the device, or None on failure."""
+    from .snmp import SwitchSnmpClient
+    from .const import OID_sysName
+    client = SwitchSnmpClient(hass, host, _make_settings(host, community, port, snmp_settings))
+    return await client._async_get_one(OID_sysName)

@@ -1,11 +1,143 @@
-
 set_port_description:
   name: Set port description
   description: Update a switch port's ifAlias/description via SNMP
   fields:
     entity_id:
-      description: Port switch entity
-      example: switch.core_switch_port_5
+      name: Port Switch Entity
+      description: The switch interface port entity to update
+      required: true
+      selector:
+        entity:
+          integration: snmp_switch_manager
+          domain: switch
     description:
+      name: Description
       description: New textual description for the port
       example: Uplink to router
+      required: true
+      selector:
+        text:
+
+set_system_name:
+  name: Set system name
+  description: Update the switch's sysName via SNMP SET
+  fields:
+    device_id:
+      name: Switch Device
+      description: The switch device to update
+      required: true
+      selector:
+        device:
+          integration: snmp_switch_manager
+    value:
+      name: Value
+      description: The new system name
+      example: CoreSwitch-01
+      required: true
+      selector:
+        text:
+
+set_system_contact:
+  name: Set system contact
+  description: Update the switch's sysContact via SNMP SET
+  fields:
+    device_id:
+      name: Switch Device
+      description: The switch device to update
+      required: true
+      selector:
+        device:
+          integration: snmp_switch_manager
+    value:
+      name: Value
+      description: The new system contact (e.g., name/email)
+      example: admin@example.com
+      required: true
+      selector:
+        text:
+
+set_system_location:
+  name: Set system location
+  description: Update the switch's sysLocation via SNMP SET
+  fields:
+    device_id:
+      name: Switch Device
+      description: The switch device to update
+      required: true
+      selector:
+        device:
+          integration: snmp_switch_manager
+    value:
+      name: Value
+      description: The new physical location
+      example: Server Rack A
+      required: true
+      selector:
+        text:
+
+set_poe_port_admin:
+  name: Set PoE port admin status
+  description: Enable or disable PoE on a specific port
+  fields:
+    entity_id:
+      name: PoE Port Switch Entity
+      description: The PoE switch entity to update (e.g., switch.switch_gi1_0_1_poe)
+      required: true
+      selector:
+        entity:
+          integration: snmp_switch_manager
+          domain: switch
+    state:
+      name: State
+      description: The PoE admin state
+      required: true
+      selector:
+        select:
+          options:
+            - "Auto"
+            - "Off"
+
+set_poe_port_priority:
+  name: Set PoE port priority
+  description: Set the PoE power priority allocation on a specific port
+  fields:
+    entity_id:
+      name: PoE Port Priority Select Entity
+      description: The PoE priority select entity to update (e.g., select.switch_gi1_0_1_poe_priority)
+      required: true
+      selector:
+        entity:
+          integration: snmp_switch_manager
+          domain: select
+    priority:
+      name: Priority
+      description: The PoE power priority level
+      required: true
+      selector:
+        select:
+          options:
+            - Critical
+            - High
+            - Low
+
+set_port_admin_status:
+  name: Set port admin status
+  description: Enable or disable a standard switch port (set link admin status to Up/Down)
+  fields:
+    entity_id:
+      name: Port Switch Entity
+      description: The switch interface port entity to update (e.g., switch.switch1_gi1_0_1)
+      required: true
+      selector:
+        entity:
+          integration: snmp_switch_manager
+          domain: switch
+    state:
+      name: State
+      description: The port admin state (Up or Down)
+      required: true
+      selector:
+        select:
+          options:
+            - "Up"
+            - "Down"

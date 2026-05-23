@@ -173,6 +173,8 @@ class OverridesPowerMixin:
             oid_budget = user_input.get("oid_budget", "").strip()
             oid_used = user_input.get("oid_used", "").strip()
             oid_port_power = user_input.get("oid_port_power", "").strip()
+            oid_port_admin = user_input.get("oid_port_admin", "").strip()
+            oid_port_priority = user_input.get("oid_port_priority", "").strip()
             vendor = user_input.get("vendor", "").strip()
             method = user_input.get("method", "get")
             description = user_input.get("description", "")
@@ -185,25 +187,20 @@ class OverridesPowerMixin:
                 errors["oid_used"] = "invalid_oid"
             if oid_port_power and not _is_valid_numeric_oid(oid_port_power):
                 errors["oid_port_power"] = "invalid_oid"
+            if oid_port_admin and not _is_valid_numeric_oid(oid_port_admin):
+                errors["oid_port_admin"] = "invalid_oid"
+            if oid_port_priority and not _is_valid_numeric_oid(oid_port_priority):
+                errors["oid_port_priority"] = "invalid_oid"
 
             scale_str = str(user_input.get("scale", "1.0")).strip()
-            attestation = user_input.get("attestation", False)
-            share_with_community = user_input.get("share_with_community", False)
             
-            if oid_budget and not _is_valid_numeric_oid(oid_budget):
-                errors["oid_budget"] = "invalid_oid"
-            if oid_used and not _is_valid_numeric_oid(oid_used):
-                errors["oid_used"] = "invalid_oid"
-            if oid_port_power and not _is_valid_numeric_oid(oid_port_power):
-                errors["oid_port_power"] = "invalid_oid"
-
             try:
                 scale = float(scale_str)
             except ValueError:
                 errors["scale"] = "invalid_float"
                 scale = 1.0
 
-            if not oid_budget and not oid_used and not oid_port_power:
+            if not oid_budget and not oid_used and not oid_port_power and not oid_port_admin and not oid_port_priority:
                 overrides = dict(self._options.get(CONF_FEATURE_OVERRIDES, {}) or {})
                 overrides.pop("poe", None)
                 self._options[CONF_FEATURE_OVERRIDES] = overrides
@@ -222,14 +219,18 @@ class OverridesPowerMixin:
                 norm_budget = _normalize_oid(oid_budget) if oid_budget else ""
                 norm_used = _normalize_oid(oid_used) if oid_used else ""
                 norm_port = _normalize_oid(oid_port_power) if oid_port_power else ""
+                norm_admin = _normalize_oid(oid_port_admin) if oid_port_admin else ""
+                norm_priority = _normalize_oid(oid_port_priority) if oid_port_priority else ""
                 
                 items = db.get("poe", {}).get("poe", [])
                 for item in items:
                     match_budget = (norm_budget and _normalize_oid(item.get("oid_budget", "")) == norm_budget)
                     match_used = (norm_used and _normalize_oid(item.get("oid_used", "")) == norm_used)
                     match_port = (norm_port and _normalize_oid(item.get("oid_port_power", "")) == norm_port)
+                    match_admin = (norm_admin and _normalize_oid(item.get("oid_port_admin", "")) == norm_admin)
+                    match_priority = (norm_priority and _normalize_oid(item.get("oid_port_priority", "")) == norm_priority)
                     
-                    if match_budget or match_used or match_port:
+                    if match_budget or match_used or match_port or match_admin or match_priority:
                         if vendor.lower() in [v.lower() for v in item.get("vendors", [])]:
                             if match_budget:
                                 errors["oid_budget"] = "duplicate_oid"
@@ -237,6 +238,10 @@ class OverridesPowerMixin:
                                 errors["oid_used"] = "duplicate_oid"
                             elif match_port:
                                 errors["oid_port_power"] = "duplicate_oid"
+                            elif match_admin:
+                                errors["oid_port_admin"] = "duplicate_oid"
+                            elif match_priority:
+                                errors["oid_port_priority"] = "duplicate_oid"
                             break
 
             if not errors:
@@ -253,6 +258,10 @@ class OverridesPowerMixin:
                     overrides["poe"]["oid_used"] = _normalize_oid(oid_used)
                 if oid_port_power:
                     overrides["poe"]["oid_port_power"] = _normalize_oid(oid_port_power)
+                if oid_port_admin:
+                    overrides["poe"]["oid_port_admin"] = _normalize_oid(oid_port_admin)
+                if oid_port_priority:
+                    overrides["poe"]["oid_port_priority"] = _normalize_oid(oid_port_priority)
 
                 self._options[CONF_FEATURE_OVERRIDES] = overrides
                 self._apply_options()
@@ -266,6 +275,8 @@ class OverridesPowerMixin:
             oid_budget = defaults.get("oid_budget", "")
             oid_used = defaults.get("oid_used", "")
             oid_port_power = defaults.get("oid_port_power", "")
+            oid_port_admin = defaults.get("oid_port_admin", "")
+            oid_port_priority = defaults.get("oid_port_priority", "")
             vendor = defaults.get("vendor", "")
             method = defaults.get("method", "get")
             description = defaults.get("description", "")
@@ -278,6 +289,8 @@ class OverridesPowerMixin:
                 vol.Optional("oid_budget"): str,
                 vol.Optional("oid_used"): str,
                 vol.Optional("oid_port_power"): str,
+                vol.Optional("oid_port_admin"): str,
+                vol.Optional("oid_port_priority"): str,
                 vol.Optional("vendor"): selector.SelectSelector(
                     selector.SelectSelectorConfig(
                         options=vendor_options,
@@ -310,6 +323,8 @@ class OverridesPowerMixin:
                     "oid_budget": oid_budget,
                     "oid_used": oid_used,
                     "oid_port_power": oid_port_power,
+                    "oid_port_admin": oid_port_admin,
+                    "oid_port_priority": oid_port_priority,
                     "vendor": vendor,
                     "method": method,
                     "description": description,

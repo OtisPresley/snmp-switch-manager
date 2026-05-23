@@ -7,8 +7,7 @@ if TYPE_CHECKING:
     from ..snmp import SwitchSnmpClient
 
 from ..helpers import _parse_numeric
-
-_OID_HR_CPU = "1.3.6.1.2.1.25.3.3.1.2"  # HOST-RESOURCES-MIB hrProcessorLoad
+from ..const import OID_hrProcessorLoad
 
 
 def _parse_cpu_string(cpu_val) -> tuple[Optional[float], Optional[float], Optional[float]]:
@@ -60,7 +59,7 @@ async def poll_cpu(client: "SwitchSnmpClient", vendor: str) -> None:
         try:
             cpu_vals = [
                 float(n)
-                for _, val in await client._async_walk(_OID_HR_CPU)
+                for _, val in await client._async_walk(OID_hrProcessorLoad)
                 if (n := _parse_numeric(val)) is not None and 0.0 <= float(n) <= 100.0
             ]
             if cpu_vals:

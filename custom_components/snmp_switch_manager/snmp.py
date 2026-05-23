@@ -32,6 +32,9 @@ from .snmp_compat import (
     _do_next_walk,
     _do_set_alias,
     _do_set_admin_status,
+    _do_set_poe_admin,
+    _do_set_poe_priority,
+    _do_set_system_string,
 )
 
 
@@ -40,6 +43,8 @@ from .const import (
     OID_sysDescr,
     OID_sysName,
     OID_sysUpTime,
+    OID_sysContact,
+    OID_sysLocation,
     CONF_BW_INCLUDE_STARTS_WITH,
     CONF_BW_INCLUDE_CONTAINS,
     CONF_BW_INCLUDE_ENDS_WITH,
@@ -51,7 +56,6 @@ from .const import (
     CONF_ENV_POLL_INTERVAL,
     ENV_MODE_ATTRIBUTES,
     DEFAULT_ENV_POLL_INTERVAL,
-    SNMP_VERSION_V2C,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -154,23 +158,41 @@ class SwitchSnmpClient:
                 except Exception as e:
                     _LOGGER.error("Failed to load database file %s: %s", filename, e)
 
-    def _get_vendor(self) -> str:
-        """Determine vendor based on sysObjectID from database."""
+    def _get_vendor_info(self) -> Dict[str, Any]:
+        """Determine vendor metadata dynamically based on sysObjectID or sysDescr."""
         sys_obj_id = self.cache.get("sysObjectID") or ""
+        sys_descr = self.cache.get("sysDescr") or ""
         vendors_db = self._database.get("vendors", {}).get("vendors", [])
-        
+
+        # 1. Match by sysObjectID prefix first
         for v in vendors_db:
             prefix = v.get("sys_object_id_prefix")
             if prefix and sys_obj_id.startswith(prefix):
-                return v.get("name")
-                
-        sys_descr = self.cache.get("sysDescr") or ""
+                return v
+
+        # 2. Match by keywords in sysDescr or sysObjectID
+        for v in vendors_db:
+            keywords = v.get("keywords", [])
+            for kw in keywords:
+                if kw and (kw.lower() in sys_descr.lower() or kw.lower() in sys_obj_id.lower()):
+                    return v
+
+        # 3. Match by name in sysDescr
         for v in vendors_db:
             name = v.get("name")
             if name and name.lower() in sys_descr.lower():
-                return name
-                
-        return "Unknown"
+                return v
+
+        # Fallback to standard
+        for v in vendors_db:
+            if v.get("name") == "Standard":
+                return v
+
+        return {"name": "Unknown"}
+
+    def _get_vendor(self) -> str:
+        """Determine vendor based on sysObjectID from database."""
+        return self._get_vendor_info().get("name", "Unknown")
 
     def _get_database_oids(self, feature: str, vendor: str) -> List[Dict[str, Any]]:
         """Get OIDs for a specific feature and vendor from database."""
@@ -312,13 +334,17 @@ class SwitchSnmpClient:
         if poll_uptime:
             self._last_uptime_poll = now_mono
 
-        sysname_oid = self._custom_oid("hostname") or OID_sysName
+        sysname_oid = self._custom_oid("name") or self._custom_oid("hostname") or OID_sysName
         uptime_oid = self._custom_oid("uptime") or OID_sysUpTime
+        syscontact_oid = self._custom_oid("contact") or OID_sysContact
+        syslocation_oid = self._custom_oid("location") or OID_sysLocation
 
-        sysdescr, sysname, sysuptime = await asyncio.gather(
+        sysdescr, sysname, sysuptime, syscontact, syslocation = await asyncio.gather(
             _do_get_one(self.engine, self.auth_data, self.target, self.context, OID_sysDescr),
             _do_get_one(self.engine, self.auth_data, self.target, self.context, sysname_oid),
             _do_get_one(self.engine, self.auth_data, self.target, self.context, uptime_oid) if poll_uptime else asyncio.sleep(0, result=None),
+            _do_get_one(self.engine, self.auth_data, self.target, self.context, syscontact_oid),
+            _do_get_one(self.engine, self.auth_data, self.target, self.context, syslocation_oid),
         )
         if (not poll_uptime) and ("sysUpTime" in self.cache):
             sysuptime = self.cache.get("sysUpTime")
@@ -328,6 +354,10 @@ class SwitchSnmpClient:
             self.cache["sysName"] = sysname
         if sysuptime is not None:
             self.cache["sysUpTime"] = sysuptime
+        if syscontact is not None:
+            self.cache["sysContact"] = syscontact
+        if syslocation is not None:
+            self.cache["sysLocation"] = syslocation
 
         # Re-evaluate manufacturer/firmware from sysDescr on each poll
         await refresh_device_info(self)
@@ -364,7 +394,7 @@ class SwitchSnmpClient:
 
             if should_poll:
                 self._env_last_poll = now_mono
-                if getattr(self, "_is_h3c", False):
+                if self._get_vendor_info().get("environment_driver") == "h3c":
                     await poll_h3c_environment(self)
                 else:
                     vendor = self.cache.get("vendor", "Unknown")
@@ -412,45 +442,67 @@ class SwitchSnmpClient:
         await self._ensure_target()
         return await _do_set_admin_status(self.engine, self.auth_data, self.target, self.context, if_index, value)
 
+    async def set_poe_admin(self, group_index: int, port_index: int, value: int) -> bool:
+        await self._ensure_engine()
+        await self._ensure_target()
+        vendor = self.cache.get("vendor", "Unknown")
+        poe_items = self._get_database_oids("poe", vendor)
+        standard_item = None
+        for item in poe_items:
+            if "poe" in self.feature_overrides and item == self.feature_overrides["poe"]:
+                standard_item = item
+                break
+            elif "oid_budget" in item:
+                standard_item = item
+                break
+        custom_oid = (standard_item or {}).get("oid_port_admin")
+        ok = await _do_set_poe_admin(self.engine, self.auth_data, self.target, self.context, group_index, port_index, value, custom_oid)
+        if ok:
+            # Update cache immediately
+            ifindex_map = self.cache.get("ifindex_by_baseport", {})
+            target_idx = ifindex_map.get(port_index, port_index)
+            if target_idx in self.cache.setdefault("poe_ports", {}):
+                self.cache["poe_ports"][target_idx]["admin"] = value
+        else:
+            _LOGGER.warning("Failed to set PoE admin via SNMP on group %s port %s", group_index, port_index)
+        return ok
 
-def _make_settings(
-    host: str,
-    community: str,
-    port: int,
-    snmp_settings: Optional[Dict[str, Any]],
-) -> Dict[str, Any]:
-    """Return a merged SNMP settings dict, falling back to v2c community defaults."""
-    settings = dict(snmp_settings or {})
-    if not settings:
-        settings = {"host": host, "port": port, "version": SNMP_VERSION_V2C, "community": community}
-    return settings
+    async def set_poe_priority(self, group_index: int, port_index: int, value: int) -> bool:
+        await self._ensure_engine()
+        await self._ensure_target()
+        vendor = self.cache.get("vendor", "Unknown")
+        poe_items = self._get_database_oids("poe", vendor)
+        standard_item = None
+        for item in poe_items:
+            if "poe" in self.feature_overrides and item == self.feature_overrides["poe"]:
+                standard_item = item
+                break
+            elif "oid_budget" in item:
+                standard_item = item
+                break
+        custom_oid = (standard_item or {}).get("oid_port_priority")
+        ok = await _do_set_poe_priority(self.engine, self.auth_data, self.target, self.context, group_index, port_index, value, custom_oid)
+        if ok:
+            # Update cache immediately
+            ifindex_map = self.cache.get("ifindex_by_baseport", {})
+            target_idx = ifindex_map.get(port_index, port_index)
+            if target_idx in self.cache.setdefault("poe_ports", {}):
+                self.cache["poe_ports"][target_idx]["priority"] = value
+        else:
+            _LOGGER.warning("Failed to set PoE priority via SNMP on group %s port %s", group_index, port_index)
+        return ok
 
-
-async def test_connection(
-    hass: HomeAssistant,
-    host: str,
-    community: str,
-    port: int,
-    *,
-    snmp_settings: Optional[Dict[str, Any]] = None,
-) -> bool:
-    """Test SNMP connectivity.
-
-    Backwards compatible with the original v2c signature, but also supports
-    passing a pre-merged settings dict for SNMPv3.
-    """
-    client = SwitchSnmpClient(hass, host, _make_settings(host, community, port, snmp_settings))
-    return await client._async_get_one(OID_sysName) is not None
-
-
-async def get_sysname(
-    hass: HomeAssistant,
-    host: str,
-    community: str,
-    port: int,
-    *,
-    snmp_settings: Optional[Dict[str, Any]] = None,
-) -> Optional[str]:
-    """Return sysName from the device, or None on failure."""
-    client = SwitchSnmpClient(hass, host, _make_settings(host, community, port, snmp_settings))
-    return await client._async_get_one(OID_sysName)
+    async def set_system_string(self, oid: str, value: str) -> bool:
+        await self._ensure_engine()
+        await self._ensure_target()
+        ok = await _do_set_system_string(self.engine, self.auth_data, self.target, self.context, oid, value)
+        if ok:
+            if oid in (OID_sysName, self._custom_oid("name"), self._custom_oid("hostname")):
+                self.cache["sysName"] = value
+            elif oid in (OID_sysContact, self._custom_oid("contact")):
+                self.cache["sysContact"] = value
+            elif oid in (OID_sysLocation, self._custom_oid("location")):
+                self.cache["sysLocation"] = value
+        else:
+            _LOGGER.warning("Failed to set system OID %s to value %s", oid, value)
+        return ok

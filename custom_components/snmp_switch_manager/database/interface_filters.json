@@ -6,7 +6,9 @@
       "vendors": [
         "Standard"
       ],
-      "rule_type": "generic_skip_cpu_interface"
+      "rule_type": "exclude",
+      "match_type": "equals",
+      "match_value": "cpu"
     },
     {
       "id": "cisco_sg_physical_fa_gi",
@@ -14,7 +16,14 @@
       "vendors": [
         "Cisco"
       ],
-      "rule_type": "cisco_sg_physical_fa_gi"
+      "vendor_keywords": ["sg"],
+      "rule_type": "include",
+      "match_type": "starts_with",
+      "match_value": [
+        "fa",
+        "gi"
+      ],
+      "oper_not_equal": 6
     },
     {
       "id": "cisco_sg_vlan_admin_or_oper",
@@ -22,7 +31,39 @@
       "vendors": [
         "Cisco"
       ],
-      "rule_type": "cisco_sg_vlan_admin_or_oper"
+      "vendor_keywords": ["sg"],
+      "rule_type": "include",
+      "conditions": [
+        {
+          "match_type": "is_digit",
+          "oper_in": [1],
+          "admin_in": [2],
+          "oper_or_admin_match": true,
+          "require_ip": true,
+          "rename_prefix": "VLAN "
+        },
+        {
+          "match_type": "starts_with",
+          "match_value": "vlan",
+          "admin_in": [
+            1,
+            2
+          ],
+          "oper_in": [
+            1,
+            2,
+            6,
+            7
+          ]
+        },
+        {
+          "match_type": "starts_with",
+          "match_value": "po",
+          "oper_in": [1],
+          "admin_in": [2],
+          "oper_or_admin_match": true
+        }
+      ]
     },
     {
       "id": "cisco_sg_other_has_ip",
@@ -30,7 +71,9 @@
       "vendors": [
         "Cisco"
       ],
-      "rule_type": "cisco_sg_other_has_ip"
+      "vendor_keywords": ["sg"],
+      "rule_type": "include",
+      "require_ip": true
     },
     {
       "id": "junos_physical_ge",
@@ -38,7 +81,10 @@
       "vendors": [
         "Junos"
       ],
-      "rule_type": "junos_physical_ge"
+      "rule_type": "include",
+      "match_type": "starts_with",
+      "match_value": "ge-",
+      "exclude_contains": "."
     },
     {
       "id": "junos_l3_subif_has_ip",
@@ -46,7 +92,12 @@
       "vendors": [
         "Junos"
       ],
-      "rule_type": "junos_l3_subif_has_ip"
+      "rule_type": "include",
+      "match_type": "starts_with",
+      "match_value": "ge-",
+      "require_contains": ".",
+      "exclude_ends_with": ".0",
+      "require_ip": true
     },
     {
       "id": "junos_vlan_admin_or_oper",
@@ -54,7 +105,19 @@
       "vendors": [
         "Junos"
       ],
-      "rule_type": "junos_vlan_admin_or_oper"
+      "rule_type": "include",
+      "match_type": "starts_with",
+      "match_value": "vlan",
+      "admin_in": [
+        1,
+        2
+      ],
+      "oper_in": [
+        1,
+        2,
+        6,
+        7
+      ]
     },
     {
       "id": "junos_other_has_ip",
@@ -62,7 +125,8 @@
       "vendors": [
         "Junos"
       ],
-      "rule_type": "junos_other_has_ip"
+      "rule_type": "include",
+      "require_ip": true
     },
     {
       "id": "skip_pfsense_enc_interfaces",
@@ -70,7 +134,9 @@
       "vendors": [
         "pfSense"
       ],
-      "rule_type": "exclude"
+      "rule_type": "exclude",
+      "match_type": "starts_with",
+      "match_value": "enc"
     },
     {
       "id": "skip_pfsense_pf_interfaces",
@@ -78,7 +144,9 @@
       "vendors": [
         "pfSense"
       ],
-      "rule_type": "exclude"
+      "rule_type": "exclude",
+      "match_type": "starts_with",
+      "match_value": "pf"
     }
   ]
 }

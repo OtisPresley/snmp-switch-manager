@@ -21,6 +21,7 @@ from ..const import (
     OID_dot1qVlanCurrentUntaggedPorts,
     OID_dot1qVlanStaticEgressPorts,
     OID_dot1qVlanStaticUntaggedPorts,
+    OID_ifConnectorPresent,
 )
 
 try:
@@ -50,6 +51,7 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
             speed_rows,
             hispeed_rows,
             iftype_rows,
+            connector_rows,
         ) = await asyncio.gather(
             client._async_walk(OID_ifIndex),
             client._async_walk(OID_ifDescr),
@@ -58,6 +60,7 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
             client._async_walk(OID_ifSpeed),
             client._async_walk(OID_ifHighSpeed),
             client._async_walk(OID_ifType),
+            client._async_walk(OID_ifConnectorPresent),
         )
 
         # Indexes
@@ -113,6 +116,17 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
                     rec["if_type"] = int(val)
                 except Exception:
                     rec["if_type"] = None
+
+        # ifConnectorPresent (standard hardware presence indicator)
+        for oid, val in connector_rows:
+            idx = int(oid.split(".")[-1])
+            rec = client.cache["ifTable"].get(idx)
+            if rec is not None:
+                try:
+                    # 1 = True (present/physical), 2 = False (absent/virtual)
+                    rec["connector_present"] = int(val) == 1
+                except Exception:
+                    rec["connector_present"] = None
 
         # VLAN (PVID) mapping via BRIDGE-MIB / Q-BRIDGE-MIB
         bridge_ifindexes: set[int] = set()
@@ -245,6 +259,7 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
                 if_type=if_type,
                 name=name,
                 is_bridge_port=is_bridge_port,
+                connector_present=rec.get("connector_present"),
                 classification_db=client._database.get("interface_classification") if hasattr(client, "_database") else None,
             )
             rec["is_bridge_port"] = is_bridge_port
@@ -270,10 +285,7 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
         raw_s = float(rec.get("speed_bps", 0))
         high_s = float(rec.get("speed_high", 0))
         
-        if getattr(client, "_is_jtcom", False) or getattr(client, "_is_h3c", False):
-            speed_mbps = high_s if high_s > 0 else (raw_s / 1000000)
-        else:
-            speed_mbps = high_s if high_s > 0 else (raw_s / 1000000)
+        speed_mbps = high_s if high_s > 0 else (raw_s / 1000000)
         
         rec["speed_mbps"] = speed_mbps
         rec["speed"] = f"{int(speed_mbps)} Mbps" if speed_mbps > 0 else "Down"

@@ -91,6 +91,9 @@ class OverridesBasicMixin:
                 norm_firm = new_custom.get("firmware", "")
                 norm_host = new_custom.get("hostname", "")
                 norm_up = new_custom.get("uptime", "")
+                norm_contact = new_custom.get("contact", "")
+                norm_name = new_custom.get("name", "")
+                norm_loc = new_custom.get("location", "")
                 
                 items = db.get("device_info", {}).get("device_info", [])
                 for item in items:
@@ -99,8 +102,11 @@ class OverridesBasicMixin:
                     match_firm = (norm_firm and _normalize_oid(item.get("oid_firmware", "")) == norm_firm)
                     match_host = (norm_host and _normalize_oid(item.get("oid_hostname", "")) == norm_host)
                     match_up = (norm_up and _normalize_oid(item.get("oid_uptime", "")) == norm_up)
+                    match_contact = (norm_contact and _normalize_oid(item.get("oid_contact", "")) == norm_contact)
+                    match_name = (norm_name and _normalize_oid(item.get("oid_name", "")) == norm_name)
+                    match_loc = (norm_loc and _normalize_oid(item.get("oid_location", "")) == norm_loc)
                     
-                    if match_mfg or match_model or match_firm or match_host or match_up:
+                    if match_mfg or match_model or match_firm or match_host or match_up or match_contact or match_name or match_loc:
                         if vendor.lower() in [v.lower() for v in item.get("vendors", [])]:
                             if match_mfg:
                                 errors["manufacturer_oid"] = "duplicate_oid"
@@ -112,6 +118,12 @@ class OverridesBasicMixin:
                                 errors["hostname_oid"] = "duplicate_oid"
                             elif match_up:
                                 errors["uptime_oid"] = "duplicate_oid"
+                            elif match_contact:
+                                errors["contact_oid"] = "duplicate_oid"
+                            elif match_name:
+                                errors["name_oid"] = "duplicate_oid"
+                            elif match_loc:
+                                errors["location_oid"] = "duplicate_oid"
                             break
 
             if not errors:

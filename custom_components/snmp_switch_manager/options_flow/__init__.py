@@ -136,6 +136,8 @@ class OptionsFlowHandler(
             defaults["oid_budget"] = existing.get("oid_budget", first_db.get("oid_budget", ""))
             defaults["oid_used"] = existing.get("oid_used", first_db.get("oid_used", ""))
             defaults["oid_port_power"] = existing.get("oid_port_power", first_db.get("oid_port_power", ""))
+            defaults["oid_port_admin"] = existing.get("oid_port_admin", first_db.get("oid_port_admin", ""))
+            defaults["oid_port_priority"] = existing.get("oid_port_priority", first_db.get("oid_port_priority", ""))
             defaults["description"] = existing.get("description", first_db.get("description", ""))
             
         return defaults
@@ -199,6 +201,10 @@ class OptionsFlowHandler(
                     parts.append(f"Used: <code>{item.get('oid_used')}</code>")
                 if item.get("oid_port_power"):
                     parts.append(f"Port Power: <code>{item.get('oid_port_power')}</code>")
+                if item.get("oid_port_admin"):
+                    parts.append(f"Port Admin: <code>{item.get('oid_port_admin')}</code>")
+                if item.get("oid_port_priority"):
+                    parts.append(f"Port Priority: <code>{item.get('oid_port_priority')}</code>")
                 oids = "<br>".join(parts)
             elif feature == "device_info":
                 parts = []
@@ -212,6 +218,12 @@ class OptionsFlowHandler(
                     parts.append(f"Hostname: <code>{item.get('oid_hostname')}</code>")
                 if item.get("oid_uptime"):
                     parts.append(f"Uptime: <code>{item.get('oid_uptime')}</code>")
+                if item.get("oid_contact"):
+                    parts.append(f"Contact: <code>{item.get('oid_contact')}</code>")
+                if item.get("oid_name"):
+                    parts.append(f"Name: <code>{item.get('oid_name')}</code>")
+                if item.get("oid_location"):
+                    parts.append(f"Location: <code>{item.get('oid_location')}</code>")
                 oids = "<br>".join(parts)
             else: # cpu, power
                 oids = f"<code>{item.get('oid')}</code>"

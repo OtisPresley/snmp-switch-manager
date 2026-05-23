@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import logging
 from homeassistant.util import slugify
-from homeassistant.const import EntityCategory
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.components.sensor import SensorEntity
 
 from ..const import (
@@ -32,7 +30,7 @@ from ..const import (
     ENV_MODE_SENSORS,
 )
 from ..snmp import SwitchSnmpClient
-from ..helpers import check_vendor_interface_rules, uptime_human
+from ..helpers import check_interface_filter_rules, uptime_human
 
 from .bandwidth import BandwidthRateSensor, BandwidthTotalSensor
 from .environmental import (
@@ -60,16 +58,9 @@ from .poe import (
     PoEPowerAvailableSensor,
     PoEHealthStatusSensor,
 )
+from .info import SimpleTextSensor, DeviceInformationSensor
 
 _LOGGER = logging.getLogger(__name__)
-
-SENSOR_TYPES = {
-    "manufacturer": "Manufacturer",
-    "model": "Model",
-    "firmware": "Firmware Revision",
-    "uptime": "Uptime",
-    "hostname": "Hostname",
-}
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -105,12 +96,18 @@ async def async_setup_entry(hass, entry, async_add_entities):
     )
 
     entities = [
-        SimpleTextSensor(coordinator, entry, "manufacturer", manufacturer, device_info, host_label),
-        SimpleTextSensor(coordinator, entry, "model", model, device_info, host_label),
-        SimpleTextSensor(coordinator, entry, "firmware", firmware, device_info, host_label),
         SimpleTextSensor(coordinator, entry, "uptime", uptime_human(uptime_ticks), device_info, host_label),
-        SimpleTextSensor(coordinator, entry, "hostname", hostname or client.host, device_info, host_label),
+        DeviceInformationSensor(coordinator, entry, device_info, host_label, client),
     ]
+
+    # Clean up legacy diagnostic sensors from the entity registry
+    legacy_keys = ["manufacturer", "model", "firmware", "hostname"]
+    ent_reg = er.async_get(hass)
+    for key in legacy_keys:
+        unique_id = f"{entry.entry_id}-{key}"
+        eid = ent_reg.async_get_entity_id("sensor", DOMAIN, unique_id)
+        if eid:
+            ent_reg.async_remove(eid)
 
     # Bandwidth sensor entities (optional; per-device)
     ent_reg = er.async_get(hass)
@@ -132,10 +129,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
         ip_mask = client.cache.get("ipMask", {}) or {}
         disabled_vendor_filter_ids = set(entry.options.get("disabled_vendor_filter_rule_ids", []) or [])
 
-        manufacturer_l = (client.cache.get("manufacturer") or "").lower()
-        sys_descr_l = (client.cache.get("sysDescr") or "").lower()
-        is_cisco_sg = manufacturer_l.startswith("sg") and sys_descr_l.startswith("sg")
-        is_junos = ("juniper" in manufacturer_l) or ("junos" in sys_descr_l) or ("ex2200" in sys_descr_l)
+        vendor = client.cache.get("vendor", "Unknown")
+        manufacturer = client.cache.get("manufacturer") or ""
+        sys_descr = client.cache.get("sysDescr") or ""
+        db_filters = client._database if hasattr(client, "_database") else None
 
         ip_by_ifindex = {}
         for ip, idx in ip_index.items():
@@ -170,30 +167,30 @@ async def async_setup_entry(hass, entry, async_add_entities):
             if not raw_name:
                 continue
 
-            # Skip internal CPU pseudo-interface
-            if raw_name.upper() == "CPU":
-                continue
-
             lower = raw_name.lower()
             ip_str = _ip_for_index(idx_i)
 
             is_port_channel = lower.startswith("po") or lower.startswith("port-channel") or lower.startswith("link aggregate")
             if is_port_channel and not (ip_str or alias):
-                continue
+                is_cisco_sg = vendor.lower() == "cisco" and any(kw in manufacturer.lower() or kw in sys_descr.lower() for kw in ["sg"])
+                if not is_cisco_sg:
+                    continue
 
             admin = row.get("admin")
             oper = row.get("oper")
             has_ip = bool(ip_str)
 
-            include, _ = check_vendor_interface_rules(
+            include, _ = check_interface_filter_rules(
                 normalized_name=lower,
                 raw_name=raw_name,
                 admin=admin,
                 oper=oper,
                 has_ip=has_ip,
-                is_cisco_sg=is_cisco_sg,
-                is_junos=is_junos,
+                vendor=vendor,
+                manufacturer=manufacturer,
+                sys_descr=sys_descr,
                 disabled_vendor_filter_ids=disabled_vendor_filter_ids,
+                classification_db=db_filters,
             )
 
             if include:
@@ -471,22 +468,3 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     async_add_entities(entities)
 
-
-class SimpleTextSensor(CoordinatorEntity, SensorEntity):
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    def __init__(self, coordinator, entry, key, value, device_info: DeviceInfo, hostname: str):
-        super().__init__(coordinator)
-        self._key = key
-        self._value = value
-        self._hostname = hostname
-        self._attr_unique_id = f"{entry.entry_id}-{key}"
-        self._attr_name = f"{hostname} {SENSOR_TYPES[key]}"
-        self._attr_device_info = device_info
-
-    @property
-    def native_value(self):
-        data = self.coordinator.data
-        if self._key == "uptime":
-            return uptime_human(data.get("sysUpTime"))
-        return data.get("sysName" if self._key == "hostname" else self._key) or self._value

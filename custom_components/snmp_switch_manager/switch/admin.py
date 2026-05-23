@@ -1,31 +1,18 @@
 from __future__ import annotations
 
-import ipaddress
-import logging
 import time
-from typing import Any, Dict, Optional
+import logging
+from typing import Any, Dict
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers import entity_registry as er
 
-from .const import (
-    DOMAIN,
-    CONF_LEGACY_DEVICE_ID,
-    CONF_ICON_RULES,
-    CONF_INCLUDE_STARTS_WITH,
-    CONF_INCLUDE_CONTAINS,
-    CONF_INCLUDE_ENDS_WITH,
-    CONF_EXCLUDE_STARTS_WITH,
-    CONF_EXCLUDE_CONTAINS,
-    CONF_EXCLUDE_ENDS_WITH,
-    CONF_DISABLED_VENDOR_FILTER_RULE_IDS,
+from ..const import (
     POE_MODE_ATTRIBUTES,
     BW_MODE_ATTRIBUTES,
 )
-from .snmp import SwitchSnmpClient
-from .helpers import format_interface_name, check_vendor_interface_rules
+from ..snmp import SwitchSnmpClient
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,6 +35,7 @@ def _format_bps(bps: Any) -> str:
         k = v / 1_000
         return f"{k:g} Kbps"
     return f"{v} bps"
+
 
 def _speed_display(row: Any) -> str:
     """Return a human-friendly interface speed string for a row from ifTable."""
@@ -78,209 +66,6 @@ OPER_STATE = {
     6: "NotPresent",
     7: "LowerLayerDown",
 }
-
-
-async def async_setup_entry(hass, entry, async_add_entities):
-    runtime = entry.runtime_data
-    client: SwitchSnmpClient = runtime.client
-    coordinator = runtime.coordinator
-
-    entities: list[IfAdminSwitch] = []
-    desired_if_indexes: set[int] = set()
-    iftable = client.cache.get("ifTable", {})
-    hostname = client.cache.get("sysName") or entry.data.get("name") or client.host
-
-    # Device identifiers must be stable. Historically we used host:port:community for SNMPv2c.
-    # When SNMPv3 was added, that attribute no longer existed on the client, and switching to
-    # entry.entry_id alone caused Home Assistant to create duplicate Devices for existing installs.
-    #
-    # To preserve backwards compatibility (and allow HA to automatically re-associate entities),
-    # include the legacy identifier for v2c entries. For v3 entries, do not include any secrets.
-    identifiers = {(DOMAIN, entry.entry_id)}
-    legacy_device_id = str(
-        entry.data.get(CONF_LEGACY_DEVICE_ID) or entry.options.get(CONF_LEGACY_DEVICE_ID) or ""
-    ).strip()
-    if legacy_device_id:
-        identifiers.add((DOMAIN, legacy_device_id))
-
-    device_info = DeviceInfo(identifiers=identifiers, name=hostname)
-
-    ip_index = client.cache.get("ipIndex", {})
-    ip_mask = client.cache.get("ipMask", {})
-
-    ip_by_ifindex = {}
-    for ip, idx in ip_index.items():
-        try:
-            ip_by_ifindex[int(idx)] = ip
-        except Exception:
-            pass
-
-    # Include/Exclude interface rules (simple string match; include wins over exclude)
-    include_starts = tuple(str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_STARTS_WITH, []) or []) if str(s).strip())
-    include_contains = [str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_CONTAINS, []) or []) if str(s).strip()]
-    include_ends = tuple(str(s).strip().lower() for s in (entry.options.get(CONF_INCLUDE_ENDS_WITH, []) or []) if str(s).strip())
-
-    exclude_starts = tuple(str(s).strip().lower() for s in (entry.options.get(CONF_EXCLUDE_STARTS_WITH, []) or []) if str(s).strip())
-    exclude_contains = [str(s).strip().lower() for s in (entry.options.get(CONF_EXCLUDE_CONTAINS, []) or []) if str(s).strip()]
-    exclude_ends = tuple(str(s).strip().lower() for s in (entry.options.get(CONF_EXCLUDE_ENDS_WITH, []) or []) if str(s).strip())
-
-    any_include_rules = bool(include_starts or include_contains or include_ends)
-
-    disabled_vendor_filter_ids = set(entry.options.get(CONF_DISABLED_VENDOR_FILTER_RULE_IDS, []) or [])
-
-    icon_rules = entry.options.get(CONF_ICON_RULES, []) or []
-
-    def _matches_any(name_l: str, starts: tuple[str, ...], contains: list[str], ends: tuple[str, ...]) -> bool:
-        if starts and name_l.startswith(starts):
-            return True
-        if ends and name_l.endswith(ends):
-            return True
-        if contains and any(x in name_l for x in contains):
-            return True
-        return False
-
-    # Vendor detection
-    manufacturer = (client.cache.get("manufacturer") or "").lower()
-    sys_descr = (client.cache.get("sysDescr") or "").lower()
-
-    # Cisco SG family
-    is_cisco_sg = manufacturer.startswith("sg") and sys_descr.startswith("sg")
-
-    # Detect Junos / Juniper EX series
-    is_junos = "juniper" in manufacturer or "junos" in sys_descr or "ex2200" in sys_descr
-
-    for idx, row in sorted(iftable.items()):
-        # Prefer display_name (when provided) over ifName. Some platforms populate a
-        # human-friendly name in display_name while still exposing a raw ifName.
-        raw_name = row.get("display_name") or row.get("name") or row.get("descr") or f"if{idx}"
-        alias = row.get("alias") or ""
-
-        # Skip internal CPU pseudo-interface (can be disabled in Built-in Vendor Filters)
-        if raw_name.strip().upper() == "CPU":
-            if "generic_skip_cpu_interface" not in disabled_vendor_filter_ids:
-                continue
-
-        normalized_name = (raw_name or "").strip().lower()
-        ip_str = _ip_for_index(idx, ip_by_ifindex, ip_mask)
-
-        include_hit = _matches_any(normalized_name, include_starts, include_contains, include_ends)
-        exclude_hit = _matches_any(normalized_name, exclude_starts, exclude_contains, exclude_ends)
-
-        # Exclude rules always win.
-        if exclude_hit:
-            continue
-
-        # If include rules exist, only matching interfaces are created.
-        if any_include_rules and not include_hit:
-            continue
-
-        is_port_channel = (
-            (normalized_name.startswith("po") and not normalized_name.startswith("port"))
-            or normalized_name.startswith("port-channel")
-            or normalized_name.startswith("link aggregate")
-        )
-        if is_port_channel and not (ip_str or alias):
-            # Only create PortChannel entity if configured (alias or IP present),
-            # except for Cisco SG where PortChannels are included by vendor rules.
-            if not is_cisco_sg:
-                continue
-
-        # Get interface details
-        admin = row.get("admin")
-        oper = row.get("oper")
-        has_ip = bool(ip_str)
-
-        include, raw_name = check_vendor_interface_rules(
-            normalized_name=normalized_name,
-            raw_name=raw_name,
-            admin=admin,
-            oper=oper,
-            has_ip=has_ip,
-            is_cisco_sg=is_cisco_sg,
-            is_junos=is_junos,
-            disabled_vendor_filter_ids=disabled_vendor_filter_ids,
-        )
-
-        if not include and not include_hit:
-            continue
-
-        # display_name from the coordinator already has rename rules applied by
-        # _postprocess_if_names in __init__.py. No further renaming needed here.
-        raw_for_display = (raw_name or "").strip()
-
-        # Try to parse Gi1/0/1 style to preserve unit/slot/port in display name
-        unit = 1
-        slot = 0
-        port = None
-        try:
-            # e.g., "Gi1/0/1" -> parts after the first two letters
-            if "/" in raw_for_display and raw_for_display[2:3].isdigit():
-                parts = raw_for_display[2:].split("/")
-                if len(parts) >= 3:
-                    unit = int(parts[0])
-                    slot = int(parts[1])
-                    port = int(parts[2])
-        except Exception:
-            pass
-
-        display = format_interface_name(raw_for_display, unit=unit, slot=slot, port=port)
-
-        entities.append(
-            IfAdminSwitch(
-                coordinator=coordinator,
-                entry_id=entry.entry_id,
-                if_index=idx,
-                raw_name=raw_name,
-                display_name=display,
-                alias=alias,
-                hostname=hostname,
-                device_info=device_info,
-                client=client,
-                icon_rules=icon_rules,
-            )
-        )
-
-        desired_if_indexes.add(idx)
-
-    # Remove any previously-created switch entities that are no longer desired
-    # (e.g. excluded by user rules). Without this, Home Assistant keeps the old
-    # entities around even if we stop creating them.
-    ent_reg = er.async_get(hass)
-    for ent in er.async_entries_for_config_entry(ent_reg, entry.entry_id):
-        if ent.domain != "switch":
-            continue
-        if not (ent.unique_id or "").startswith(f"{entry.entry_id}-if-"):
-            continue
-        try:
-            old_idx = int((ent.unique_id or "").split("-if-", 1)[1])
-        except Exception:
-            continue
-        if old_idx not in desired_if_indexes:
-            ent_reg.async_remove(ent.entity_id)
-
-    async_add_entities(entities)
-
-def _ip_for_index(if_index: int, ip_by_ifindex: Dict[int, str], ip_mask: Dict[str, str]) -> Optional[str]:
-    """Return IP/maskbits string for an ifIndex if present."""
-    ip = ip_by_ifindex.get(if_index)
-    if not ip:
-        return None
-    mask = ip_mask.get(ip)
-    if not mask:
-        return ip
-    try:
-        mask_parts = [int(p) for p in mask.split(".")]
-        if len(mask_parts) == 4:
-            prefix_len = sum(bin(x).count('1') for x in mask_parts)
-            return f"{ip}/{prefix_len}"
-    except Exception:
-        pass
-
-    try:
-        net = ipaddress.IPv4Network((ip, mask), strict=False)
-        return f"{ip}/{net.prefixlen}"
-    except Exception:
-        return ip
 
 
 class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
@@ -319,9 +104,8 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
         # Calculate icon once during setup
         self._attr_icon = self._calculate_icon()
 
-
-    def _calculate_icon(self) -> str | None:
-        """Return an optional icon override from user rules (first match wins)."""
+    def _calculate_icon(self) -> str:
+        """Return an icon from user rules, or a premium dynamic default."""
         name_l = (self._display_name or self._raw_name or "").lower()
         for r in self._icon_rules:
             try:
@@ -338,7 +122,17 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
                     return icon
             except Exception:
                 continue
-        return None
+
+        # Dynamic high-quality defaults:
+        if name_l.startswith(("vl", "vlan")):
+            return "mdi:lan"
+        if name_l.startswith(("lo", "loopback")):
+            return "mdi:lan-pending"
+        if name_l.startswith(("po", "port-channel", "lag")):
+            return "mdi:lan-connect"
+
+        # Default for physical ports
+        return "mdi:ethernet"
 
     @property
     def is_on(self) -> bool:
@@ -434,6 +228,7 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
 
         hide_ip_on_physical = bool(data.get("hide_ip_on_physical", False))
 
+        from . import _ip_for_index
         ip = _ip_for_index(self._if_index, data.get("ip_by_ifindex", {}), data.get("ip_mask_by_ifindex", {}))
         if ip and not (hide_ip_on_physical and port_type == "physical"):
             attrs["IP"] = ip
@@ -452,7 +247,6 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
                      attrs["PoE Power (W)"] = round(float(mw) / 1000.0, 1)
                  except Exception:
                      pass
-
 
         # Bandwidth attributes (optional)
         if (

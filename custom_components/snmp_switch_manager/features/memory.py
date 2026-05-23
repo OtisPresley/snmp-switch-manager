@@ -7,13 +7,13 @@ if TYPE_CHECKING:
     from ..snmp import SwitchSnmpClient
 
 from ..helpers import _parse_numeric
-
-# HOST-RESOURCES-MIB storage table OIDs
-_OID_HR_TYPE = "1.3.6.1.2.1.25.2.3.1.2"
-_OID_HR_ALLOC = "1.3.6.1.2.1.25.2.3.1.4"
-_OID_HR_SIZE = "1.3.6.1.2.1.25.2.3.1.5"
-_OID_HR_USED = "1.3.6.1.2.1.25.2.3.1.6"
-_OID_HR_RAM_TYPE = "1.3.6.1.2.1.25.2.1.2"  # hrStorageRam
+from ..const import (
+    OID_hrStorageType,
+    OID_hrStorageAllocationUnits,
+    OID_hrStorageSize,
+    OID_hrStorageUsed,
+    OID_hrStorageRam,
+)
 
 
 def _walk_to_int_map(rows, filter_set: set[int] | None = None) -> dict[int, int]:
@@ -56,20 +56,20 @@ async def poll_memory(client: "SwitchSnmpClient", vendor: str) -> None:
         try:
             # Identify hrStorageRam entries
             ram_idxs: set[int] = set()
-            for oid, val in await client._async_walk(_OID_HR_TYPE):
+            for oid, val in await client._async_walk(OID_hrStorageType):
                 try:
                     idx = int(str(oid).split(".")[-1])
                 except Exception:
                     continue
-                if _OID_HR_RAM_TYPE in str(val):
+                if OID_hrStorageRam in str(val):
                     ram_idxs.add(idx)
 
             if ram_idxs:
                 # Fetch all three columns in parallel, then filter
                 alloc_rows, size_rows, used_rows = await asyncio.gather(
-                    client._async_walk(_OID_HR_ALLOC),
-                    client._async_walk(_OID_HR_SIZE),
-                    client._async_walk(_OID_HR_USED),
+                    client._async_walk(OID_hrStorageAllocationUnits),
+                    client._async_walk(OID_hrStorageSize),
+                    client._async_walk(OID_hrStorageUsed),
                 )
                 alloc_units = _walk_to_int_map(alloc_rows, ram_idxs)
                 sizes = _walk_to_int_map(size_rows, ram_idxs)

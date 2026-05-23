@@ -33,6 +33,7 @@ from .const import (
     CONF_PORT_RENAME_USER_RULES,
     CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
     CONF_POE_ENABLE,
+    CONF_POE_CONTROL_LOOPS,
     CONF_POE_MODE,
     CONF_POE_POLL_INTERVAL,
     POE_MODE_ATTRIBUTES,
@@ -44,6 +45,9 @@ from .const import (
     DEFAULT_ENV_POLL_INTERVAL,
     CONF_HIDE_IP_ON_PHYSICAL,
     CONF_HIDE_IP_ON_PHYSICAL_INTERFACES,
+    OID_sysName,
+    OID_sysContact,
+    OID_sysLocation,
 )
 from .snmp import SwitchSnmpClient
 from .snmp_compat import SnmpAuthError
@@ -169,6 +173,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
         CONF_POE_ENABLE: entry.options.get(CONF_POE_ENABLE, False),
         CONF_POE_MODE: entry.options.get(CONF_POE_MODE, POE_MODE_ATTRIBUTES),
         CONF_POE_POLL_INTERVAL: entry.options.get(CONF_POE_POLL_INTERVAL, DEFAULT_POE_POLL_INTERVAL),
+        CONF_POE_CONTROL_LOOPS: entry.options.get(CONF_POE_CONTROL_LOOPS, False),
     }
 
     env_options = {
@@ -301,5 +306,222 @@ async def async_register_services(hass: HomeAssistant):
         await client.set_alias(if_index, description)
         await runtime.coordinator.async_request_refresh()
 
+    async def handle_set_system_string(call, oid: str):
+        from homeassistant.helpers import device_registry as dr
+
+        device_id = call.data.get("device_id")
+        if not device_id:
+            return
+        if isinstance(device_id, (list, set, tuple)):
+            if not device_id:
+                return
+            device_id = list(device_id)[0]
+
+        dev_reg = dr.async_get(hass)
+        device = dev_reg.async_get(device_id)
+        if not device:
+            return
+
+        entry_id = None
+        for entry_id_cand in device.config_entries:
+            config_entry = hass.config_entries.async_get_entry(entry_id_cand)
+            if config_entry and config_entry.domain == DOMAIN:
+                entry_id = entry_id_cand
+                break
+
+        if not entry_id:
+            return
+
+        config_entry = hass.config_entries.async_get_entry(entry_id)
+        runtime: SnmpSwitchRuntimeData | None = getattr(config_entry, "runtime_data", None) if config_entry else None
+        if not runtime:
+            return
+
+        client = runtime.client
+        value = call.data.get("value", "")
+        
+        target_oid = oid
+        if oid == OID_sysName:
+            target_oid = client._custom_oid("name") or client._custom_oid("hostname") or OID_sysName
+        elif oid == OID_sysContact:
+            target_oid = client._custom_oid("contact") or OID_sysContact
+        elif oid == OID_sysLocation:
+            target_oid = client._custom_oid("location") or OID_sysLocation
+            
+        await client.set_system_string(target_oid, value)
+        await runtime.coordinator.async_request_refresh()
+
+    async def handle_set_system_name(call):
+        await handle_set_system_string(call, OID_sysName)
+
+    async def handle_set_system_contact(call):
+        await handle_set_system_string(call, OID_sysContact)
+
+    async def handle_set_system_location(call):
+        await handle_set_system_string(call, OID_sysLocation)
+
+    async def handle_set_poe_admin(call):
+        entity_id = call.data.get("entity_id")
+        state = call.data.get("state")
+
+        ent_reg = er.async_get(hass)
+        ent = ent_reg.async_get(entity_id)
+        if not ent:
+            _LOGGER.warning("PoE admin service: Entity %s not found", entity_id)
+            return
+
+        entry_id = ent.config_entry_id
+        config_entry = hass.config_entries.async_get_entry(entry_id)
+        runtime: SnmpSwitchRuntimeData | None = getattr(config_entry, "runtime_data", None) if config_entry else None
+        if not runtime:
+            return
+
+        client = runtime.client
+        unique_id = ent.unique_id or ""
+        try:
+            if "-poe-" in unique_id:
+                if_index = int(unique_id.split("-poe-")[-1])
+            elif "-if-" in unique_id:
+                if_index = int(unique_id.split("-if-")[-1])
+            else:
+                _LOGGER.warning("PoE admin service: Entity %s does not have a recognizable ifIndex", entity_id)
+                return
+        except Exception:
+            return
+
+        poe_ports = client.cache.get("poe_ports", {})
+        port_info = poe_ports.get(if_index)
+        if not port_info:
+            _LOGGER.warning("PoE admin service: PoE details not found in cache for ifIndex %s", if_index)
+            return
+
+        group_idx = port_info.get("group")
+        port_idx = port_info.get("port")
+        if group_idx is None or port_idx is None:
+            return
+
+        # 1 = auto, 2 = disabled
+        val = 1 if (state == "Auto" or state is True) else 2
+
+        ok = await client.set_poe_admin(group_idx, port_idx, val)
+        if ok:
+            if if_index in client.cache.setdefault("poe_ports", {}):
+                client.cache["poe_ports"][if_index]["admin"] = val
+            await runtime.coordinator.async_request_refresh()
+
+    async def handle_set_poe_priority(call):
+        entity_id = call.data.get("entity_id")
+        priority = call.data.get("priority")
+
+        ent_reg = er.async_get(hass)
+        ent = ent_reg.async_get(entity_id)
+        if not ent:
+            _LOGGER.warning("PoE priority service: Entity %s not found", entity_id)
+            return
+
+        entry_id = ent.config_entry_id
+        config_entry = hass.config_entries.async_get_entry(entry_id)
+        runtime: SnmpSwitchRuntimeData | None = getattr(config_entry, "runtime_data", None) if config_entry else None
+        if not runtime:
+            return
+
+        client = runtime.client
+        unique_id = ent.unique_id or ""
+        try:
+            if "-poe-priority-" in unique_id:
+                if_index = int(unique_id.split("-poe-priority-")[-1])
+            elif "-poe-" in unique_id:
+                if_index = int(unique_id.split("-poe-")[-1])
+            elif "-if-" in unique_id:
+                if_index = int(unique_id.split("-if-")[-1])
+            else:
+                _LOGGER.warning("PoE priority service: Entity %s does not have a recognizable ifIndex", entity_id)
+                return
+        except Exception:
+            return
+
+        poe_ports = client.cache.get("poe_ports", {})
+        port_info = poe_ports.get(if_index)
+        if not port_info:
+            _LOGGER.warning("PoE priority service: PoE details not found in cache for ifIndex %s", if_index)
+            return
+
+        group_idx = port_info.get("group")
+        port_idx = port_info.get("port")
+        if group_idx is None or port_idx is None:
+            return
+
+        val = 3
+        if priority == "Critical":
+            val = 1
+        elif priority == "High":
+            val = 2
+        elif priority == "Low":
+            current_port_priority = port_info.get("priority")
+            if current_port_priority == 4 or any(p.get("priority") == 4 for p in poe_ports.values()):
+                val = 4
+            else:
+                val = 3
+
+        ok = await client.set_poe_priority(group_idx, port_idx, val)
+        if ok:
+            if if_index in client.cache.setdefault("poe_ports", {}):
+                client.cache["poe_ports"][if_index]["priority"] = val
+            await runtime.coordinator.async_request_refresh()
+
+    async def handle_set_port_admin_status(call):
+        entity_id = call.data.get("entity_id")
+        state = call.data.get("state")
+
+        ent_reg = er.async_get(hass)
+        ent = ent_reg.async_get(entity_id)
+        if not ent:
+            _LOGGER.warning("Port admin status service: Entity %s not found", entity_id)
+            return
+
+        entry_id = ent.config_entry_id
+        config_entry = hass.config_entries.async_get_entry(entry_id)
+        runtime: SnmpSwitchRuntimeData | None = getattr(config_entry, "runtime_data", None) if config_entry else None
+        if not runtime:
+            return
+
+        client = runtime.client
+        unique_id = ent.unique_id or ""
+        try:
+            if "-if-" in unique_id:
+                if_index = int(unique_id.split("-if-")[-1])
+            else:
+                _LOGGER.warning("Port admin status service: Entity %s does not have a recognizable ifIndex", entity_id)
+                return
+        except Exception:
+            return
+
+        # 1 = Up/Enabled, 2 = Down/Disabled
+        val = 1 if (state == "Up" or state is True) else 2
+
+        ok = await client.set_admin_status(if_index, val)
+        if ok:
+            if if_index in client.cache.setdefault("ifTable", {}):
+                client.cache["ifTable"][if_index]["admin"] = val
+            await runtime.coordinator.async_request_refresh()
+
     if not hass.services.has_service(DOMAIN, "set_port_description"):
         hass.services.async_register(DOMAIN, "set_port_description", handle_set_alias)
+
+    if not hass.services.has_service(DOMAIN, "set_system_name"):
+        hass.services.async_register(DOMAIN, "set_system_name", handle_set_system_name)
+
+    if not hass.services.has_service(DOMAIN, "set_system_contact"):
+        hass.services.async_register(DOMAIN, "set_system_contact", handle_set_system_contact)
+
+    if not hass.services.has_service(DOMAIN, "set_system_location"):
+        hass.services.async_register(DOMAIN, "set_system_location", handle_set_system_location)
+
+    if not hass.services.has_service(DOMAIN, "set_poe_port_admin"):
+        hass.services.async_register(DOMAIN, "set_poe_port_admin", handle_set_poe_admin)
+
+    if not hass.services.has_service(DOMAIN, "set_poe_port_priority"):
+        hass.services.async_register(DOMAIN, "set_poe_port_priority", handle_set_poe_priority)
+
+    if not hass.services.has_service(DOMAIN, "set_port_admin_status"):
+        hass.services.async_register(DOMAIN, "set_port_admin_status", handle_set_port_admin_status)

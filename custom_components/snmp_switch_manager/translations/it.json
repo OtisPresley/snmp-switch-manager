@@ -38,7 +38,8 @@
           "env_mode": "Dati ambientali come",
           "poe_enabled": "Abilita sensori PoE",
           "poe_mode": "Dati PoE come",
-          "poe_per_port_power": "Crea sensori di potenza PoE per porta"
+          "poe_per_port_power": "Crea sensori di potenza PoE per porta",
+          "poe_control_loops": "Loop di controllo PoE"
         },
         "description": "Abilita il monitoraggio ambientale/PoE per questo dispositivo.\n\nSe scegli Attributi, i valori vengono aggiunti alle entità porta (senza cronologia).\nSe scegli Sensori, vengono create entità sensore separate (con cronologia).",
         "title": "Sensori ambientali"
@@ -350,7 +351,8 @@
           "poe_enabled": "Abilita statistiche PoE",
           "poe_mode": "Dati PoE come",
           "poe_per_port_power": "Crea sensori di potenza PoE per porta",
-          "back_to_menu": "Torna indietro (annulla modifiche)"
+          "back_to_menu": "Torna indietro (annulla modifiche)",
+          "poe_control_loops": "Loop di controllo PoE"
         },
         "description": "Scegli se i dati ambientali/PoE vengono memorizzati come attributi (senza cronologia) o come sensori separati (con cronologia).",
         "title": "Sensori ambientali"
@@ -519,7 +521,9 @@
           "attestation": "Attesto di aver testato e verificato che questi OID funzionino come previsto.",
           "share_with_community": "Condividi con la community",
           "back_to_menu": "Torna indietro (annulla modifiche)",
-          "scale": "Scala"
+          "scale": "Scala",
+          "oid_port_admin": "OID di abilitazione dell'amministratore della porta PoE (opzionale)",
+          "oid_port_priority": "OID di priorità di alimentazione della porta PoE (opzionale)"
         }
       },
       "override_device_info": {
@@ -534,7 +538,10 @@
           "vendor": "Produttore (Marca)",
           "back_to_menu": "Torna indietro (annulla modifiche)",
           "attestation": "Attesto di aver testato e verificato che questi OID funzionino come previsto.",
-          "share_with_community": "Condividi con la community"
+          "share_with_community": "Condividi con la community",
+          "contact_oid": "OID del contatto (opzionale)",
+          "name_oid": "OID del nome (opzionale)",
+          "location_oid": "OID della posizione (opzionale)"
         }
       },
       "github_connection_error": {

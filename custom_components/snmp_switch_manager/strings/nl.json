@@ -38,7 +38,8 @@
           "env_mode": "Omgevingsgegevens als",
           "poe_enabled": "PoE-sensoren inschakelen",
           "poe_mode": "PoE-gegevens als",
-          "poe_per_port_power": "PoE-vermogen sensoren per poort maken"
+          "poe_per_port_power": "PoE-vermogen sensoren per poort maken",
+          "poe_control_loops": "PoE-besturingslussen"
         },
         "description": "Schakel omgevings-/PoE-monitoring in voor dit apparaat.\n\nAls je Attributen kiest, worden waarden toegevoegd aan poortentiteiten (geen geschiedenis).\nAls je Sensoren kiest, worden aparte sensorentiteiten gemaakt (geschiedenis).",
         "title": "Omgevingssensoren"
@@ -350,7 +351,8 @@
           "poe_enabled": "PoE-statistieken inschakelen",
           "poe_mode": "PoE-gegevens als",
           "poe_per_port_power": "PoE-vermogen sensoren per poort maken",
-          "back_to_menu": "Teruggaan (wijzigingen weggooien)"
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)",
+          "poe_control_loops": "PoE-besturingslussen"
         },
         "description": "Kies of omgevings-/PoE-gegevens worden opgeslagen als attributen (geen geschiedenis) of als aparte sensoren (geschiedenis).",
         "title": "Omgevingssensoren"
@@ -519,7 +521,9 @@
           "attestation": "Ik verklaar dat ik deze OID's heb getest en geverifieerd en dat ze naar verwachting werken.",
           "share_with_community": "Deel dit met de community",
           "back_to_menu": "Teruggaan (wijzigingen weggooien)",
-          "scale": "Schaal"
+          "scale": "Schaal",
+          "oid_port_admin": "PoE-poortbeheer inschakelen OID (optioneel)",
+          "oid_port_priority": "PoE-poortstroomprioriteit OID (optioneel)"
         }
       },
       "override_device_info": {
@@ -534,7 +538,10 @@
           "vendor": "Fabrikant (Merk)",
           "back_to_menu": "Teruggaan (wijzigingen weggooien)",
           "attestation": "Ik verklaar dat ik deze OID’s heb getest en geverifieerd.",
-          "share_with_community": "Deel dit met de community"
+          "share_with_community": "Deel dit met de community",
+          "contact_oid": "Contact OID (optioneel)",
+          "name_oid": "Naam OID (optioneel)",
+          "location_oid": "Locatie OID (optioneel)"
         }
       },
       "github_connection_error": {

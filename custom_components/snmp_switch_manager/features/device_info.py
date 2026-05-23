@@ -8,13 +8,6 @@ if TYPE_CHECKING:
 from ..helpers import parse_pfsense_sysdescr
 from ..const import OID_entPhysicalModelName, OID_sysDescr, OID_sysObjectID, OID_sysName, OID_sysUpTime
 
-# Vendor-specific OIDs (fetched once; firmware/model never change at runtime)
-OID_entPhysicalSoftwareRev_CBS350 = "1.3.6.1.2.1.47.1.1.1.1.10.67109120"
-OID_entPhysicalMfgName_Zyxel = "1.3.6.1.2.1.47.1.1.1.1.12"
-OID_zyxel_firmware_version = "1.3.6.1.4.1.890.1.15.3.1.6.0"
-OID_mikrotik_software_version = "1.3.6.1.4.1.14988.1.1.7.4.0"
-OID_mikrotik_model = "1.3.6.1.4.1.14988.1.1.7.8.0"
-
 
 async def _fetch_oid_str(client: "SwitchSnmpClient", oid: str) -> Optional[str]:
     """Fetch a single OID value, returning a stripped string or None."""
@@ -55,27 +48,19 @@ async def initialize_device_info(client: "SwitchSnmpClient") -> None:
     client.cache["model"] = model_hint
 
     sd = (client.cache.get("sysDescr") or "").strip()
-    desc_lower = sd.lower()
     pfs = parse_pfsense_sysdescr(sd)
 
     manufacturer: Optional[str] = None
     firmware: Optional[str] = None
 
-    # Specialty vendor detection
-    client._is_jtcom = False
-    client._is_h3c = False
-    client._is_zyxel = False
+    # Specialty vendor detection using dynamic database engine
+    vendor_info = client._get_vendor_info()
+    vendor_name = vendor_info.get("name", "Unknown")
 
-    if any(x in desc_lower for x in ("jt-com", "jtcom", "goodtop")):
-        manufacturer = "Jt-Com"
-        client.cache["model"] = "Managed Switch"
-        client._is_jtcom = True
-    elif "h3c" in desc_lower:
-        manufacturer = "H3C"
-        client._is_h3c = True
-    elif "zyxel" in desc_lower:
-        manufacturer = "Zyxel"
-        client._is_zyxel = True
+    if vendor_name not in ("Unknown", "Standard"):
+        manufacturer = vendor_name
+        if "model_fallback" in vendor_info:
+            client.cache["model"] = vendor_info["model_fallback"]
 
     # pfSense overrides generic parsing
     if pfs.get("manufacturer"):
@@ -131,24 +116,28 @@ async def refresh_device_info(client: "SwitchSnmpClient") -> None:
     model_hint = client.cache.get("model")
     manufacturer, firmware = _parse_sysdescr_generic(sd, model_hint)
 
+    vendor = client.cache.get("vendor", "Unknown")
+
     # Vendor-specific OIDs are fetched at most once per session
     if not client._vendor_oids_fetched:
-        sd_lower = sd.lower()
+        for item in client._get_database_oids("device_info", vendor):
+            if oid_fw := item.get("oid_firmware"):
+                firmware = await _fetch_oid_str(client, oid_fw) or firmware
+            if oid_mdl := item.get("oid_model"):
+                if val := await _fetch_oid_str(client, oid_mdl):
+                    client.cache["model"] = val or client.cache.get("model")
+            if oid_mfg := item.get("oid_mfg"):
+                manufacturer = await _fetch_oid_str(client, oid_mfg) or manufacturer
 
         if (model_hint and "CBS" in model_hint) or "CBS" in sd:
-            firmware = await _fetch_oid_str(client, OID_entPhysicalSoftwareRev_CBS350) or firmware
-
-        if "zyxel" in sd_lower:
-            manufacturer = await _fetch_oid_str(client, OID_entPhysicalMfgName_Zyxel) or manufacturer
-            firmware = await _fetch_oid_str(client, OID_zyxel_firmware_version) or firmware
-
-        if "mikrotik" in sd_lower or "routeros" in sd_lower:
-            manufacturer = "MikroTik"
-            firmware = await _fetch_oid_str(client, OID_mikrotik_software_version) or firmware
-            if val := await _fetch_oid_str(client, OID_mikrotik_model):
-                client.cache["model"] = val or client.cache.get("model")
+            for item in client._get_database_oids("device_info", "Cisco"):
+                if oid_fw := item.get("oid_firmware"):
+                    firmware = await _fetch_oid_str(client, oid_fw) or firmware
 
         client._vendor_oids_fetched = True
+
+    if vendor == "Mikrotik" and not manufacturer:
+        manufacturer = "MikroTik"
 
     # Custom OIDs (highest precedence)
     if oid := client._custom_oid("manufacturer"):

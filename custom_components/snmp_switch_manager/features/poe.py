@@ -13,16 +13,15 @@ from ..const import (
     CONF_POE_MODE,
     CONF_POE_POLL_INTERVAL,
     POE_MODE_ATTRIBUTES,
+    OID_pethMainPsePower,
+    OID_pethMainPseConsumedPower,
+    OID_pethPsePortActualPower,
+    OID_pethPsePortAdminEnable,
+    OID_pethPsePortPowerPriority,
 )
 from ..helpers import _parse_numeric
 
 _LOGGER = logging.getLogger(__name__)
-
-# Fallback OIDs when poe.json does not match the current vendor
-_OID_BUDGET_DEFAULT = "1.3.6.1.2.1.105.1.3.1.1.2"
-_OID_USED_DEFAULT = "1.3.6.1.2.1.105.1.3.1.1.4"
-_OID_STD_PORT_DEFAULT = "1.3.6.1.2.1.105.1.1.1.1.15"
-
 
 def _extract_floats(rows) -> list[float]:
     """Collect non-negative numeric values from SNMP walk rows."""
@@ -41,13 +40,18 @@ def _oid_last_idx(oid: str) -> int:
 async def poll_poe(client: "SwitchSnmpClient") -> None:
     """Poll PoE budget and per-port power data from device."""
     poe_enabled = bool(client._poe_options.get(CONF_POE_ENABLE, False))
+    poe_control_loops = bool(client._poe_options.get("poe_control_loops", False))
     poe_mode = client._poe_options.get(CONF_POE_MODE, POE_MODE_ATTRIBUTES)
+    
     client.cache["poe_enabled"] = poe_enabled
+    client.cache["poe_control_loops"] = poe_control_loops
     client.cache["poe_mode"] = poe_mode
     client.cache.setdefault("poe_power_mw", {})
+    client.cache.setdefault("poe_ports", {})
 
-    if not poe_enabled:
+    if not poe_enabled and not poe_control_loops:
         client.cache["poe_power_mw"] = {}
+        client.cache["poe_ports"] = {}
         for k in ("poe_budget_total_w", "poe_power_used_w", "poe_power_available_w",
                   "poe_health_status", "poe_health_status_raw"):
             client.cache.pop(k, None)
@@ -63,27 +67,47 @@ async def poll_poe(client: "SwitchSnmpClient") -> None:
 
     # Resolve OIDs from database
     vendor = client.cache.get("vendor", "Unknown")
-    poe_items = client._database.get("poe", {}).get("poe", [])
+    poe_items = client._get_database_oids("poe", vendor)
     standard_item = None
     dell_item = None
     for item in poe_items:
         vendors = item.get("vendors", [])
-        if "oid_budget" in item and ("Standard" in vendors or vendor in vendors):
+        if "poe" in client.feature_overrides and item == client.feature_overrides["poe"]:
+            standard_item = item
+        elif "oid_budget" in item and ("Standard" in vendors or vendor in vendors):
             standard_item = item
         elif "oid_port_power" in item and "oid_budget" not in item and vendor in vendors:
             dell_item = item
 
-    oid_budget = (standard_item or {}).get("oid_budget", _OID_BUDGET_DEFAULT)
-    oid_used = (standard_item or {}).get("oid_used", _OID_USED_DEFAULT)
-    oid_std_port = (standard_item or {}).get("oid_port_power", _OID_STD_PORT_DEFAULT)
-    oid_dell_port = (dell_item or {}).get("oid_port_power") if dell_item else None
+    tasks = []
+    if poe_enabled:
+        oid_budget = (standard_item or {}).get("oid_budget") or OID_pethMainPsePower
+        oid_used = (standard_item or {}).get("oid_used") or OID_pethMainPseConsumedPower
+        oid_std_port = (standard_item or {}).get("oid_port_power") or OID_pethPsePortActualPower
+        oid_dell_port = (dell_item or {}).get("oid_port_power") if dell_item else None
+        
+        tasks.append(client._async_walk(oid_budget))
+        tasks.append(client._async_walk(oid_used))
+        tasks.append(client._async_walk(oid_dell_port) if oid_dell_port else asyncio.sleep(0, result=[]))
+        tasks.append(client._async_walk(oid_std_port))
+    else:
+        tasks.extend([asyncio.sleep(0, result=[]), asyncio.sleep(0, result=[]), asyncio.sleep(0, result=[]), asyncio.sleep(0, result=[])])
 
-    budget_rows, used_rows, dell_poe_rows, std_poe_rows = await asyncio.gather(
-        client._async_walk(oid_budget),
-        client._async_walk(oid_used),
-        client._async_walk(oid_dell_port) if oid_dell_port else asyncio.sleep(0, result=[]),
-        client._async_walk(oid_std_port),
-    )
+    if poe_control_loops:
+        oid_port_admin = (standard_item or {}).get("oid_port_admin") or OID_pethPsePortAdminEnable
+        oid_port_priority = (standard_item or {}).get("oid_port_priority") or OID_pethPsePortPowerPriority
+        tasks.append(client._async_walk(oid_port_admin))
+        tasks.append(client._async_walk(oid_port_priority))
+    else:
+        tasks.extend([asyncio.sleep(0, result=[]), asyncio.sleep(0, result=[])])
+
+    results = await asyncio.gather(*tasks)
+    budget_rows = results[0]
+    used_rows = results[1]
+    dell_poe_rows = results[2]
+    std_poe_rows = results[3]
+    admin_rows = results[4] if len(results) > 4 else []
+    priority_rows = results[5] if len(results) > 5 else []
 
     # PoE totals (POWER-ETHERNET-MIB)
     try:
@@ -101,16 +125,19 @@ async def poll_poe(client: "SwitchSnmpClient") -> None:
     custom_scale_b = (standard_item or {}).get("scale_budget") or (standard_item or {}).get("scale")
     custom_scale_u = (standard_item or {}).get("scale_used") or (standard_item or {}).get("scale")
     
+    vendor_info = client._get_vendor_info()
+    is_zyxel_heuristic = vendor_info.get("poe_scale_heuristic") == "zyxel"
+
     if custom_scale_b is not None:
         scale_b = float(custom_scale_b)
-    elif getattr(client, "_is_zyxel", False):
+    elif is_zyxel_heuristic:
         scale_b = 1.0 if b_sum < 2000 else 1000.0
     else:
         scale_b = 1000.0 if b_sum > 5000 else 1.0
 
     if custom_scale_u is not None:
         scale_u = float(custom_scale_u)
-    elif getattr(client, "_is_zyxel", False):
+    elif is_zyxel_heuristic:
         scale_u = 1.0 if u_sum < 2000 else 1000.0
     else:
         scale_u = 1000.0 if u_sum > 5000 else 1.0
@@ -147,3 +174,39 @@ async def poll_poe(client: "SwitchSnmpClient") -> None:
         pass
 
     client.cache["poe_power_mw"] = poe_power_mw
+
+    # Per-port PoE control loops
+    if poe_control_loops:
+        admin_map = {}
+        for oid, val in admin_rows:
+            parts = oid.split(".")
+            group_idx = int(parts[-2])
+            port_idx = int(parts[-1])
+            v = _parse_numeric(val)
+            if v is not None:
+                admin_map[(group_idx, port_idx)] = int(v)
+
+        priority_map = {}
+        for oid, val in priority_rows:
+            parts = oid.split(".")
+            group_idx = int(parts[-2])
+            port_idx = int(parts[-1])
+            v = _parse_numeric(val)
+            if v is not None:
+                priority_map[(group_idx, port_idx)] = int(v)
+
+        poe_ports = {}
+        ifindex_map = client.cache.get("ifindex_by_baseport", {})
+        for (g_idx, p_idx), admin_val in admin_map.items():
+            target_idx = ifindex_map.get(p_idx, p_idx)
+            priority_val = priority_map.get((g_idx, p_idx), 3)
+            poe_ports[target_idx] = {
+                "ifindex": target_idx,
+                "group": g_idx,
+                "port": p_idx,
+                "admin": admin_val,
+                "priority": priority_val,
+            }
+        client.cache["poe_ports"] = poe_ports
+    else:
+        client.cache["poe_ports"] = {}

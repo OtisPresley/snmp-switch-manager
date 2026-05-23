@@ -21,14 +21,16 @@ CONF_POLL_INTERVAL = "poll_interval"
 MIN_POLL_INTERVAL = 5    # seconds
 MAX_POLL_INTERVAL = 300  # seconds
 
-PLATFORMS = ["sensor", "switch"]
+PLATFORMS = ["sensor", "switch", "select"]
 
 # --- Diagnostic OIDs (built-in defaults) ---
 # Standard SNMP system OIDs
 OID_sysDescr = "1.3.6.1.2.1.1.1.0"
 OID_sysObjectID = "1.3.6.1.2.1.1.2.0"
 OID_sysUpTime = "1.3.6.1.2.1.1.3.0"
+OID_sysContact = "1.3.6.1.2.1.1.4.0"
 OID_sysName = "1.3.6.1.2.1.1.5.0"
+OID_sysLocation = "1.3.6.1.2.1.1.6.0"
 
 # ENTITY-MIB (used for some vendor firmware/model/manufacturer)
 OID_entPhysicalMfgName = "1.3.6.1.2.1.47.1.1.1.1.12"
@@ -39,13 +41,12 @@ OID_entPhysicalDescr = "1.3.6.1.2.1.47.1.1.1.1.2"
 OID_entPhysicalClass = "1.3.6.1.2.1.47.1.1.1.1.5"
 OID_entPhysicalName = "1.3.6.1.2.1.47.1.1.1.1.7"
 
-
-OID_pethPsePortActualPower = "1.3.6.1.2.1.105.1.1.1.1.15"
-
-
-
-
-
+# --- POWER-ETHERNET-MIB ---
+OID_pethPsePortActualPower = "1.3.6.1.2.1.105.1.1.1.15"
+OID_pethPsePortAdminEnable = "1.3.6.1.2.1.105.1.1.1.3"
+OID_pethPsePortPowerPriority = "1.3.6.1.2.1.105.1.1.1.7"
+OID_pethMainPsePower = "1.3.6.1.2.1.105.1.3.1.1.2"
+OID_pethMainPseConsumedPower = "1.3.6.1.2.1.105.1.3.1.1.4"
 # --- IF-MIB base OIDs ---
 OID_ifIndex = "1.3.6.1.2.1.2.2.1.1"
 OID_ifDescr = "1.3.6.1.2.1.2.2.1.2"
@@ -76,6 +77,7 @@ OID_ifName = "1.3.6.1.2.1.31.1.1.1.1"
 OID_ifHighSpeed = "1.3.6.1.2.1.31.1.1.1.15"  # Mbps by RFC, but some devices report bps
 OID_ifHCInOctets = "1.3.6.1.2.1.31.1.1.1.6"
 OID_ifHCOutOctets = "1.3.6.1.2.1.31.1.1.1.10"
+OID_ifConnectorPresent = "1.3.6.1.2.1.31.1.1.1.10"
 
 # BRIDGE-MIB (PVID / VLAN)
 OID_dot1qPvid = "1.3.6.1.2.1.17.7.1.4.5.1.1"
@@ -94,6 +96,14 @@ OID_dot1dBasePortIfIndex = "1.3.6.1.2.1.17.1.4.1.2"
 OID_ipAdEntAddr = "1.3.6.1.2.1.4.20.1.1"
 OID_ipAdEntIfIndex = "1.3.6.1.2.1.4.20.1.2"
 OID_ipAdEntNetMask = "1.3.6.1.2.1.4.20.1.3"
+
+# --- HOST-RESOURCES-MIB ---
+OID_hrProcessorLoad = "1.3.6.1.2.1.25.3.3.1.2"
+OID_hrStorageType = "1.3.6.1.2.1.25.2.3.1.2"
+OID_hrStorageAllocationUnits = "1.3.6.1.2.1.25.2.3.1.4"
+OID_hrStorageSize = "1.3.6.1.2.1.25.2.3.1.5"
+OID_hrStorageUsed = "1.3.6.1.2.1.25.2.3.1.6"
+OID_hrStorageRam = "1.3.6.1.2.1.25.2.1.2"
 
 
 
@@ -232,6 +242,8 @@ CONF_POE_MODE = "poe_mode"
 CONF_POE_PER_PORT_POWER = "poe_per_port_power"  # create per-port PoE Power (W) sensors in sensors mode
 POE_MODE_SENSORS = "sensors"
 POE_MODE_ATTRIBUTES = "attributes"
+CONF_POE_CONTROL_LOOPS = "poe_control_loops"
+
 # Bandwidth sensor icon overrides (optional, per type)
 CONF_BW_RX_THROUGHPUT_ICON = "bw_rx_throughput_icon"
 CONF_BW_TX_THROUGHPUT_ICON = "bw_tx_throughput_icon"

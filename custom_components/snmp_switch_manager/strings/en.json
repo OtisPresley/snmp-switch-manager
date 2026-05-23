@@ -38,7 +38,8 @@
           "env_mode": "Environmental data as",
           "poe_enabled": "Enable PoE sensors",
           "poe_mode": "PoE data as",
-          "poe_per_port_power": "Create per-port PoE Power sensors"
+          "poe_per_port_power": "Create per-port PoE Power sensors",
+          "poe_control_loops": "PoE Control Loops"
         },
         "description": "Enable environmental/PoE monitoring for this device.\n\nIf you choose Attributes, values are added to port entities (no history).\nIf you choose Sensors, separate sensor entities are created (history).",
         "title": "Environmental Sensors"
@@ -350,7 +351,8 @@
           "poe_enabled": "Enable PoE statistics",
           "poe_mode": "PoE data as",
           "poe_per_port_power": "Create per-port PoE Power sensors",
-          "back_to_menu": "Go back (discard changes)"
+          "back_to_menu": "Go back (discard changes)",
+          "poe_control_loops": "PoE Control Loops"
         },
         "description": "Choose whether environmental/PoE data is stored as attributes (no history) or separate sensors (history).",
         "title": "Environmental Sensors"
@@ -513,6 +515,8 @@
           "oid_budget": "Total Budget OID",
           "oid_used": "Used Power OID",
           "oid_port_power": "Port Power OID",
+          "oid_port_admin": "PoE Port Admin Enable OID (optional)",
+          "oid_port_priority": "PoE Port Power Priority OID (optional)",
           "vendor": "Vendor (Brand)",
           "method": "Method",
           "description": "Description",
@@ -531,6 +535,9 @@
           "firmware_oid": "Firmware OID (optional)",
           "hostname_oid": "Hostname OID (optional)",
           "uptime_oid": "Uptime OID (optional)",
+          "contact_oid": "Contact OID (optional)",
+          "name_oid": "Name OID (optional)",
+          "location_oid": "Location OID (optional)",
           "vendor": "Vendor (Brand)",
           "back_to_menu": "Go back (discard changes)",
           "attestation": "I attest that I have tested and verified that these OIDs work as expected.",
