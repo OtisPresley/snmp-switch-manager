@@ -30,10 +30,15 @@ def _matches_any(name_l: str, starts: tuple, contains: tuple, ends: tuple) -> bo
     return contains and any(x in name_l for x in contains)
 
 
-def _counter_delta(cur: int, prev: int, use_hc: bool) -> int:
-    """Compute a monotonic counter delta, handling 32-bit wrap when not HC."""
+def _counter_delta(cur: int, prev: int, use_hc: bool) -> int | None:
+    """Compute a monotonic counter delta, handling 32-bit wrap when not HC.
+    
+    Returns None on negative delta for HC counters (reset/reboot).
+    """
     delta = cur - prev
-    if not use_hc and delta < 0:
+    if delta < 0:
+        if use_hc:
+            return None
         delta += 2 ** 32
     return delta
 
@@ -116,9 +121,13 @@ async def poll_bandwidth(client: "SwitchSnmpClient") -> None:
             rx_bps = tx_bps = None
             if dt > 0:
                 if rx_oct is not None and last.get("rx") is not None:
-                    rx_bps = (_counter_delta(rx_oct, int(last["rx"]), use_hc) * 8.0) / dt
+                    d_rx = _counter_delta(rx_oct, int(last["rx"]), use_hc)
+                    if d_rx is not None:
+                        rx_bps = (d_rx * 8.0) / dt
                 if tx_oct is not None and last.get("tx") is not None:
-                    tx_bps = (_counter_delta(tx_oct, int(last["tx"]), use_hc) * 8.0) / dt
+                    d_tx = _counter_delta(tx_oct, int(last["tx"]), use_hc)
+                    if d_tx is not None:
+                        tx_bps = (d_tx * 8.0) / dt
 
             client._bw_last[idx_i] = {"ts": now_ts, "rx": rx_oct, "tx": tx_oct}
             bw_out[idx_i] = {

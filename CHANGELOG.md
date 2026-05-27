@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 This beta release delivers dynamic telemetry scaling overrides, automated background database auto-updating, direct OID overrides, crowdsourced community sharing, and a fully modular options flow with extreme startup performance optimizations.
 
+⚠️ If this release does not work for you, please open an [issue](https://github.com/OtisPresley/snmp-switch-manager/issues) describing the issue and then go back to [v0.5.2](https://github.com/OtisPresley/snmp-switch-manager/releases/tag/v0.5.2) or the previous version you were using before.
+
 ### Added
 
 * 🎛️ **100% Modular, Database-Driven Interface Filters:** Migrated all built-in vendor interface filter rules (Cisco SG, Junos, pfSense, CPU pseudo-interfaces) from hardcoded Python code into the dynamic `interface_filters.json` database. A fully vendor-agnostic match engine dynamically interprets these filters based on interface names, state, and IP configurations, enabling seamless community-driven filter contributions and automatic updates without code changes.
