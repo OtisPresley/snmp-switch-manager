@@ -7,6 +7,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0-beta.2] - 2026-05-27
+
+### Fixed
+
+* 📈 **Throughput Sensor Negative Values on Switch Reboot:** Resolved an issue where 64-bit High Capacity (HC) counters yielded negative throughput rates following a switch reboot or counter reset. The bandwidth polling loop now gracefully returns `None` for rates when a negative delta is detected and updates the baseline, allowing positive rate calculations to resume cleanly on the very next poll.
+
 ## [0.6.0-beta.1] - 2026-05-20
 
 This beta release delivers dynamic telemetry scaling overrides, automated background database auto-updating, direct OID overrides, crowdsourced community sharing, and a fully modular options flow with extreme startup performance optimizations.
