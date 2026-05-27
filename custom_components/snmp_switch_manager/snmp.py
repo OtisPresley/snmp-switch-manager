@@ -364,7 +364,10 @@ class SwitchSnmpClient:
         await poll_bandwidth(self)
 
         # PoE (optional)
-        await poll_poe(self)
+        try:
+            await poll_poe(self)
+        except Exception as e:
+            _LOGGER.debug("PoE polling failed: %s", e)
 
 
         # Environmental power (Dell N-Series via private MIB)
@@ -391,31 +394,34 @@ class SwitchSnmpClient:
 
             if should_poll:
                 self._env_last_poll = now_mono
-                if self._get_vendor_info().get("environment_driver") == "h3c":
-                    await poll_h3c_environment(self)
-                else:
-                    vendor = self.cache.get("vendor", "Unknown")
+                try:
+                    if self._get_vendor_info().get("environment_driver") == "h3c":
+                        await poll_h3c_environment(self)
+                    else:
+                        vendor = self.cache.get("vendor", "Unknown")
 
-                    # Memory
-                    await poll_memory(self, vendor)
+                        # Memory
+                        await poll_memory(self, vendor)
 
-                    # CPU
-                    await poll_cpu(self, vendor)
+                        # CPU
+                        await poll_cpu(self, vendor)
 
-                    # Power
-                    await poll_power(self, vendor)
+                        # Power
+                        await poll_power(self, vendor)
 
-                    # Fans
-                    await poll_fans(self, vendor)
+                        # Fans
+                        await poll_fans(self, vendor)
 
-                    # PSU
-                    await poll_psu(self, vendor)
+                        # PSU
+                        await poll_psu(self, vendor)
 
-                    # Temperature
-                    await poll_temperature(self, vendor)
+                        # Temperature
+                        await poll_temperature(self, vendor)
 
-                    # Fallback
-                    await poll_entity_sensor_fallback(self)
+                        # Fallback
+                        await poll_entity_sensor_fallback(self)
+                except Exception as e:
+                    _LOGGER.debug("Environmental features polling failed: %s", e)
 
 
 
