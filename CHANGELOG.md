@@ -7,6 +7,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0-beta.4] - 2026-05-28
+
+### Fixed
+
+* 🔌 **Dynamic Port Speed Telemetry:** Resolved a bug where switch port physical link speed attributes and sensors were only walked once at startup, causing their values to remain frozen at the initial speed when physical link renegotiation occurred (e.g. toggling from 1 Gbps to 100 Mbps). Moved physical link speed polling (`ifSpeed` and `ifHighSpeed`) to the dynamic/always-polled telemetry loop and added automatic stale value pruning to dynamically update interface speed attributes and sensors in real-time.
+
 ## [0.6.0-beta.3] - 2026-05-27
 
 ### Fixed

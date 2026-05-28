@@ -48,8 +48,6 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
             descr_rows,
             name_rows,
             alias_rows,
-            speed_rows,
-            hispeed_rows,
             iftype_rows,
             connector_rows,
         ) = await asyncio.gather(
@@ -57,8 +55,6 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
             client._async_walk(OID_ifDescr),
             client._async_walk(OID_ifName),
             client._async_walk(OID_ifAlias),
-            client._async_walk(OID_ifSpeed),
-            client._async_walk(OID_ifHighSpeed),
             client._async_walk(OID_ifType),
             client._async_walk(OID_ifConnectorPresent),
         )
@@ -82,30 +78,6 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
         for oid, val in alias_rows:
             idx = int(oid.split(".")[-1])
             client.cache["ifTable"].setdefault(idx, {})["alias"] = str(val)
-
-        # Speeds (prefer ifHighSpeed where present; fall back to ifSpeed)
-        for oid, val in speed_rows:
-            idx = int(oid.split(".")[-1])
-            try:
-                bps = _parse_numeric(val)
-                if not bps or bps <= 0:
-                    continue
-            except Exception:
-                continue
-            if bps > 0:
-                client.cache["ifTable"].setdefault(idx, {})["speed_bps"] = bps
-
-        for oid, val in hispeed_rows:
-            idx = int(oid.split(".")[-1])
-            try:
-                v = int(val)
-            except Exception:
-                continue
-            # ifHighSpeed is defined as Mbps (IF-MIB), but some devices incorrectly return bps.
-            # Heuristic: values >= 1,000,000 are treated as bps to avoid 1e6x inflation.
-            if v > 0:
-                bps = v if v >= 1_000_000 else v * 1_000_000
-                client.cache["ifTable"].setdefault(idx, {})["speed_bps"] = bps
 
         # ifType (needed for port classification)
         for oid, val in iftype_rows:
@@ -264,9 +236,11 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
             )
             rec["is_bridge_port"] = is_bridge_port
 
-    admin_rows, oper_rows = await asyncio.gather(
+    admin_rows, oper_rows, speed_rows, hispeed_rows = await asyncio.gather(
         client._async_walk(OID_ifAdminStatus),
         client._async_walk(OID_ifOperStatus),
+        client._async_walk(OID_ifSpeed),
+        client._async_walk(OID_ifHighSpeed),
     )
 
     for oid, val in admin_rows:
@@ -276,6 +250,35 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
     for oid, val in oper_rows:
         idx = int(oid.split(".")[-1])
         client.cache["ifTable"].setdefault(idx, {})["oper"] = int(val)
+
+    # Reset speed_bps for each interface to prevent stale values if speed becomes unknown
+    for idx, rec in client.cache["ifTable"].items():
+        if isinstance(rec, dict) and "speed_bps" in rec:
+            rec.pop("speed_bps", None)
+
+    # Speeds (prefer ifHighSpeed where present; fall back to ifSpeed)
+    for oid, val in speed_rows:
+        idx = int(oid.split(".")[-1])
+        try:
+            bps = _parse_numeric(val)
+            if not bps or bps <= 0:
+                continue
+        except Exception:
+            continue
+        if bps > 0:
+            client.cache["ifTable"].setdefault(idx, {})["speed_bps"] = bps
+
+    for oid, val in hispeed_rows:
+        idx = int(oid.split(".")[-1])
+        try:
+            v = int(val)
+        except Exception:
+            continue
+        # ifHighSpeed is defined as Mbps (IF-MIB), but some devices incorrectly return bps.
+        # Heuristic: values >= 1,000,000 are treated as bps to avoid 1e6x inflation.
+        if v > 0:
+            bps = v if v >= 1_000_000 else v * 1_000_000
+            client.cache["ifTable"].setdefault(idx, {})["speed_bps"] = bps
     
     # Specialty Math
     for idx, rec in client.cache["ifTable"].items():
