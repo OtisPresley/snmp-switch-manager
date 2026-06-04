@@ -108,6 +108,7 @@ __all__ = [
     "usmDESPrivProtocol",
     "usmAesCfb128Protocol",
     "SnmpAuthError",
+    "SnmpConnectionError",
     "_do_get_one",
     "_do_get_many",
     "_do_next_walk",
@@ -142,6 +143,10 @@ class SnmpAuthError(Exception):
     """Raised when SNMP authentication fails."""
 
 
+class SnmpConnectionError(Exception):
+    """Raised when SNMP connection or timeout occurs."""
+
+
 def _is_auth_error(err_ind: Any) -> bool:
     """Return True when err_ind indicates an SNMP authentication/security failure."""
     if err_ind is None:
@@ -156,7 +161,7 @@ async def _do_get_one(engine, community, target, context, oid: str) -> Optional[
     if err_ind:
         if _is_auth_error(err_ind):
             raise SnmpAuthError(str(err_ind))
-        return None
+        raise SnmpConnectionError(str(err_ind))
     if err_stat:
         return None
     return str(vbs[0][1]) if vbs else None
@@ -177,7 +182,7 @@ async def _do_get_many(engine, community, target, context, oids: list[str]) -> D
         if err_ind:
             if _is_auth_error(err_ind):
                 raise SnmpAuthError(str(err_ind))
-            return {oid: None for oid in chunk}
+            raise SnmpConnectionError(str(err_ind))
         if err_stat:
             return {oid: None for oid in chunk}
         return {oid: (str(vbs[i][1]) if i < len(vbs) else None) for i, oid in enumerate(chunk)}
@@ -199,7 +204,7 @@ async def _do_next_walk(engine, community, target, context, base_oid: str) -> Li
         if err_ind:
             if _is_auth_error(err_ind):
                 raise SnmpAuthError(str(err_ind))
-            break
+            raise SnmpConnectionError(str(err_ind))
         if err_stat or not vbs:
             break
         oid, val = vbs[0]
@@ -217,8 +222,10 @@ async def _do_set_alias(engine, community, target, context, if_index: int, alias
         ObjectType(ObjectIdentity(f"{OID_ifAlias}.{if_index}"), OctetString(alias)),
         lookupMib=False,
     )
-    if err_ind and _is_auth_error(err_ind):
-        raise SnmpAuthError(str(err_ind))
+    if err_ind:
+        if _is_auth_error(err_ind):
+            raise SnmpAuthError(str(err_ind))
+        raise SnmpConnectionError(str(err_ind))
     return (not err_ind) and (not err_stat)
 
 
@@ -228,8 +235,10 @@ async def _do_set_admin_status(engine, community, target, context, if_index: int
         ObjectType(ObjectIdentity(f"{OID_ifAdminStatus}.{if_index}"), Integer(state)),
         lookupMib=False,
     )
-    if err_ind and _is_auth_error(err_ind):
-        raise SnmpAuthError(str(err_ind))
+    if err_ind:
+        if _is_auth_error(err_ind):
+            raise SnmpAuthError(str(err_ind))
+        raise SnmpConnectionError(str(err_ind))
     return (not err_ind) and (not err_stat)
 
 
@@ -240,8 +249,10 @@ async def _do_set_poe_admin(engine, community, target, context, group_index: int
         ObjectType(ObjectIdentity(f"{base_oid}.{group_index}.{port_index}"), Integer(state)),
         lookupMib=False,
     )
-    if err_ind and _is_auth_error(err_ind):
-        raise SnmpAuthError(str(err_ind))
+    if err_ind:
+        if _is_auth_error(err_ind):
+            raise SnmpAuthError(str(err_ind))
+        raise SnmpConnectionError(str(err_ind))
     return (not err_ind) and (not err_stat)
 
 
@@ -252,8 +263,10 @@ async def _do_set_poe_priority(engine, community, target, context, group_index: 
         ObjectType(ObjectIdentity(f"{base_oid}.{group_index}.{port_index}"), Integer(priority)),
         lookupMib=False,
     )
-    if err_ind and _is_auth_error(err_ind):
-        raise SnmpAuthError(str(err_ind))
+    if err_ind:
+        if _is_auth_error(err_ind):
+            raise SnmpAuthError(str(err_ind))
+        raise SnmpConnectionError(str(err_ind))
     return (not err_ind) and (not err_stat)
 
 
@@ -263,6 +276,8 @@ async def _do_set_system_string(engine, community, target, context, oid: str, va
         ObjectType(ObjectIdentity(oid), OctetString(value)),
         lookupMib=False,
     )
-    if err_ind and _is_auth_error(err_ind):
-        raise SnmpAuthError(str(err_ind))
+    if err_ind:
+        if _is_auth_error(err_ind):
+            raise SnmpAuthError(str(err_ind))
+        raise SnmpConnectionError(str(err_ind))
     return (not err_ind) and (not err_stat)

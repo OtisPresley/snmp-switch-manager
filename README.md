@@ -30,6 +30,7 @@ SNMP Switch Manager discovers and monitors SNMP-enabled managed switches and net
 ## ✨ Core Highlights
 
 - 🎛️ **Active Port Control**: Direct administrative state management (Up/Down) via native Home Assistant `switch` entities.
+- 🔌 **Graceful Offline & Connection Handling**: Displays a clear "Setup failed: will retry" status if unreachable at startup, marks entities as `Unavailable` at runtime, and automatically issues self-healing persistent notifications with custom offline imagery to simplify troubleshooting.
 - ⚡ **Power over Ethernet (PoE)**: Switch-level budgets (total, used, remaining power) and per-port PoE power monitoring and toggles (reboot or disable PoE devices directly from HA!).
 - 🔑 **Robust SNMP v3 Support**: Secure connections with full SHA/MD5 authentication and CBC-DES privacy encryption. Seamlessly transition between SNMP v2c and v3 without losing your Home Assistant device and entity registry.
 - 🔄 **Dynamic OID Database**: Automatically pulls updated vendor definitions (CPU, Memory, Fans, PSUs, Temperature, Power, PoE) from the community database in the background every 6 hours—applying updates instantly without requiring a Home Assistant restart.
@@ -102,14 +103,77 @@ With **SNMP write permissions** enabled on your switch, SNMP Switch Manager prov
 
 ## 🏷️ Services
 
-### Service: `snmp_switch_manager.set_port_description`
-Updates the interface alias (`ifAlias`) directly on the switch hardware and immediately syncs the name back to Home Assistant.
+With Read-Write permissions enabled, the following services are available to manage and configure your switch directly from Home Assistant:
 
+### 🔌 Port Management Services
+
+#### Service: `snmp_switch_manager.set_port_admin_status`
+Enable or disable a standard switch port (set link admin status to Up/Down).
+```yaml
+service: snmp_switch_manager.set_port_admin_status
+data:
+  entity_id: switch.switch_study_gi1_0_5
+  state: "Down" # "Up" or "Down"
+```
+
+#### Service: `snmp_switch_manager.set_port_description`
+Updates the interface alias (`ifAlias`) directly on the switch hardware and immediately syncs the name back to Home Assistant.
 ```yaml
 service: snmp_switch_manager.set_port_description
 data:
   entity_id: switch.switch_study_gi1_0_5
   description: "Uplink to Core Router"
+```
+
+### ⚡ Power over Ethernet (PoE) Services
+
+#### Service: `snmp_switch_manager.set_poe_port_admin`
+Enable or disable PoE on a specific port without changing the physical link admin status.
+```yaml
+service: snmp_switch_manager.set_poe_port_admin
+data:
+  entity_id: switch.switch_study_gi1_0_5_poe
+  state: "Off" # "Auto" or "Off"
+```
+
+#### Service: `snmp_switch_manager.set_poe_port_priority`
+Set the PoE power priority allocation level (Critical, High, Low) on a specific port priority select entity.
+```yaml
+service: snmp_switch_manager.set_poe_port_priority
+data:
+  entity_id: select.switch_study_gi1_0_5_poe_priority
+  priority: "Critical" # "Critical", "High", or "Low"
+```
+
+### ⚙️ System Mutation Services
+
+These services target the switch device configuration instead of individual port entities:
+
+#### Service: `snmp_switch_manager.set_system_name`
+Updates the switch's SNMP system name (`sysName`).
+```yaml
+service: snmp_switch_manager.set_system_name
+data:
+  device_id: "f83a45c3de722784b2abce8e001" # Target Device ID in Home Assistant
+  value: "CoreSwitch-01"
+```
+
+#### Service: `snmp_switch_manager.set_system_contact`
+Updates the switch's SNMP system contact (`sysContact`).
+```yaml
+service: snmp_switch_manager.set_system_contact
+data:
+  device_id: "f83a45c3de722784b2abce8e001"
+  value: "admin@example.com"
+```
+
+#### Service: `snmp_switch_manager.set_system_location`
+Updates the switch's SNMP system location (`sysLocation`).
+```yaml
+service: snmp_switch_manager.set_system_location
+data:
+  device_id: "f83a45c3de722784b2abce8e001"
+  value: "Server Rack A"
 ```
 
 ---

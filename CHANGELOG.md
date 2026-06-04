@@ -7,27 +7,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0-beta.4] - 2026-05-28
-
-### Fixed
-
-* 🔌 **Dynamic Port Speed Telemetry:** Resolved a bug where switch port physical link speed attributes and sensors were only walked once at startup, causing their values to remain frozen at the initial speed when physical link renegotiation occurred (e.g. toggling from 1 Gbps to 100 Mbps). Moved physical link speed polling (`ifSpeed` and `ifHighSpeed`) to the dynamic/always-polled telemetry loop and added automatic stale value pruning to dynamically update interface speed attributes and sensors in real-time.
-
-## [0.6.0-beta.3] - 2026-05-27
-
-### Fixed
-
-* 📈 **Throughput Sensor Negative Values on Switch Reboot:** Resolved an issue where 64-bit High Capacity (HC) counters yielded negative throughput rates following a switch reboot or counter reset. The bandwidth polling loop now gracefully returns `None` for rates when a negative delta is detected and updates the baseline, allowing positive rate calculations to resume cleanly on the very next poll.
-* ⚡ **SNMP Polling Error Isolation:** Isolated optional secondary polling features (PoE and environmental/hardware metrics) inside `try...except` blocks. If any sub-poll times out or fails (highly common on sluggish switches under load), it will no longer crash the entire coordinator update cycle, preventing switch interface entities and attributes from freezing with stale timestamps.
-
-## [0.6.0-beta.1] - 2026-05-20
-
-This beta release delivers dynamic telemetry scaling overrides, automated background database auto-updating, direct OID overrides, crowdsourced community sharing, and a fully modular options flow with extreme startup performance optimizations.
-
-⚠️ If this release does not work for you, please open an [issue](https://github.com/OtisPresley/snmp-switch-manager/issues) describing the issue and then go back to [v0.5.2](https://github.com/OtisPresley/snmp-switch-manager/releases/tag/v0.5.2) or the previous version you were using before.
+## [0.6.0] - 2026-06-04
 
 ### Added
 
+* 🔌 **Connection Loss & Graceful Offline Handling:** Integrated robust exception raising (`SnmpConnectionError`), startup retry lifecycle (`ConfigEntryNotReady`), runtime polling failure (`UpdateFailed`), and self-healing persistent notifications with custom offline switch imagery.
 * 🎛️ **100% Modular, Database-Driven Interface Filters:** Migrated all built-in vendor interface filter rules (Cisco SG, Junos, pfSense, CPU pseudo-interfaces) from hardcoded Python code into the dynamic `interface_filters.json` database. A fully vendor-agnostic match engine dynamically interprets these filters based on interface names, state, and IP configurations, enabling seamless community-driven filter contributions and automatic updates without code changes.
 * 🔌 **Dynamic Port Classification Schema:** Shifted absolute standard MIB type virtual indicators into `interface_classification.json` under `"virtual_iftypes"`, enabling dynamic customization of hardware port classification rules.
 * 🕒 **Scheduled Background Database Auto-Updater:** Automates downloading of system OIDs, filters, and classifications for all **12 database files** from the main repository branch every 6 hours. Performs structural JSON validation and immediately applies updates to running switch/sensor entities within 2 seconds without an HA restart.
@@ -47,6 +31,9 @@ This beta release delivers dynamic telemetry scaling overrides, automated backgr
 
 ### Fixed
 
+* 🔌 **Dynamic Port Speed Telemetry:** Resolved a bug where switch port physical link speed attributes and sensors were only walked once at startup, causing their values to remain frozen at the initial speed when physical link renegotiation occurred (e.g. toggling from 1 Gbps to 100 Mbps). Moved physical link speed polling (`ifSpeed` and `ifHighSpeed`) to the dynamic/always-polled telemetry loop and added automatic stale value pruning to dynamically update interface speed attributes and sensors in real-time.
+* 📈 **Throughput Sensor Negative Values on Switch Reboot:** Resolved an issue where 64-bit High Capacity (HC) counters yielded negative throughput rates following a switch reboot or counter reset. The bandwidth polling loop now gracefully returns `None` for rates when a negative delta is detected and updates the baseline, allowing positive rate calculations to resume cleanly on the very next poll.
+* ⚡ **SNMP Polling Error Isolation:** Isolated optional secondary polling features (PoE and environmental/hardware metrics) inside `try...except` blocks. If any sub-poll times out or fails (highly common on sluggish switches under load), it will no longer crash the entire coordinator update cycle, preventing switch interface entities and attributes from freezing with stale timestamps.
 * 🔌 **Standard PoE OIDs:** Corrected a critical typo in standard `POWER-ETHERNET-MIB` OIDs (`OID_pethPsePortAdminEnable`, `OID_pethPsePortActualPower`, `OID_pethPsePortPowerPriority`) which queried with an extra `.1` segment. This was preventing PoE control loops and switches from being successfully discovered and registered on standard switches.
 
 ### Improved

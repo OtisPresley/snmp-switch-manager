@@ -7,8 +7,12 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+try:
+    from homeassistant.components.http import StaticPathConfig
+except ImportError:
+    StaticPathConfig = None
 
 from .const import (
     DOMAIN,
@@ -50,7 +54,7 @@ from .const import (
     OID_sysLocation,
 )
 from .snmp import SwitchSnmpClient
-from .snmp_compat import SnmpAuthError
+from .snmp_compat import SnmpAuthError, SnmpConnectionError
 from .helpers import get_snmp_connection_settings
 
 _LOGGER = logging.getLogger(__name__)
@@ -69,6 +73,23 @@ SwitchManagerConfigEntry = ConfigEntry
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     await async_register_services(hass)
+
+    # Register static path to serve offline image & assets
+    static_dir = hass.config.path("custom_components/snmp_switch_manager/static")
+    if StaticPathConfig is not None and hasattr(hass.http, "async_register_static_paths"):
+        await hass.http.async_register_static_paths([
+            StaticPathConfig(
+                url_path="/snmp_switch_manager_static",
+                path=static_dir,
+                cache_headers=False
+            )
+        ])
+    else:
+        hass.http.register_static_path(
+            "/snmp_switch_manager_static",
+            static_dir,
+            cache_headers=False
+        )
     return True
 
 def _build_port_rename_rules(options: dict, default_rules: list[dict[str, str]] | None = None) -> list[tuple[str, _re.Pattern[str], str]]:
@@ -198,6 +219,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
         raise ConfigEntryAuthFailed(
             f"SNMP authentication failed for {host}: {exc}"
         ) from exc
+    except SnmpConnectionError as exc:
+        raise ConfigEntryNotReady(
+            f"Failed to connect to SNMP device at {host}: {exc}"
+        ) from exc
 
     # Apply per-device option for sysUpTime throttling
     client.set_uptime_poll_interval(entry.options.get(CONF_UPTIME_POLL_INTERVAL, DEFAULT_UPTIME_POLL_INTERVAL))
@@ -206,8 +231,40 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
     port_rename_rules = _build_port_rename_rules(entry.options, default_rename_rules)
 
     async def _update_method():
-        data = await client.async_poll()
-        return _postprocess_if_names(data, entry.options, port_rename_rules)
+        try:
+            data = await client.async_poll()
+            # Success: dismiss unreachable notification if it exists
+            try:
+                from homeassistant.components import persistent_notification
+                persistent_notification.async_dismiss(
+                    hass,
+                    notification_id=f"snmp_switch_offline_{entry.entry_id}"
+                )
+            except Exception as e:
+                _LOGGER.debug("Failed to dismiss persistent notification: %s", e)
+            return _postprocess_if_names(data, entry.options, port_rename_rules)
+        except SnmpConnectionError as exc:
+            # Failure: create unreachable persistent notification with offline illustration
+            try:
+                from homeassistant.components import persistent_notification
+                title = f"SNMP Switch Unreachable ({entry.title})"
+                # Embed the offline image served from our registered static route
+                message = (
+                    f'<img src="/snmp_switch_manager_static/offline.png" width="100%" '
+                    f'style="max-width: 400px; border-radius: 8px; margin-bottom: 15px; display: block;" />\n\n'
+                    f'The switch at **{host}** is currently unreachable.\n\n'
+                    f'**Error:** `{exc}`\n\n'
+                    f'Please verify that the device is powered on, connected to the network, and that no firewall is blocking SNMP queries (port {snmp_settings.get("port", 161)}).'
+                )
+                persistent_notification.async_create(
+                    hass,
+                    title=title,
+                    message=message,
+                    notification_id=f"snmp_switch_offline_{entry.entry_id}"
+                )
+            except Exception as e:
+                _LOGGER.debug("Failed to create persistent notification: %s", e)
+            raise UpdateFailed(f"Error communicating with SNMP device at {host}: {exc}") from exc
 
     coordinator = DataUpdateCoordinator(
         hass,

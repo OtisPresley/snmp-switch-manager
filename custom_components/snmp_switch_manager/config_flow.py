@@ -30,6 +30,7 @@ from .const import (
     CONF_LEGACY_DEVICE_ID,
 )
 from .helpers import test_connection, get_sysname
+from .snmp_compat import SnmpAuthError, SnmpConnectionError
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -92,12 +93,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
                 try:
                     ok = await test_connection(self.hass, host, community, port)
-                except Exception:
-                    ok = False
-                    errors["base"] = "unknown"
-                if not ok:
-                    if "base" not in errors:
+                    if not ok:
                         errors["base"] = "cannot_connect"
+                except SnmpAuthError:
+                    errors["base"] = "invalid_auth"
+                except SnmpConnectionError:
+                    errors["base"] = "cannot_connect"
+                except Exception:
+                    errors["base"] = "unknown"
                 else:
                     try:
                         sysname = await get_sysname(self.hass, host, community, port)
@@ -161,11 +164,22 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_SNMPV3_PRIV_PROTOCOL: priv_protocol,
                     CONF_SNMPV3_PRIV_PASSWORD: priv_password,
                 }
-                ok = await test_connection(self.hass, host, "", port, snmp_settings=settings)
-                if not ok:
+                try:
+                    ok = await test_connection(self.hass, host, "", port, snmp_settings=settings)
+                    if not ok:
+                        errors["base"] = "cannot_connect"
+                except SnmpAuthError:
+                    errors["base"] = "invalid_auth"
+                except SnmpConnectionError:
                     errors["base"] = "cannot_connect"
-                else:
-                    sysname = await get_sysname(self.hass, host, "", port, snmp_settings=settings)
+                except Exception:
+                    errors["base"] = "unknown"
+
+                if not errors:
+                    try:
+                        sysname = await get_sysname(self.hass, host, "", port, snmp_settings=settings)
+                    except Exception:
+                        sysname = ""
                     title = sysname or host
 
                     await self.async_set_unique_id(f"{host}:{port}:v3:{username}")
