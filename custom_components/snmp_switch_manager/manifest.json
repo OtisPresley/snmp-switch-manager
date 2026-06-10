@@ -6,6 +6,9 @@
   ],
   "config_flow": true,
   "dependencies": [],
+  "after_dependencies": [
+    "http"
+  ],
   "documentation": "https://github.com/OtisPresley/snmp-switch-manager/wiki",
   "integration_type": "device",
   "iot_class": "local_polling",

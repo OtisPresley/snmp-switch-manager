@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+import homeassistant.helpers.config_validation as cv
 try:
     from homeassistant.components.http import StaticPathConfig
 except ImportError:
@@ -70,6 +71,8 @@ class SnmpSwitchRuntimeData:
 
 # Use standard aliasing compatible with Python <3.12
 SwitchManagerConfigEntry = ConfigEntry
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     await async_register_services(hass)
