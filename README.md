@@ -43,7 +43,7 @@ SNMP Switch Manager discovers and monitors SNMP-enabled managed switches and net
 
 ---
 
-> 📸 **[Screenshot Placeholder]**: *Interactive Lovelace Card showing physical port grids, color-coded status, PoE consumption bars, and active port toggles.*
+<img alt="image" src="https://github.com/user-attachments/assets/311582d4-f186-4efe-9d5c-28a84878ee4d" />
 
 ---
 
