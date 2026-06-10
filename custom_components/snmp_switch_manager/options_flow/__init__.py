@@ -437,3 +437,38 @@ class OptionsFlowHandler(
             data_schema=schema,
             errors=errors,
         )
+
+    def async_show_form(
+        self,
+        step_id: str | None = None,
+        data_schema: vol.Schema | None = None,
+        errors: dict[str, str] | None = None,
+        description_placeholders: dict[str, str] | None = None,
+        last_step: bool | None = None,
+    ) -> FlowResult:
+        """Override to inject GITHUB URLs as placeholders for hassfest validation."""
+        placeholders = {
+            "bandwidth_guide_url": "https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#3-bandwidth-sensors",
+            "connection_guide_url": "https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#1-connection--name",
+            "custom_oid_guide_url": "https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#5-feature-oid-overrides-advanced",
+            "community_guide_url": "https://github.com/OtisPresley/snmp-switch-manager/wiki/Community-Submissions",
+            "env_guide_url": "https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#4-environmental-sensors",
+            "interfaces_guide_url": "https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#2-manage-interfaces",
+            "naming_guide_url": "https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#interface-name-rules",
+            "ip_guide_url": "https://github.com/OtisPresley/snmp-switch-manager/wiki/Integration-Configuration#interface-ip-display",
+        }
+        if description_placeholders is None:
+            description_placeholders = {}
+        else:
+            description_placeholders = dict(description_placeholders)
+        for k, v in placeholders.items():
+            if k not in description_placeholders:
+                description_placeholders[k] = v
+        return super().async_show_form(
+            step_id=step_id,
+            data_schema=data_schema,
+            errors=errors,
+            description_placeholders=description_placeholders,
+            last_step=last_step,
+        )
+
