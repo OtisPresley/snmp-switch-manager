@@ -9,7 +9,7 @@ from typing import Any as Any
 DOMAIN = "snmp_switch_manager"
 
 # Target GitHub branch for downloading database files and creating PRs
-GITHUB_BRANCH = "feature/modular-refactor"
+GITHUB_BRANCH = "main"
 
 CONF_HOST = "host"
 CONF_PORT = "port"
