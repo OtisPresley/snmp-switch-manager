@@ -10,11 +10,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 import homeassistant.helpers.config_validation as cv
+
 try:
     from homeassistant.components.http import StaticPathConfig
 except ImportError:
     StaticPathConfig = None
 
+from .frontend import async_register_frontend
 from .const import (
     DOMAIN,
     PLATFORMS,
@@ -74,28 +76,35 @@ SwitchManagerConfigEntry = ConfigEntry
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
+
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     await async_register_services(hass)
+    await async_register_frontend(hass)
 
     # Register static path to serve offline image & assets
     static_dir = hass.config.path("custom_components/snmp_switch_manager/static")
-    if StaticPathConfig is not None and hasattr(hass.http, "async_register_static_paths"):
-        await hass.http.async_register_static_paths([
-            StaticPathConfig(
-                url_path="/snmp_switch_manager_static",
-                path=static_dir,
-                cache_headers=False
-            )
-        ])
+    if StaticPathConfig is not None and hasattr(
+        hass.http, "async_register_static_paths"
+    ):
+        await hass.http.async_register_static_paths(
+            [
+                StaticPathConfig(
+                    url_path="/snmp_switch_manager_static",
+                    path=static_dir,
+                    cache_headers=False,
+                )
+            ]
+        )
     else:
         hass.http.register_static_path(
-            "/snmp_switch_manager_static",
-            static_dir,
-            cache_headers=False
+            "/snmp_switch_manager_static", static_dir, cache_headers=False
         )
     return True
 
-def _build_port_rename_rules(options: dict, default_rules: list[dict[str, str]] | None = None) -> list[tuple[str, _re.Pattern[str], str]]:
+
+def _build_port_rename_rules(
+    options: dict, default_rules: list[dict[str, str]] | None = None
+) -> list[tuple[str, _re.Pattern[str], str]]:
     """Build ordered (id, compiled_regex, replace) rules from config entry options.
 
     User rules come first (highest priority), followed by enabled built-in defaults.
@@ -113,7 +122,7 @@ def _build_port_rename_rules(options: dict, default_rules: list[dict[str, str]] 
         except Exception:
             continue
 
-    for r in (default_rules or []):
+    for r in default_rules or []:
         rid = (r or {}).get("id") or ""
         if not rid or rid in disabled:
             continue
@@ -129,7 +138,9 @@ def _build_port_rename_rules(options: dict, default_rules: list[dict[str, str]] 
     return rules
 
 
-def _apply_port_rename_all(name: str, rules: list[tuple[str, _re.Pattern[str], str]]) -> str:
+def _apply_port_rename_all(
+    name: str, rules: list[tuple[str, _re.Pattern[str], str]]
+) -> str:
     """Apply *all* matching rename rules in order (each at most once)."""
     if not name or not rules:
         return name
@@ -143,7 +154,9 @@ def _apply_port_rename_all(name: str, rules: list[tuple[str, _re.Pattern[str], s
     return out
 
 
-def _postprocess_if_names(data: dict, options: dict, rules: list[tuple[str, _re.Pattern[str], str]]) -> dict:
+def _postprocess_if_names(
+    data: dict, options: dict, rules: list[tuple[str, _re.Pattern[str], str]]
+) -> dict:
     """Apply port rename rules to ifTable names in coordinator data."""
     # Persist option flags for downstream consumers
     data["hide_ip_on_physical"] = bool(
@@ -174,20 +187,28 @@ def _postprocess_if_names(data: dict, options: dict, rules: list[tuple[str, _re.
     return data
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry) -> bool:
+async def async_setup_entry(
+    hass: HomeAssistant, entry: SwitchManagerConfigEntry
+) -> bool:
     snmp_settings = get_snmp_connection_settings(entry.data, entry.options)
     host = snmp_settings.get("host")
 
     bandwidth_options = {
         CONF_BW_MODE: entry.options.get(CONF_BW_MODE, None),
         CONF_BW_ENABLE: entry.options.get(CONF_BW_ENABLE, False),
-        CONF_BW_INCLUDE_STARTS_WITH: entry.options.get(CONF_BW_INCLUDE_STARTS_WITH, []) or [],
+        CONF_BW_INCLUDE_STARTS_WITH: entry.options.get(CONF_BW_INCLUDE_STARTS_WITH, [])
+        or [],
         CONF_BW_INCLUDE_CONTAINS: entry.options.get(CONF_BW_INCLUDE_CONTAINS, []) or [],
-        CONF_BW_INCLUDE_ENDS_WITH: entry.options.get(CONF_BW_INCLUDE_ENDS_WITH, []) or [],
-        CONF_BW_EXCLUDE_STARTS_WITH: entry.options.get(CONF_BW_EXCLUDE_STARTS_WITH, []) or [],
+        CONF_BW_INCLUDE_ENDS_WITH: entry.options.get(CONF_BW_INCLUDE_ENDS_WITH, [])
+        or [],
+        CONF_BW_EXCLUDE_STARTS_WITH: entry.options.get(CONF_BW_EXCLUDE_STARTS_WITH, [])
+        or [],
         CONF_BW_EXCLUDE_CONTAINS: entry.options.get(CONF_BW_EXCLUDE_CONTAINS, []) or [],
-        CONF_BW_EXCLUDE_ENDS_WITH: entry.options.get(CONF_BW_EXCLUDE_ENDS_WITH, []) or [],
-        CONF_BANDWIDTH_POLL_INTERVAL: entry.options.get(CONF_BANDWIDTH_POLL_INTERVAL, DEFAULT_BANDWIDTH_POLL_INTERVAL),
+        CONF_BW_EXCLUDE_ENDS_WITH: entry.options.get(CONF_BW_EXCLUDE_ENDS_WITH, [])
+        or [],
+        CONF_BANDWIDTH_POLL_INTERVAL: entry.options.get(
+            CONF_BANDWIDTH_POLL_INTERVAL, DEFAULT_BANDWIDTH_POLL_INTERVAL
+        ),
     }
 
     # Always provide a non-None default for mode values.
@@ -196,21 +217,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
     poe_options = {
         CONF_POE_ENABLE: entry.options.get(CONF_POE_ENABLE, False),
         CONF_POE_MODE: entry.options.get(CONF_POE_MODE, POE_MODE_ATTRIBUTES),
-        CONF_POE_POLL_INTERVAL: entry.options.get(CONF_POE_POLL_INTERVAL, DEFAULT_POE_POLL_INTERVAL),
+        CONF_POE_POLL_INTERVAL: entry.options.get(
+            CONF_POE_POLL_INTERVAL, DEFAULT_POE_POLL_INTERVAL
+        ),
         CONF_POE_CONTROL_LOOPS: entry.options.get(CONF_POE_CONTROL_LOOPS, False),
     }
 
     env_options = {
         CONF_ENV_ENABLE: entry.options.get(CONF_ENV_ENABLE, False),
         CONF_ENV_MODE: entry.options.get(CONF_ENV_MODE, ENV_MODE_ATTRIBUTES),
-        CONF_ENV_POLL_INTERVAL: entry.options.get(CONF_ENV_POLL_INTERVAL, DEFAULT_ENV_POLL_INTERVAL),
+        CONF_ENV_POLL_INTERVAL: entry.options.get(
+            CONF_ENV_POLL_INTERVAL, DEFAULT_ENV_POLL_INTERVAL
+        ),
     }
 
     client = SwitchSnmpClient(
         hass,
         host,
         snmp_settings,
-        custom_oids=(entry.options.get(CONF_FEATURE_OVERRIDES) or {}).get("device_info") or {},
+        custom_oids=(entry.options.get(CONF_FEATURE_OVERRIDES) or {}).get("device_info")
+        or {},
         bandwidth_options=bandwidth_options,
         poe_options=poe_options,
         env_options=env_options,
@@ -228,9 +254,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
         ) from exc
 
     # Apply per-device option for sysUpTime throttling
-    client.set_uptime_poll_interval(entry.options.get(CONF_UPTIME_POLL_INTERVAL, DEFAULT_UPTIME_POLL_INTERVAL))
+    client.set_uptime_poll_interval(
+        entry.options.get(CONF_UPTIME_POLL_INTERVAL, DEFAULT_UPTIME_POLL_INTERVAL)
+    )
 
-    default_rename_rules = client._database.get("rename_rules", {}).get("rename_rules", [])
+    default_rename_rules = client._database.get("rename_rules", {}).get(
+        "rename_rules", []
+    )
     port_rename_rules = _build_port_rename_rules(entry.options, default_rename_rules)
 
     async def _update_method():
@@ -239,9 +269,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
             # Success: dismiss unreachable notification if it exists
             try:
                 from homeassistant.components import persistent_notification
+
                 persistent_notification.async_dismiss(
-                    hass,
-                    notification_id=f"snmp_switch_offline_{entry.entry_id}"
+                    hass, notification_id=f"snmp_switch_offline_{entry.entry_id}"
                 )
             except Exception as e:
                 _LOGGER.debug("Failed to dismiss persistent notification: %s", e)
@@ -250,36 +280,44 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
             # Failure: create unreachable persistent notification with offline illustration
             try:
                 from homeassistant.components import persistent_notification
+
                 title = f"SNMP Switch Unreachable ({entry.title})"
                 # Embed the offline image served from our registered static route
                 message = (
                     f'<img src="/snmp_switch_manager_static/offline.png" width="100%" '
                     f'style="max-width: 400px; border-radius: 8px; margin-bottom: 15px; display: block;" />\n\n'
-                    f'The switch at **{host}** is currently unreachable.\n\n'
-                    f'**Error:** `{exc}`\n\n'
-                    f'Please verify that the device is powered on, connected to the network, and that no firewall is blocking SNMP queries (port {snmp_settings.get("port", 161)}).'
+                    f"The switch at **{host}** is currently unreachable.\n\n"
+                    f"**Error:** `{exc}`\n\n"
+                    f"Please verify that the device is powered on, connected to the network, and that no firewall is blocking SNMP queries (port {snmp_settings.get('port', 161)})."
                 )
                 persistent_notification.async_create(
                     hass,
                     title=title,
                     message=message,
-                    notification_id=f"snmp_switch_offline_{entry.entry_id}"
+                    notification_id=f"snmp_switch_offline_{entry.entry_id}",
                 )
             except Exception as e:
                 _LOGGER.debug("Failed to create persistent notification: %s", e)
-            raise UpdateFailed(f"Error communicating with SNMP device at {host}: {exc}") from exc
+            raise UpdateFailed(
+                f"Error communicating with SNMP device at {host}: {exc}"
+            ) from exc
 
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
         name=f"{DOMAIN}-coordinator-{host}",
-        update_interval=timedelta(seconds=max(
-            MIN_POLL_INTERVAL,
-            min(
-                MAX_POLL_INTERVAL,
-                int(entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL) or DEFAULT_POLL_INTERVAL),
-            ),
-        )),
+        update_interval=timedelta(
+            seconds=max(
+                MIN_POLL_INTERVAL,
+                min(
+                    MAX_POLL_INTERVAL,
+                    int(
+                        entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)
+                        or DEFAULT_POLL_INTERVAL
+                    ),
+                ),
+            )
+        ),
         # IMPORTANT: use the client's poll method directly. The client is
         # responsible for handling/guarding poll errors so we don't mark all
         # coordinator-backed entities unavailable.
@@ -294,38 +332,54 @@ async def async_setup_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry
     # Clean up duplicate legacy device registry entries if they exist
     try:
         from homeassistant.helpers import device_registry as dr
+
         device_registry = dr.async_get(hass)
         devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
         if len(devices) > 1:
-            _LOGGER.info("Found %d registered devices for config entry %s, starting cleanup", len(devices), entry.entry_id)
+            _LOGGER.info(
+                "Found %d registered devices for config entry %s, starting cleanup",
+                len(devices),
+                entry.entry_id,
+            )
             true_device = None
             for device in devices:
                 if (DOMAIN, entry.entry_id) in device.identifiers:
                     true_device = device
                     break
-            
+
             if true_device:
                 for device in devices:
                     if device.id != true_device.id:
-                        _LOGGER.warning("Removing duplicate/legacy device registry entry: %s (ID: %s)", device.name, device.id)
+                        _LOGGER.warning(
+                            "Removing duplicate/legacy device registry entry: %s (ID: %s)",
+                            device.name,
+                            device.id,
+                        )
                         device_registry.async_remove_device(device.id)
     except Exception as exc:
         _LOGGER.error("Error during device registry cleanup: %s", exc)
 
     from .db_updater import async_setup_db_updater
+
     await async_setup_db_updater(hass, entry)
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
 
-async def _async_update_listener(hass: HomeAssistant, entry: SwitchManagerConfigEntry) -> None:
+
+async def _async_update_listener(
+    hass: HomeAssistant, entry: SwitchManagerConfigEntry
+) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntry) -> bool:
+async def async_unload_entry(
+    hass: HomeAssistant, entry: SwitchManagerConfigEntry
+) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
         from .db_updater import async_unload_db_updater
+
         async_unload_db_updater(hass, entry)
 
         runtime: SnmpSwitchRuntimeData | None = getattr(entry, "runtime_data", None)
@@ -335,6 +389,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: SwitchManagerConfigEntr
             except Exception:
                 pass
     return unloaded
+
 
 async def async_register_services(hass: HomeAssistant):
     from homeassistant.helpers import entity_registry as er
@@ -351,7 +406,9 @@ async def async_register_services(hass: HomeAssistant):
         # Resolve the integration entry and client from the entity's config_entry_id
         entry_id = ent.config_entry_id
         config_entry = hass.config_entries.async_get_entry(entry_id)
-        runtime: SnmpSwitchRuntimeData | None = getattr(config_entry, "runtime_data", None) if config_entry else None
+        runtime: SnmpSwitchRuntimeData | None = (
+            getattr(config_entry, "runtime_data", None) if config_entry else None
+        )
         if not runtime:
             return
 
@@ -393,21 +450,27 @@ async def async_register_services(hass: HomeAssistant):
             return
 
         config_entry = hass.config_entries.async_get_entry(entry_id)
-        runtime: SnmpSwitchRuntimeData | None = getattr(config_entry, "runtime_data", None) if config_entry else None
+        runtime: SnmpSwitchRuntimeData | None = (
+            getattr(config_entry, "runtime_data", None) if config_entry else None
+        )
         if not runtime:
             return
 
         client = runtime.client
         value = call.data.get("value", "")
-        
+
         target_oid = oid
         if oid == OID_sysName:
-            target_oid = client._custom_oid("name") or client._custom_oid("hostname") or OID_sysName
+            target_oid = (
+                client._custom_oid("name")
+                or client._custom_oid("hostname")
+                or OID_sysName
+            )
         elif oid == OID_sysContact:
             target_oid = client._custom_oid("contact") or OID_sysContact
         elif oid == OID_sysLocation:
             target_oid = client._custom_oid("location") or OID_sysLocation
-            
+
         await client.set_system_string(target_oid, value)
         await runtime.coordinator.async_request_refresh()
 
@@ -432,7 +495,9 @@ async def async_register_services(hass: HomeAssistant):
 
         entry_id = ent.config_entry_id
         config_entry = hass.config_entries.async_get_entry(entry_id)
-        runtime: SnmpSwitchRuntimeData | None = getattr(config_entry, "runtime_data", None) if config_entry else None
+        runtime: SnmpSwitchRuntimeData | None = (
+            getattr(config_entry, "runtime_data", None) if config_entry else None
+        )
         if not runtime:
             return
 
@@ -444,7 +509,10 @@ async def async_register_services(hass: HomeAssistant):
             elif "-if-" in unique_id:
                 if_index = int(unique_id.split("-if-")[-1])
             else:
-                _LOGGER.warning("PoE admin service: Entity %s does not have a recognizable ifIndex", entity_id)
+                _LOGGER.warning(
+                    "PoE admin service: Entity %s does not have a recognizable ifIndex",
+                    entity_id,
+                )
                 return
         except Exception:
             return
@@ -452,7 +520,10 @@ async def async_register_services(hass: HomeAssistant):
         poe_ports = client.cache.get("poe_ports", {})
         port_info = poe_ports.get(if_index)
         if not port_info:
-            _LOGGER.warning("PoE admin service: PoE details not found in cache for ifIndex %s", if_index)
+            _LOGGER.warning(
+                "PoE admin service: PoE details not found in cache for ifIndex %s",
+                if_index,
+            )
             return
 
         group_idx = port_info.get("group")
@@ -481,7 +552,9 @@ async def async_register_services(hass: HomeAssistant):
 
         entry_id = ent.config_entry_id
         config_entry = hass.config_entries.async_get_entry(entry_id)
-        runtime: SnmpSwitchRuntimeData | None = getattr(config_entry, "runtime_data", None) if config_entry else None
+        runtime: SnmpSwitchRuntimeData | None = (
+            getattr(config_entry, "runtime_data", None) if config_entry else None
+        )
         if not runtime:
             return
 
@@ -495,7 +568,10 @@ async def async_register_services(hass: HomeAssistant):
             elif "-if-" in unique_id:
                 if_index = int(unique_id.split("-if-")[-1])
             else:
-                _LOGGER.warning("PoE priority service: Entity %s does not have a recognizable ifIndex", entity_id)
+                _LOGGER.warning(
+                    "PoE priority service: Entity %s does not have a recognizable ifIndex",
+                    entity_id,
+                )
                 return
         except Exception:
             return
@@ -503,7 +579,10 @@ async def async_register_services(hass: HomeAssistant):
         poe_ports = client.cache.get("poe_ports", {})
         port_info = poe_ports.get(if_index)
         if not port_info:
-            _LOGGER.warning("PoE priority service: PoE details not found in cache for ifIndex %s", if_index)
+            _LOGGER.warning(
+                "PoE priority service: PoE details not found in cache for ifIndex %s",
+                if_index,
+            )
             return
 
         group_idx = port_info.get("group")
@@ -518,7 +597,9 @@ async def async_register_services(hass: HomeAssistant):
             val = 2
         elif priority == "Low":
             current_port_priority = port_info.get("priority")
-            if current_port_priority == 4 or any(p.get("priority") == 4 for p in poe_ports.values()):
+            if current_port_priority == 4 or any(
+                p.get("priority") == 4 for p in poe_ports.values()
+            ):
                 val = 4
             else:
                 val = 3
@@ -541,7 +622,9 @@ async def async_register_services(hass: HomeAssistant):
 
         entry_id = ent.config_entry_id
         config_entry = hass.config_entries.async_get_entry(entry_id)
-        runtime: SnmpSwitchRuntimeData | None = getattr(config_entry, "runtime_data", None) if config_entry else None
+        runtime: SnmpSwitchRuntimeData | None = (
+            getattr(config_entry, "runtime_data", None) if config_entry else None
+        )
         if not runtime:
             return
 
@@ -551,7 +634,10 @@ async def async_register_services(hass: HomeAssistant):
             if "-if-" in unique_id:
                 if_index = int(unique_id.split("-if-")[-1])
             else:
-                _LOGGER.warning("Port admin status service: Entity %s does not have a recognizable ifIndex", entity_id)
+                _LOGGER.warning(
+                    "Port admin status service: Entity %s does not have a recognizable ifIndex",
+                    entity_id,
+                )
                 return
         except Exception:
             return
@@ -572,16 +658,24 @@ async def async_register_services(hass: HomeAssistant):
         hass.services.async_register(DOMAIN, "set_system_name", handle_set_system_name)
 
     if not hass.services.has_service(DOMAIN, "set_system_contact"):
-        hass.services.async_register(DOMAIN, "set_system_contact", handle_set_system_contact)
+        hass.services.async_register(
+            DOMAIN, "set_system_contact", handle_set_system_contact
+        )
 
     if not hass.services.has_service(DOMAIN, "set_system_location"):
-        hass.services.async_register(DOMAIN, "set_system_location", handle_set_system_location)
+        hass.services.async_register(
+            DOMAIN, "set_system_location", handle_set_system_location
+        )
 
     if not hass.services.has_service(DOMAIN, "set_poe_port_admin"):
         hass.services.async_register(DOMAIN, "set_poe_port_admin", handle_set_poe_admin)
 
     if not hass.services.has_service(DOMAIN, "set_poe_port_priority"):
-        hass.services.async_register(DOMAIN, "set_poe_port_priority", handle_set_poe_priority)
+        hass.services.async_register(
+            DOMAIN, "set_poe_port_priority", handle_set_poe_priority
+        )
 
     if not hass.services.has_service(DOMAIN, "set_port_admin_status"):
-        hass.services.async_register(DOMAIN, "set_port_admin_status", handle_set_port_admin_status)
+        hass.services.async_register(
+            DOMAIN, "set_port_admin_status", handle_set_port_admin_status
+        )

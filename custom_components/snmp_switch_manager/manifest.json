@@ -8,7 +8,10 @@
     "@OtisPresley"
   ],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": [
+    "frontend",
+    "http"
+  ],
   "documentation": "https://github.com/OtisPresley/snmp-switch-manager/wiki",
   "integration_type": "device",
   "iot_class": "local_polling",
