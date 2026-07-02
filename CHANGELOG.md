@@ -7,6 +7,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-07-02
+
+### Added
+- 📦 **Embedded Lovelace Companion Card**: Bundled the `snmp-switch-manager-card` directly inside the integration repo, serving it on startup and automatically registering it as a Lovelace resource (for storage dashboards).
+- 🛠️ **Card Build Toolchain Integration**: Moved the card's source code and compilation scripts under `frontend-card/` in the integration repository, making it straightforward to edit and rebuild the card bundle locally.
+
+### Fixed
+- 🌐 **LovelaceData Attribute Compatibility**: Fixed startup failure on Home Assistant 2026.2+ by checking for both `resource_mode` and `mode` attributes.
+- 🧪 **Testing Environment Backward Compatibility**: Conditionally import `StaticPathConfig` and fall back to synchronous static path registration to support unit testing suites executing under older HA environments (like `homeassistant==2023.7.3`).
+
+---
+
 ## [0.6.0] - 2026-06-10
 
 ### Added
