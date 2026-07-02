@@ -1,0 +1,13 @@
+{
+  "name": "snmp-switch-manager-card",
+  "version": "2.0.0",
+  "description": "Premium Switch Manager Card for Home Assistant",
+  "main": "../custom_components/snmp_switch_manager/frontend/snmp-switch-manager-card.js",
+  "scripts": {
+    "build": "npx esbuild src/card.js --bundle --minify --sourcemap --target=es2020 --outfile=../custom_components/snmp_switch_manager/frontend/snmp-switch-manager-card.js",
+    "watch": "npx esbuild src/card.js --bundle --sourcemap --target=es2020 --outfile=../custom_components/snmp_switch_manager/frontend/snmp-switch-manager-card.js --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.0"
+  }
+}
