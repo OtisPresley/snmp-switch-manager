@@ -102,7 +102,22 @@ class OptionsFlowHandler(
         existing = overrides.get(feature, {})
         
         db_items = db.get(feature, {}).get(feature, [])
-        first_db = db_items[0] if db_items else {}
+        vendor = self._get_device_vendor()
+        vendor_lower = vendor.lower()
+        matching_db = {}
+        for item in db_items:
+            if any(v.lower() == vendor_lower for v in item.get("vendors", [])):
+                matching_db = item
+                break
+        if not matching_db:
+            for item in db_items:
+                if any(v.lower() == "standard" for v in item.get("vendors", [])):
+                    matching_db = item
+                    break
+        if not matching_db and db_items:
+            matching_db = db_items[0]
+            
+        first_db = matching_db
         
         defaults = {}
         defaults["vendor"] = existing.get("vendor", first_db.get("vendors", [""])[0] if first_db.get("vendors") else "")
@@ -118,9 +133,11 @@ class OptionsFlowHandler(
             defaults["oid"] = existing.get("oid", first_db.get("oid", ""))
             defaults["oid_free"] = existing.get("oid_free", first_db.get("oid_free", ""))
             defaults["oid_total"] = existing.get("oid_total", first_db.get("oid_total", ""))
+            defaults["scale"] = existing.get("scale", first_db.get("scale", 1.0))
         elif feature == "fans":
             defaults["oid_rpm"] = existing.get("oid_rpm", first_db.get("oid_rpm", ""))
             defaults["oid_status"] = existing.get("oid_status", first_db.get("oid_status", ""))
+            defaults["scale"] = existing.get("scale", first_db.get("scale", 1.0))
         elif feature == "psu":
             defaults["oid_status"] = existing.get("oid_status", first_db.get("oid_status", ""))
             defaults["oid_label"] = existing.get("oid_label", first_db.get("oid_label", ""))
@@ -129,9 +146,11 @@ class OptionsFlowHandler(
             defaults["oid"] = existing.get("oid", first_db.get("oid", ""))
             defaults["oid_state"] = existing.get("oid_state", first_db.get("oid_state", ""))
             defaults["oid_label"] = existing.get("oid_label", first_db.get("oid_label", ""))
+            defaults["scale"] = existing.get("scale", first_db.get("scale", 1.0))
         elif feature == "power":
             defaults["oid"] = existing.get("oid", first_db.get("oid", ""))
             defaults["description"] = existing.get("description", first_db.get("description", ""))
+            defaults["scale"] = existing.get("scale", first_db.get("scale", 1.0))
         elif feature == "poe":
             defaults["oid_budget"] = existing.get("oid_budget", first_db.get("oid_budget", ""))
             defaults["oid_used"] = existing.get("oid_used", first_db.get("oid_used", ""))
@@ -139,6 +158,7 @@ class OptionsFlowHandler(
             defaults["oid_port_admin"] = existing.get("oid_port_admin", first_db.get("oid_port_admin", ""))
             defaults["oid_port_priority"] = existing.get("oid_port_priority", first_db.get("oid_port_priority", ""))
             defaults["description"] = existing.get("description", first_db.get("description", ""))
+            defaults["scale"] = existing.get("scale", first_db.get("scale", 1.0))
             
         return defaults
 
