@@ -6,4 +6,8 @@ test_live.py
 check_poe_bonuscloset.py
 scratch.py
 
+# Deployment scripts (Local-only containing private IPs)
+deploy.sh
+deploy*.sh
+
 
