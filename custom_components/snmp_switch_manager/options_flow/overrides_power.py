@@ -58,7 +58,7 @@ class OverridesPowerMixin:
                 errors["scale"] = "invalid_float"
                 scale = 1.0
 
-            if not errors:
+            if not errors and share_with_community:
                 norm_oid = _normalize_oid(oid)
                 items = db.get("power", {}).get("power", [])
                 for item in items:
@@ -215,7 +215,7 @@ class OverridesPowerMixin:
             elif attestation and not share_with_community:
                 errors["share_with_community"] = "required_share"
                 
-            if not errors:
+            if not errors and share_with_community:
                 norm_budget = _normalize_oid(oid_budget) if oid_budget else ""
                 norm_used = _normalize_oid(oid_used) if oid_used else ""
                 norm_port = _normalize_oid(oid_port_power) if oid_port_power else ""

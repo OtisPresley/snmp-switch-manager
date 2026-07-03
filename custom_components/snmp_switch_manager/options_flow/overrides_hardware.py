@@ -62,7 +62,7 @@ class OverridesHardwareMixin:
                 errors["scale"] = "invalid_float"
                 scale = 1.0
 
-            if not errors:
+            if not errors and share_with_community:
                 norm_rpm = _normalize_oid(oid_rpm) if oid_rpm else ""
                 norm_status = _normalize_oid(oid_status) if oid_status else ""
                 if norm_rpm or norm_status:
@@ -199,7 +199,7 @@ class OverridesHardwareMixin:
             if oid_label and not _is_valid_numeric_oid(oid_label):
                 errors["oid_label"] = "invalid_oid"
                 
-            if not errors:
+            if not errors and share_with_community:
                 norm_status = _normalize_oid(oid_status)
                 items = db.get("psu", {}).get("psu", [])
                 for item in items:
@@ -344,7 +344,7 @@ class OverridesHardwareMixin:
                 errors["scale"] = "invalid_float"
                 scale = 1.0
 
-            if not errors:
+            if not errors and share_with_community:
                 norm_oid = _normalize_oid(oid)
                 items = db.get("temperature", {}).get("temperature", [])
                 for item in items:

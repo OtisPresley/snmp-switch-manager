@@ -85,7 +85,7 @@ class OverridesBasicMixin:
                 self._apply_options()
                 return await self.async_step_feature_overrides()
 
-            if not errors:
+            if not errors and share_with_community:
                 norm_mfg = new_custom.get("manufacturer", "")
                 norm_model = new_custom.get("model", "")
                 norm_firm = new_custom.get("firmware", "")
@@ -219,7 +219,7 @@ class OverridesBasicMixin:
                 return await self.async_step_feature_overrides()
             elif not _is_valid_numeric_oid(oid):
                 errors["oid"] = "invalid_oid"
-            else:
+            elif share_with_community:
                 norm_oid = _normalize_oid(oid)
                 items = db.get("cpu", {}).get("cpu", [])
                 for item in items:
@@ -380,7 +380,7 @@ class OverridesBasicMixin:
                 errors["scale"] = "invalid_float"
                 scale = 1.0
 
-            if not errors:
+            if not errors and share_with_community:
                 norm_oid = _normalize_oid(oid) if oid else ""
                 norm_free = _normalize_oid(oid_free) if oid_free else ""
                 norm_total = _normalize_oid(oid_total) if oid_total else ""
