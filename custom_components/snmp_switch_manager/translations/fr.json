@@ -116,8 +116,9 @@
       "required_share": "Puisque vous avez vérifié l'OID, veuillez également sélectionner l'option de le partager avec la communauté pour aider les autres.",
       "required_attestation_to_share": "Vous devez attester que vous avez testé l'OID avant de le partager avec la communauté.",
       "duplicate_oid": "Cet OID existe déjà dans la base de données pour ce fournisseur.",
-      "invalid_float": "Facteur d'échelle numérique invalide (doit être un float comme 1.0 ou 0.1)",
-      "required_all_attestations_to_share": "Vous devez cocher les trois cases d'attestation pour soumettre à GitHub."
+      "invalid_float": "Facteur d'échelle numérique invalide (debe être un float comme 1.0 ou 0.1)",
+      "required_all_attestations_to_share": "Vous devez cocher les trois cases d'attestation pour soumettre à GitHub.",
+      "either_percentage_or_free_total": "Veuillez fournir soit l'OID de pourcentage d'utilisation de la mémoire, soit les deux OID Libre et Total, mais pas les deux."
     },
     "step": {
       "bandwidth_enable": {
@@ -247,6 +248,7 @@
       },
       "override_memory": {
         "data": {
+          "oid": "OID de pourcentage d'utilisation de la mémoire",
           "oid_free": "OID de mémoire libre",
           "oid_total": "OID de mémoire totale",
           "vendor": "Vendeur (Marque)",
@@ -256,7 +258,7 @@
           "back_to_menu": "Retourner (ignorer les modifications)",
           "scale": "Échelle"
         },
-        "description": "👉 **[📘 Read Memory Override Guide]({custom_oid_guide_url})**\n\nRemplacez les OID de mémoire pour cet appareil. Laissez les deux champs vides pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Memory Override Guide]({custom_oid_guide_url})**\n\nRemplacez les OID de mémoire pour cet appareil. Saisissez soit un unique OID de pourcentage d'utilisation de la mémoire, soit les deux OID Libre et Total. Laissez tous les champs vides pour utiliser la détection automatique ou pour effacer tout remplacement existant.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Remplacer la mémoire"
       },
       "override_fans": {

@@ -117,7 +117,8 @@
       "required_attestation_to_share": "You must attest that you have tested the OID before sharing it with the community.",
       "required_all_attestations_to_share": "You must check all three attestation checkboxes to submit to GitHub.",
       "duplicate_oid": "This OID already exists in the database for this vendor.",
-      "invalid_float": "Invalid numeric scale factor (must be a float like 1.0 or 0.1)"
+      "invalid_float": "Invalid numeric scale factor (must be a float like 1.0 or 0.1)",
+      "either_percentage_or_free_total": "Please provide either Memory Usage Percentage OID OR both Free and Total Memory OIDs, not both."
     },
     "step": {
       "bandwidth_enable": {
@@ -247,6 +248,7 @@
       },
       "override_memory": {
         "data": {
+          "oid": "Memory Usage Percentage OID",
           "oid_free": "Free Memory OID",
           "oid_total": "Total Memory OID",
           "vendor": "Vendor (Brand)",
@@ -256,7 +258,7 @@
           "back_to_menu": "Go back (discard changes)",
           "scale": "Scale"
         },
-        "description": "👉 **[📘 Read Memory Override Guide]({custom_oid_guide_url})**\n\nOverride the Memory OIDs for this device. Leave both fields blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Memory Override Guide]({custom_oid_guide_url})**\n\nOverride the Memory OIDs for this device. Enter either a single Memory Usage Percentage OID OR both Free and Total Memory OIDs. Leave all fields blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Override Memory"
       },
       "override_fans": {

@@ -117,7 +117,8 @@
       "required_attestation_to_share": "Sie müssen bestätigen, dass Sie die OID getestet haben, bevor Sie sie mit der Community teilen.",
       "required_all_attestations_to_share": "Sie müssen alle drei Bestätigungskontrollkästchen aktivieren, um an GitHub zu senden.",
       "duplicate_oid": "Diese OID existiert bereits in der Datenbank für diesen Anbieter.",
-      "invalid_float": "Ungültiger numerischer Skalierungsfaktor (muss eine Fließkommazahl wie 1.0 oder 0.1 sein)"
+      "invalid_float": "Ungültiger numerischer Skalierungsfaktor (muss eine Fließkommazahl wie 1.0 oder 0.1 sein)",
+      "either_percentage_or_free_total": "Bitte geben Sie entweder die Speichernutzung-Prozentsatz-OID ODER beide OIDs für freien und gesamten Speicher ein, nicht beides."
     },
     "step": {
       "bandwidth_enable": {
@@ -247,6 +248,7 @@
       },
       "override_memory": {
         "data": {
+          "oid": "Speichernutzung Prozentsatz OID",
           "oid_free": "Freier Speicher OID",
           "oid_total": "Gesamtspeicher OID",
           "vendor": "Hersteller (Marke)",
@@ -256,7 +258,7 @@
           "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
           "scale": "Skalierung"
         },
-        "description": "👉 **[📘 Read Memory Override Guide]({custom_oid_guide_url})**\n\nÜberschreiben Sie die Memory-OIDs für dieses Gerät. Lassen Sie beide Felder leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Memory Override Guide]({custom_oid_guide_url})**\n\nÜberschreiben Sie die Memory-OIDs für dieses Gerät. Geben Sie entweder eine einzelne Speichernutzung-Prozentsatz-OID ODER beide OIDs für freien und gesamten Speicher ein. Lassen Sie alle Felder leer, um die automatische Erkennung zu nutzen oder ein bestehendes Override zu löschen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Speicher überschreiben"
       },
       "override_fans": {

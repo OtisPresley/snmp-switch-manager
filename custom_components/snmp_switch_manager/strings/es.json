@@ -117,7 +117,8 @@
       "required_attestation_to_share": "Debe certificar que ha probado el OID antes de compartirlo con la comunidad.",
       "duplicate_oid": "Este OID ya existe en la base de datos para este proveedor.",
       "invalid_float": "Factor de escala numérico no válido (debe ser un flotante como 1.0 o 0.1)",
-      "required_all_attestations_to_share": "Debe marcar las tres casillas de certificación para enviar a GitHub."
+      "required_all_attestations_to_share": "Debe marcar las tres casillas de certificación para enviar a GitHub.",
+      "either_percentage_or_free_total": "Por favor, proporcione el OID de porcentaje de uso de memoria O ambos OID de memoria libre y total, no ambos."
     },
     "step": {
       "bandwidth_enable": {
@@ -247,6 +248,7 @@
       },
       "override_memory": {
         "data": {
+          "oid": "OID de porcentaje de uso de memoria",
           "oid_free": "OID de memoria libre",
           "oid_total": "OID de memoria total",
           "vendor": "Proveedor (Marca)",
@@ -256,7 +258,7 @@
           "back_to_menu": "Volver (descartar cambios)",
           "scale": "Escala"
         },
-        "description": "👉 **[📘 Read Memory Override Guide]({custom_oid_guide_url})**\n\nAnule los OID de memoria para este dispositivo. Deje ambos campos en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Memory Override Guide]({custom_oid_guide_url})**\n\nAnule los OID de memoria para este dispositivo. Introduzca un único OID de porcentaje de uso de memoria O ambos OID de memoria libre y total. Deje todos los campos en blanco para usar la detección automática o para borrar cualquier anulación existente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Anular memoria"
       },
       "override_fans": {

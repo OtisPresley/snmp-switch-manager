@@ -117,7 +117,8 @@
       "required_attestation_to_share": "Devi attestare di aver testato l'OID prima di condividerlo con la community.",
       "duplicate_oid": "Questo OID esiste già nel database per questo fornitore.",
       "invalid_float": "Fattore di scala numerico non valido (deve essere un float come 1.0 o 0.1)",
-      "required_all_attestations_to_share": "È necessario selezionare tutte e tre le caselle di attestazione per inviare a GitHub."
+      "required_all_attestations_to_share": "È necessario selezionare tutte e tre le caselle di attestazione per inviare a GitHub.",
+      "either_percentage_or_free_total": "Fornire l'OID percentuale utilizzo memoria OPPURE entrambi gli OID memoria libera e totale, non entrambi."
     },
     "step": {
       "bandwidth_enable": {
@@ -247,6 +248,7 @@
       },
       "override_memory": {
         "data": {
+          "oid": "OID percentuale utilizzo memoria",
           "oid_free": "OID memoria libera",
           "oid_total": "OID memoria totale",
           "vendor": "Fornitore (Marca)",
@@ -256,7 +258,7 @@
           "back_to_menu": "Torna indietro (annulla modifiche)",
           "scale": "Scala"
         },
-        "description": "👉 **[📘 Read Memory Override Guide]({custom_oid_guide_url})**\n\nIgnora gli OID di memoria per questo dispositivo. Lascia entrambi i campi vuoti per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Memory Override Guide]({custom_oid_guide_url})**\n\nIgnora gli OID di memoria per questo dispositivo. Inserisci un singolo OID percentuale utilizzo memoria OPPURE entrambi gli OID memoria libera e totale. Lascia tutti i campi vuoti per utilizzare il rilevamento automatico o per cancellare qualsiasi override esistente.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Sovrascrivi memoria"
       },
       "override_fans": {

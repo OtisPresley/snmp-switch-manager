@@ -39,7 +39,26 @@ async def poll_memory(client: "SwitchSnmpClient", vendor: str) -> None:
 
     scale = 1.0
     for item in mem_items:
-        if item.get("type") == "free_total" and item.get("method") == "get":
+        if item.get("type", "free_total") == "percentage":
+            oid = item.get("oid")
+            pct_val = None
+            if item.get("method") == "get":
+                pct_val = await client._async_get_one(oid)
+            elif item.get("method") == "walk":
+                rows = await client._async_walk(oid)
+                vals = [float(v) for _, v in rows if _parse_numeric(v) is not None]
+                if vals:
+                    pct_val = sum(vals) / len(vals)
+            
+            if pct_val is not None:
+                try:
+                    pct = max(0.0, min(100.0, float(pct_val) * float(item.get("scale", 1.0))))
+                    client.cache["env_mem_total_kb"] = 1000000
+                    client.cache["env_mem_free_kb"] = int(1000000.0 * (100.0 - pct) / 100.0)
+                    return
+                except Exception:
+                    pass
+        elif item.get("type", "free_total") == "free_total" and item.get("method") == "get":
             mem_free_val = await client._async_get_one(item.get("oid_free"))
             mem_total_val = await client._async_get_one(item.get("oid_total"))
             scale = float(item.get("scale", 1.0))

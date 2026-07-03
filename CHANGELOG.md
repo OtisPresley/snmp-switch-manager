@@ -7,6 +7,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2-beta.1] - 2026-07-03
+
+### Added
+- 🎛️ **Memory Usage Percentage OID Override**: Added a new optional "Memory Usage Percentage OID" field to the memory override form. The polling backend now supports single-percentage memory OID overrides, translating the value into virtual total/free memory sizes to maintain compatibility with existing sensors.
+- 🌐 **Localized Memory Percentage Override Strings**: Added translation strings and updated descriptions for the new memory OID fields and errors across all supported languages (DE, EN, ES, FR, IT, NL) in both `strings/` and `translations/` directories.
+
+---
+
 ## [0.6.1] - 2026-07-02
 
 ### Added

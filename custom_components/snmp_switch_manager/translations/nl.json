@@ -117,7 +117,8 @@
       "required_attestation_to_share": "U moet verklaren dat u de OID hebt getest voordat u deze met de community deelt.",
       "duplicate_oid": "Deze OID bestaat al in de database voor deze leverancier.",
       "invalid_float": "Ongeldige numerieke schaalfactor (moet een float zijn zoals 1.0 of 0.1)",
-      "required_all_attestations_to_share": "U moet alle drie de attestation-vakjes aanvinken om naar GitHub te verzenden."
+      "required_all_attestations_to_share": "U moet alle drie de attestation-vakjes aanvinken om naar GitHub te verzenden.",
+      "either_percentage_or_free_total": "Geef ofwel de OID voor het geheugengebruikpercentage op OF beide OID's voor vrij en totaal geheugen, niet beide."
     },
     "step": {
       "bandwidth_enable": {
@@ -247,6 +248,7 @@
       },
       "override_memory": {
         "data": {
+          "oid": "Geheugengebruik percentage OID",
           "oid_free": "Vrij geheugen OID",
           "oid_total": "Totaal geheugen OID",
           "vendor": "Leverancier (Merk)",
@@ -256,7 +258,7 @@
           "back_to_menu": "Teruggaan (wijzigingen weggooien)",
           "scale": "Schaal"
         },
-        "description": "👉 **[📘 Read Memory Override Guide]({custom_oid_guide_url})**\n\nOverschrijf de Geheugen OID’s voor dit apparaat. Laat beide velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
+        "description": "👉 **[📘 Read Memory Override Guide]({custom_oid_guide_url})**\n\nOverschrijf de Geheugen OID's voor dit apparaat. Voer een enkele OID voor het geheugengebruikpercentage in OF beide OID's voor vrij en totaal geheugen. Laat alle velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Existing Database Entries:\n{existing_entries}",
         "title": "Geheugen overschrijven"
       },
       "override_fans": {

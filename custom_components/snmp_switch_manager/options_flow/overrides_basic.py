@@ -341,6 +341,7 @@ class OverridesBasicMixin:
             if user_input.get("back_to_menu"):
                 return await self.async_step_feature_overrides()
 
+            oid = user_input.get("oid", "").strip()
             oid_free = user_input.get("oid_free", "").strip()
             oid_total = user_input.get("oid_total", "").strip()
             vendor = user_input.get("vendor", "").strip()
@@ -349,23 +350,30 @@ class OverridesBasicMixin:
             attestation = user_input.get("attestation", False)
             share_with_community = user_input.get("share_with_community", False)
             
-            if not oid_free and not oid_total:
+            if not oid and not oid_free and not oid_total:
                 overrides = dict(self._options.get(CONF_FEATURE_OVERRIDES, {}) or {})
                 overrides.pop("memory", None)
                 self._options[CONF_FEATURE_OVERRIDES] = overrides
                 self._apply_options()
                 return await self.async_step_feature_overrides()
 
-            if not oid_free:
-                errors["oid_free"] = "required"
-            elif not _is_valid_numeric_oid(oid_free):
-                errors["oid_free"] = "invalid_oid"
-                
-            if not oid_total:
-                errors["oid_total"] = "required"
-            elif not _is_valid_numeric_oid(oid_total):
-                errors["oid_total"] = "invalid_oid"
-                
+            if oid:
+                if oid_free or oid_total:
+                    errors["base"] = "either_percentage_or_free_total"
+                elif not _is_valid_numeric_oid(oid):
+                    errors["oid"] = "invalid_oid"
+            else:
+                if not oid_free or not oid_total:
+                    if not oid_free:
+                        errors["oid_free"] = "required"
+                    if not oid_total:
+                        errors["oid_total"] = "required"
+                else:
+                    if not _is_valid_numeric_oid(oid_free):
+                        errors["oid_free"] = "invalid_oid"
+                    if not _is_valid_numeric_oid(oid_total):
+                        errors["oid_total"] = "invalid_oid"
+
             try:
                 scale = float(scale_str)
             except ValueError:
@@ -373,17 +381,25 @@ class OverridesBasicMixin:
                 scale = 1.0
 
             if not errors:
-                norm_free = _normalize_oid(oid_free)
-                norm_total = _normalize_oid(oid_total)
+                norm_oid = _normalize_oid(oid) if oid else ""
+                norm_free = _normalize_oid(oid_free) if oid_free else ""
+                norm_total = _normalize_oid(oid_total) if oid_total else ""
                 items = db.get("memory", {}).get("memory", [])
                 for item in items:
-                    if item.get("type", "free_total") == "percentage":
-                        continue
-                    if _normalize_oid(item.get("oid_free", "")) == norm_free and _normalize_oid(item.get("oid_total", "")) == norm_total:
-                        if vendor.lower() in [v.lower() for v in item.get("vendors", [])]:
-                            errors["oid_free"] = "duplicate_oid"
-                            errors["oid_total"] = "duplicate_oid"
-                            break
+                    if oid:
+                        if item.get("type", "free_total") == "percentage":
+                            if _normalize_oid(item.get("oid", "")) == norm_oid:
+                                if vendor.lower() in [v.lower() for v in item.get("vendors", [])]:
+                                    errors["oid"] = "duplicate_oid"
+                                    break
+                    else:
+                        if item.get("type", "free_total") == "percentage":
+                            continue
+                        if _normalize_oid(item.get("oid_free", "")) == norm_free and _normalize_oid(item.get("oid_total", "")) == norm_total:
+                            if vendor.lower() in [v.lower() for v in item.get("vendors", [])]:
+                                errors["oid_free"] = "duplicate_oid"
+                                errors["oid_total"] = "duplicate_oid"
+                                break
                             
             if not vendor:
                 errors["vendor"] = "required"
@@ -395,14 +411,23 @@ class OverridesBasicMixin:
                 
             if not errors:
                 overrides = dict(self._options.get(CONF_FEATURE_OVERRIDES, {}) or {})
-                overrides["memory"] = {
-                    "type": "free_total",
-                    "oid_free": _normalize_oid(oid_free),
-                    "oid_total": _normalize_oid(oid_total),
-                    "vendor": vendor,
-                    "method": method,
-                    "scale": scale,
-                }
+                if oid:
+                    overrides["memory"] = {
+                        "type": "percentage",
+                        "oid": _normalize_oid(oid),
+                        "vendor": vendor,
+                        "method": method,
+                        "scale": scale,
+                    }
+                else:
+                    overrides["memory"] = {
+                        "type": "free_total",
+                        "oid_free": _normalize_oid(oid_free),
+                        "oid_total": _normalize_oid(oid_total),
+                        "vendor": vendor,
+                        "method": method,
+                        "scale": scale,
+                    }
                 self._options[CONF_FEATURE_OVERRIDES] = overrides
                 self._apply_options()
                 
@@ -412,6 +437,7 @@ class OverridesBasicMixin:
                 else:
                     return await self.async_step_feature_overrides()
         else:
+            oid = defaults.get("oid", "")
             oid_free = defaults.get("oid_free", "")
             oid_total = defaults.get("oid_total", "")
             vendor = defaults.get("vendor", "")
@@ -422,6 +448,7 @@ class OverridesBasicMixin:
 
         schema = vol.Schema(
             {
+                vol.Optional("oid"): str,
                 vol.Optional("oid_free"): str,
                 vol.Optional("oid_total"): str,
                 vol.Optional("vendor"): selector.SelectSelector(
@@ -452,6 +479,7 @@ class OverridesBasicMixin:
             data_schema=self.add_suggested_values_to_schema(
                 schema,
                 {
+                    "oid": oid,
                     "oid_free": oid_free,
                     "oid_total": oid_total,
                     "vendor": vendor,
