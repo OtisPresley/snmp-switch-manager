@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🎛️ **Memory Usage Percentage OID Override**: Added a new optional "Memory Usage Percentage OID" field to the memory override form. The polling backend now supports single-percentage memory OID overrides, translating the value into virtual total/free memory sizes to maintain compatibility with existing sensors.
 - 🌐 **Localized Memory Percentage Override Strings**: Added translation strings and updated descriptions for the new memory OID fields and errors across all supported languages (DE, EN, ES, FR, IT, NL) in both `strings/` and `translations/` directories.
 
+### Fixed
+- 🛡️ **Conditional Duplicate OID Checks**: Restructured duplicate OID checks to run only when the user chooses to share the OID with the community (`share_with_community: true`). This resolves an issue where users were blocked from overriding scale or parameters for OIDs already in the built-in database.
+- 🎛️ **Consistent Form Pre-population**: Fixed options flow form pre-population defaults to resolve OIDs matching the device's active vendor (or Standard fallback) instead of picking the first database entry. Restored pre-populating scale factor values for memory, fans, temperature, power, and PoE override forms.
+
 ---
 
 ## [0.6.1] - 2026-07-02
