@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - 🛡️ **Conditional Duplicate OID Checks**: Restructured duplicate OID checks to run only when the user chooses to share the OID with the community (`share_with_community: true`). This resolves an issue where users were blocked from overriding scale or parameters for OIDs already in the built-in database.
 - 🎛️ **Consistent Form Pre-population**: Fixed options flow form pre-population defaults to resolve OIDs matching the device's active vendor (or Standard fallback) instead of picking the first database entry. Restored pre-populating scale factor values for memory, fans, temperature, power, and PoE override forms.
+- ⚡ **PoE Polling GET Method Support**: Enabled GET-method queries for PoE budget and used power OIDs (in addition to standard WALK subtrees), correcting an issue where scalar PoE usage OIDs returned 'Unknown'.
 
 ---
 
