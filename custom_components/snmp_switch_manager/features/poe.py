@@ -86,8 +86,14 @@ async def poll_poe(client: "SwitchSnmpClient") -> None:
         oid_std_port = (standard_item or {}).get("oid_port_power") or OID_pethPsePortActualPower
         oid_dell_port = (dell_item or {}).get("oid_port_power") if dell_item else None
         
-        tasks.append(client._async_walk(oid_budget))
-        tasks.append(client._async_walk(oid_used))
+        method_total = (standard_item or {}).get("method", "walk")
+        if method_total == "get":
+            tasks.append(client._async_get_one(oid_budget))
+            tasks.append(client._async_get_one(oid_used))
+        else:
+            tasks.append(client._async_walk(oid_budget))
+            tasks.append(client._async_walk(oid_used))
+            
         tasks.append(client._async_walk(oid_dell_port) if oid_dell_port else asyncio.sleep(0, result=[]))
         tasks.append(client._async_walk(oid_std_port))
     else:
@@ -102,8 +108,14 @@ async def poll_poe(client: "SwitchSnmpClient") -> None:
         tasks.extend([asyncio.sleep(0, result=[]), asyncio.sleep(0, result=[])])
 
     results = await asyncio.gather(*tasks)
-    budget_rows = results[0]
-    used_rows = results[1]
+    
+    if poe_enabled and method_total == "get":
+        budget_rows = [(oid_budget, results[0])] if results[0] is not None else []
+        used_rows = [(oid_used, results[1])] if results[1] is not None else []
+    else:
+        budget_rows = results[0]
+        used_rows = results[1]
+        
     dell_poe_rows = results[2]
     std_poe_rows = results[3]
     admin_rows = results[4] if len(results) > 4 else []
