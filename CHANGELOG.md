@@ -7,20 +7,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.2-beta.2] - 2026-07-04
-
-### Fixed
-- ⚡ **PoE Polling GET Method Support**: Enabled GET-method queries for PoE budget and used power OIDs (in addition to standard WALK subtrees), correcting an issue where scalar PoE usage OIDs returned 'Unknown'.
-
----
-
-## [0.6.2-beta.1] - 2026-07-03
+## [0.6.2] - 2026-07-06
 
 ### Added
 - 🎛️ **Memory Usage Percentage OID Override**: Added a new optional "Memory Usage Percentage OID" field to the memory override form. The polling backend now supports single-percentage memory OID overrides, translating the value into virtual total/free memory sizes to maintain compatibility with existing sensors.
 - 🌐 **Localized Memory Percentage Override Strings**: Added translation strings and updated descriptions for the new memory OID fields and errors across all supported languages (DE, EN, ES, FR, IT, NL) in both `strings/` and `translations/` directories.
 
 ### Fixed
+- 🐛 **Legacy PySNMP Fallback Compatibility**: Corrected import and function wrappers in the legacy PySNMP/PySNMP-lextudio compatibility fallback layer (`snmp_compat.py`), resolving a startup initialization crash (`ImportError`) when falling back to legacy PySNMP libraries.
+- ⚡ **PoE Polling GET Method Support**: Enabled GET-method queries for PoE budget and used power OIDs (in addition to standard WALK subtrees), correcting an issue where scalar PoE usage OIDs returned 'Unknown'.
 - 🛡️ **Conditional Duplicate OID Checks**: Restructured duplicate OID checks to run only when the user chooses to share the OID with the community (`share_with_community: true`). This resolves an issue where users were blocked from overriding scale or parameters for OIDs already in the built-in database.
 - 🎛️ **Consistent Form Pre-population**: Fixed options flow form pre-population defaults to resolve OIDs matching the device's active vendor (or Standard fallback) instead of picking the first database entry. Restored pre-populating scale factor values for memory, fans, temperature, power, and PoE override forms.
 

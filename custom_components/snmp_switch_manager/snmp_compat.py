@@ -50,14 +50,14 @@ if not HAS_V7:
         usmNoPrivProtocol,
         usmDESPrivProtocol,
         usmAesCfb128Protocol,
-        get_cmd as _get_cmd,
-        set_cmd as _set_cmd,
-        next_cmd as _next_cmd,
-        bulk_cmd as _bulk_cmd,
-        walk_cmd as _walk_cmd,
-        bulk_walk_cmd as _bulk_walk_cmd,
-        is_end_of_mib,
+        getCmd as _get_cmd,
+        setCmd as _set_cmd,
+        nextCmd as _next_cmd,
+        bulkCmd as _bulk_cmd,
     )
+
+    def is_end_of_mib(*a, **k):
+        return True
 
     async def get_cmd(*a, **k):
         """Legacy wrapper for get_cmd."""
@@ -77,11 +77,11 @@ if not HAS_V7:
 
     async def walk_cmd(*a, **k):
         """Legacy wrapper for walk_cmd."""
-        return await _walk_cmd(*a, **k)
+        raise NotImplementedError("walk_cmd not supported in legacy PySNMP")
 
     async def bulk_walk_cmd(*a, **k):
         """Legacy wrapper for bulk_walk_cmd."""
-        return await _bulk_walk_cmd(*a, **k)
+        raise NotImplementedError("bulk_walk_cmd not supported in legacy PySNMP")
 
 # The __all__ list tells other tools which symbols are public.
 __all__ = [
