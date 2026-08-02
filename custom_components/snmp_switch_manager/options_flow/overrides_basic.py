@@ -26,6 +26,10 @@ class OverridesBasicMixin:
                 "override_temperature",
                 "override_power",
                 "override_poe",
+                "override_lldp",
+                "override_fdb",
+                "override_arp",
+                "override_base_mac",
                 "back",
             ],
         )

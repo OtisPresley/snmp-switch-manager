@@ -227,7 +227,11 @@
           "override_psu": "Voeding overschrijven",
           "override_temperature": "Temperatuur overschrijven",
           "override_poe": "PoE overschrijven",
-          "override_device_info": "Apparaatinfo overschrijven"
+          "override_device_info": "Apparaatinfo overschrijven",
+          "override_lldp": "LLDP overschrijven",
+          "override_fdb": "FDB overschrijven",
+          "override_arp": "ARP overschrijven",
+          "override_base_mac": "Basis-MAC overschrijven"
         },
         "title": "Functie OID-overschrijvingen"
       },
@@ -583,6 +587,56 @@
           "beneficial_for_everyone": "Ik verklaar dat deze filters/tokens nuttig zijn voor iedereen, generiek zijn en geen persoonlijke voorkeuren bevatten.",
           "back_to_menu": "Teruggaan (wijzigingen negeren)"
         }
+      },
+      "override_lldp": {
+        "data": {
+          "vendor": "Leverancier (Merk)",
+          "description": "Beschrijving",
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID werkt zoals verwacht.",
+          "share_with_community": "Deel dit met de community",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)",
+          "oid_rem_sys_name": "LLDP Externe Systeemnaam OID",
+          "oid_cdp_sys_name": "Cisco CDP Systeemnaam OID"
+        },
+        "description": "👉 **[📘 Lees LLDP Overschrijvingshandleiding]({custom_oid_guide_url})**\n\nOverschrijf de LLDP-OID's voor dit apparaat. Laat deze velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Bestaande database-items:\n{existing_entries}",
+        "title": "LLDP overschrijven"
+      },
+      "override_fdb": {
+        "data": {
+          "vendor": "Leverancier (Merk)",
+          "description": "Beschrijving",
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID werkt zoals verwacht.",
+          "share_with_community": "Deel dit met de community",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)",
+          "oid_fdb_port": "FDB-poort OID (Bridge-MIB)",
+          "oid_q_fdb_port": "Q-FDB-poort OID (Q-BRIDGE-MIB)"
+        },
+        "description": "👉 **[📘 Lees FDB Overschrijvingshandleiding]({custom_oid_guide_url})**\n\nOverschrijf de forwarding database (FDB) OID's voor dit apparaat. Laat deze velden leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Bestaande database-items:\n{existing_entries}",
+        "title": "FDB overschrijven"
+      },
+      "override_arp": {
+        "data": {
+          "vendor": "Leverancier (Merk)",
+          "description": "Beschrijving",
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID werkt zoals verwacht.",
+          "share_with_community": "Deel dit met de community",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)",
+          "oid_arp_mac": "ARP OID (IP-MIB)"
+        },
+        "description": "👉 **[📘 Lees ARP Overschrijvingshandleiding]({custom_oid_guide_url})**\n\nOverschrijf de ARP OID voor dit apparaat. Laat dit veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Bestaande database-items:\n{existing_entries}",
+        "title": "ARP overschrijven"
+      },
+      "override_base_mac": {
+        "data": {
+          "vendor": "Leverancier (Merk)",
+          "description": "Beschrijving",
+          "attestation": "Ik verklaar dat ik heb getest en geverifieerd dat deze OID werkt zoals verwacht.",
+          "share_with_community": "Deel dit met de community",
+          "back_to_menu": "Teruggaan (wijzigingen weggooien)",
+          "oid_base_mac": "Basis Bridge MAC OID (Bridge-MIB)"
+        },
+        "description": "👉 **[📘 Lees Basis MAC Overschrijvingshandleiding]({custom_oid_guide_url})**\n\nOverschrijf de Basis MAC OID voor dit apparaat. Laat dit veld leeg om automatische detectie te gebruiken of om een bestaande overschrijving te wissen.\n\n### Bestaande database-items:\n{existing_entries}",
+        "title": "Basis-MAC overschrijven"
       }
     }
   },

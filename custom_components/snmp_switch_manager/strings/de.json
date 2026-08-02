@@ -227,7 +227,11 @@
           "override_psu": "Netzteil überschreiben",
           "override_temperature": "Temperatur überschreiben",
           "override_poe": "PoE überschreiben",
-          "override_device_info": "Geräteinfo überschreiben"
+          "override_device_info": "Geräteinfo überschreiben",
+          "override_lldp": "LLDP überschreiben",
+          "override_fdb": "FDB überschreiben",
+          "override_arp": "ARP überschreiben",
+          "override_base_mac": "Basis-MAC überschreiben"
         },
         "title": "Feature-OID-Überschreibungen"
       },
@@ -583,6 +587,56 @@
       "github_connection_error": {
         "title": "GitHub-Verbindungsfehler",
         "description": "Verbindung mit GitHub fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
+      },
+      "override_lldp": {
+        "data": {
+          "vendor": "Hersteller (Marke)",
+          "description": "Beschreibung",
+          "attestation": "Ich bestätige, dass ich diese OID getestet und überprüft habe und sie wie erwartet funktioniert.",
+          "share_with_community": "Mit der Community teilen",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
+          "oid_rem_sys_name": "LLDP Remote-Systemname-OID",
+          "oid_cdp_sys_name": "Cisco CDP Systemname-OID"
+        },
+        "description": "👉 **[📘 LLDP-Überschreibungsanleitung lesen]({custom_oid_guide_url})**\n\nÜberschreiben Sie die LLDP-OIDs für dieses Gerät. Lassen Sie diese Felder leer, um die automatische Erkennung zu verwenden oder eine vorhandene Überschreibung zu löschen.\n\n### Vorhandene Datenbankeinträge:\n{existing_entries}",
+        "title": "LLDP überschreiben"
+      },
+      "override_fdb": {
+        "data": {
+          "vendor": "Hersteller (Marke)",
+          "description": "Beschreibung",
+          "attestation": "Ich bestätige, dass ich diese OID getestet und überprüft habe und sie wie erwartet funktioniert.",
+          "share_with_community": "Mit der Community teilen",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
+          "oid_fdb_port": "FDB-Port-OID (Bridge-MIB)",
+          "oid_q_fdb_port": "Q-FDB-Port-OID (Q-BRIDGE-MIB)"
+        },
+        "description": "👉 **[📘 FDB-Überschreibungsanleitung lesen]({custom_oid_guide_url})**\n\nÜberschreiben Sie die Weiterleitungsdatenbank-OIDs (FDB) für dieses Gerät. Lassen Sie diese Felder leer, um die automatische Erkennung zu verwenden oder eine vorhandene Überschreibung zu löschen.\n\n### Vorhandene Datenbankeinträge:\n{existing_entries}",
+        "title": "FDB überschreiben"
+      },
+      "override_arp": {
+        "data": {
+          "vendor": "Hersteller (Marke)",
+          "description": "Beschreibung",
+          "attestation": "Ich bestätige, dass ich diese OID getestet und überprüft habe und sie wie erwartet funktioniert.",
+          "share_with_community": "Mit der Community teilen",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
+          "oid_arp_mac": "ARP-OID (IP-MIB)"
+        },
+        "description": "👉 **[📘 ARP-Überschreibungsanleitung lesen]({custom_oid_guide_url})**\n\nÜberschreiben Sie die ARP-OID für dieses Gerät. Lassen Sie dieses Feld leer, um die automatische Erkennung zu verwenden oder eine vorhandene Überschreibung zu löschen.\n\n### Vorhandene Datenbankeinträge:\n{existing_entries}",
+        "title": "ARP überschreiben"
+      },
+      "override_base_mac": {
+        "data": {
+          "vendor": "Hersteller (Marke)",
+          "description": "Beschreibung",
+          "attestation": "Ich bestätige, dass ich diese OID getestet und überprüft habe und sie wie erwartet funktioniert.",
+          "share_with_community": "Mit der Community teilen",
+          "back_to_menu": "Zurückgehen (Änderungen verwerfen)",
+          "oid_base_mac": "Basis-Bridge-MAC-OID (Bridge-MIB)"
+        },
+        "description": "👉 **[📘 Basis-MAC-Überschreibungsanleitung lesen]({custom_oid_guide_url})**\n\nÜberschreiben Sie die Basis-MAC-OID für dieses Gerät. Lassen Sie dieses Feld leer, um die automatische Erkennung zu verwenden oder eine vorhandene Überschreibung zu löschen.\n\n### Vorhandene Datenbankeinträge:\n{existing_entries}",
+        "title": "Basis-MAC überschreiben"
       }
     }
   },

@@ -227,7 +227,11 @@
           "override_psu": "Sovrascrivi alimentatore",
           "override_temperature": "Sovrascrivi temperatura",
           "override_poe": "Ignora PoE",
-          "override_device_info": "Ignora le info sul dispositivo"
+          "override_device_info": "Ignora le info sul dispositivo",
+          "override_lldp": "Sovrascrivi LLDP",
+          "override_fdb": "Sovrascrivi FDB",
+          "override_arp": "Sovrascrivi ARP",
+          "override_base_mac": "Sovrascrivi MAC base"
         },
         "title": "Override OID funzionalità"
       },
@@ -583,6 +587,56 @@
           "beneficial_for_everyone": "Attesto che questi filtri/token siano vantaggiosi per tutti, siano generici e non contengano preferenze personali.",
           "back_to_menu": "Torna indietro (annulla modifiche)"
         }
+      },
+      "override_lldp": {
+        "data": {
+          "vendor": "Fornitore (Marca)",
+          "description": "Descrizione",
+          "attestation": "Attesto di aver testato e verificato che questo OID funziona come previsto.",
+          "share_with_community": "Condividi con la community",
+          "back_to_menu": "Torna indietro (annulla modifiche)",
+          "oid_rem_sys_name": "OID del nome del sistema remoto LLDP",
+          "oid_cdp_sys_name": "OID del nome del sistema Cisco CDP"
+        },
+        "description": "👉 **[📘 Leggi la guida alla sovrascrittura di LLDP]({custom_oid_guide_url})**\n\nSovrascrivi gli OID LLDP per questo dispositivo. Lascia questi campi vuoti per utilizzare il rilevamento automatico o cancellare una sovrascrittura esistente.\n\n### Voci del database esistenti:\n{existing_entries}",
+        "title": "Sovrascrivi LLDP"
+      },
+      "override_fdb": {
+        "data": {
+          "vendor": "Fornitore (Marca)",
+          "description": "Descrizione",
+          "attestation": "Attesto di aver testato e verificato che questo OID funziona come previsto.",
+          "share_with_community": "Condividi con la community",
+          "back_to_menu": "Torna indietro (annulla modifiche)",
+          "oid_fdb_port": "OID della porta FDB (Bridge-MIB)",
+          "oid_q_fdb_port": "OID della porta Q-FDB (Q-BRIDGE-MIB)"
+        },
+        "description": "👉 **[📘 Leggi la guida alla sovrascrittura di FDB]({custom_oid_guide_url})**\n\nSovrascrivi gli OID della tabella di inoltro (FDB) per questo dispositivo. Lascia questi campi vuoti per utilizzare il rilevamento automatico o cancellare una sovrascrittura esistente.\n\n### Voci del database esistenti:\n{existing_entries}",
+        "title": "Sovrascrivi FDB"
+      },
+      "override_arp": {
+        "data": {
+          "vendor": "Fornitore (Marca)",
+          "description": "Descrizione",
+          "attestation": "Attesto di aver testato e verificato che questo OID funziona come previsto.",
+          "share_with_community": "Condividi con la community",
+          "back_to_menu": "Torna indietro (annulla modifiche)",
+          "oid_arp_mac": "OID di ARP (IP-MIB)"
+        },
+        "description": "👉 **[📘 Leggi la guida alla sovrascrittura di ARP]({custom_oid_guide_url})**\n\nSovrascrivi l'OID ARP per questo dispositivo. Lascia questo campo vuoto per utilizzare il rilevamento automatico o cancellare una sovrascrittura esistente.\n\n### Voci del database esistenti:\n{existing_entries}",
+        "title": "Sovrascrivi ARP"
+      },
+      "override_base_mac": {
+        "data": {
+          "vendor": "Fornitore (Marca)",
+          "description": "Descrizione",
+          "attestation": "Attesto di aver testato e verificato che questo OID funziona come previsto.",
+          "share_with_community": "Condividi con la community",
+          "back_to_menu": "Torna indietro (annulla modifiche)",
+          "oid_base_mac": "OID del MAC del bridge base (Bridge-MIB)"
+        },
+        "description": "👉 **[📘 Leggi la guida alla sovrascrittura del MAC base]({custom_oid_guide_url})**\n\nSovrascrivi l'OID MAC base per questo dispositivo. Lascia questo campo vuoto per utilizzare il rilevamento automatico o cancellare una sovrascrittura esistente.\n\n### Voci del database esistenti:\n{existing_entries}",
+        "title": "Sovrascrivi MAC base"
       }
     }
   },

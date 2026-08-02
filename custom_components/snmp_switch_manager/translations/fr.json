@@ -227,7 +227,11 @@
           "override_psu": "Remplacer le bloc d'alimentation",
           "override_temperature": "Remplacer la température",
           "override_poe": "Remplacer le PoE",
-          "override_device_info": "Remplacer les infos de l'appareil"
+          "override_device_info": "Remplacer les infos de l'appareil",
+          "override_lldp": "Forcer LLDP",
+          "override_fdb": "Forcer FDB",
+          "override_arp": "Forcer ARP",
+          "override_base_mac": "Forcer l'adresse MAC de base"
         },
         "title": "Remplacements d'OID de fonctionnalité"
       },
@@ -583,6 +587,56 @@
           "beneficial_for_everyone": "J'atteste que ces filtres/jetons sont bénéfiques pour tous, sont génériques et ne contiennent pas de préférences personnelles.",
           "back_to_menu": "Retour (abandonner les modifications)"
         }
+      },
+      "override_lldp": {
+        "data": {
+          "vendor": "Vendeur (Marque)",
+          "description": "Description",
+          "attestation": "J'atteste que j'ai testé et vérifié que cet OID fonctionne comme prévu.",
+          "share_with_community": "Partager avec la communauté",
+          "back_to_menu": "Retourner (ignorer les modifications)",
+          "oid_rem_sys_name": "OID du nom du système distant LLDP",
+          "oid_cdp_sys_name": "OID du nom du système Cisco CDP"
+        },
+        "description": "👉 **[📘 Lire le guide de forçage LLDP]({custom_oid_guide_url})**\n\nForcer les OID LLDP pour cet appareil. Laissez ces champs vides pour utiliser la détection automatique ou effacer un forçage existant.\n\n### Entrées de base de données existantes :\n{existing_entries}",
+        "title": "Forcer LLDP"
+      },
+      "override_fdb": {
+        "data": {
+          "vendor": "Vendeur (Marque)",
+          "description": "Description",
+          "attestation": "J'atteste que j'ai testé et vérifié que cet OID fonctionne comme prévu.",
+          "share_with_community": "Partager avec la communauté",
+          "back_to_menu": "Retourner (ignorer les modifications)",
+          "oid_fdb_port": "OID du port FDB (Bridge-MIB)",
+          "oid_q_fdb_port": "OID du port Q-FDB (Q-BRIDGE-MIB)"
+        },
+        "description": "👉 **[📘 Lire le guide de forçage FDB]({custom_oid_guide_url})**\n\nForcer les OID de la base de données de transfert (FDB) pour cet appareil. Laissez ces champs vides pour utiliser la détection automatique ou effacer un forçage existant.\n\n### Entrées de base de données existantes :\n{existing_entries}",
+        "title": "Forcer FDB"
+      },
+      "override_arp": {
+        "data": {
+          "vendor": "Vendeur (Marque)",
+          "description": "Description",
+          "attestation": "J'atteste que j'ai testé et vérifié que cet OID fonctionne comme prévu.",
+          "share_with_community": "Partager avec la communauté",
+          "back_to_menu": "Retourner (ignorer les modifications)",
+          "oid_arp_mac": "OID ARP (IP-MIB)"
+        },
+        "description": "👉 **[📘 Lire le guide de forçage ARP]({custom_oid_guide_url})**\n\nForcer l'OID ARP pour cet appareil. Laissez ce champ vide pour utiliser la détection automatique ou effacer un forçage existant.\n\n### Entrées de base de données existantes :\n{existing_entries}",
+        "title": "Forcer ARP"
+      },
+      "override_base_mac": {
+        "data": {
+          "vendor": "Vendeur (Marque)",
+          "description": "Description",
+          "attestation": "J'atteste que j'ai testé et vérifié que cet OID fonctionne comme prévu.",
+          "share_with_community": "Partager avec la communauté",
+          "back_to_menu": "Retourner (ignorer les modifications)",
+          "oid_base_mac": "OID de l'adresse MAC du pont de base (Bridge-MIB)"
+        },
+        "description": "👉 **[📘 Lire le guide de forçage MAC de base]({custom_oid_guide_url})**\n\nForcer l'OID MAC de base pour cet appareil. Laissez ce champ vide pour utiliser la détection automatique ou effacer un forçage existant.\n\n### Entrées de base de données existantes :\n{existing_entries}",
+        "title": "Forcer l'adresse MAC de base"
       }
     }
   },

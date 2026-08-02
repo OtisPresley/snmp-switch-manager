@@ -40,6 +40,7 @@ from .overrides_basic import OverridesBasicMixin
 from .overrides_hardware import OverridesHardwareMixin
 from .overrides_power import OverridesPowerMixin
 from .overrides_env import OverridesEnvMixin
+from .overrides_topology import OverridesTopologyMixin
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,6 +54,7 @@ class OptionsFlowHandler(
     OverridesHardwareMixin,
     OverridesPowerMixin,
     OverridesEnvMixin,
+    OverridesTopologyMixin,
     config_entries.OptionsFlow,
 ):
     """Main Options Flow Handler composing all modular submenus and settings."""
@@ -159,6 +161,20 @@ class OptionsFlowHandler(
             defaults["oid_port_priority"] = existing.get("oid_port_priority", first_db.get("oid_port_priority", ""))
             defaults["description"] = existing.get("description", first_db.get("description", ""))
             defaults["scale"] = existing.get("scale", first_db.get("scale", 1.0))
+        elif feature == "lldp":
+            defaults["oid_rem_sys_name"] = existing.get("oid_rem_sys_name", first_db.get("oid_rem_sys_name", ""))
+            defaults["oid_cdp_sys_name"] = existing.get("oid_cdp_sys_name", first_db.get("oid_cdp_sys_name", ""))
+            defaults["description"] = existing.get("description", first_db.get("description", ""))
+        elif feature == "fdb":
+            defaults["oid_fdb_port"] = existing.get("oid_fdb_port", first_db.get("oid_fdb_port", ""))
+            defaults["oid_q_fdb_port"] = existing.get("oid_q_fdb_port", first_db.get("oid_q_fdb_port", ""))
+            defaults["description"] = existing.get("description", first_db.get("description", ""))
+        elif feature == "arp":
+            defaults["oid_arp_mac"] = existing.get("oid_arp_mac", first_db.get("oid_arp_mac", ""))
+            defaults["description"] = existing.get("description", first_db.get("description", ""))
+        elif feature == "base_mac":
+            defaults["oid_base_mac"] = existing.get("oid_base_mac", first_db.get("oid_base_mac", ""))
+            defaults["description"] = existing.get("description", first_db.get("description", ""))
             
         return defaults
 
@@ -245,6 +261,24 @@ class OptionsFlowHandler(
                 if item.get("oid_location"):
                     parts.append(f"Location: <code>{item.get('oid_location')}</code>")
                 oids = "<br>".join(parts)
+            elif feature == "lldp":
+                parts = []
+                if item.get("oid_rem_sys_name"):
+                    parts.append(f"Rem Sys Name: <code>{item.get('oid_rem_sys_name')}</code>")
+                if item.get("oid_cdp_sys_name"):
+                    parts.append(f"CDP Sys Name: <code>{item.get('oid_cdp_sys_name')}</code>")
+                oids = "<br>".join(parts)
+            elif feature == "fdb":
+                parts = []
+                if item.get("oid_fdb_port"):
+                    parts.append(f"FDB Port: <code>{item.get('oid_fdb_port')}</code>")
+                if item.get("oid_q_fdb_port"):
+                    parts.append(f"Q-FDB Port: <code>{item.get('oid_q_fdb_port')}</code>")
+                oids = "<br>".join(parts)
+            elif feature == "arp":
+                oids = f"ARP MAC: <code>{item.get('oid_arp_mac')}</code>"
+            elif feature == "base_mac":
+                oids = f"Base MAC: <code>{item.get('oid_base_mac')}</code>"
             else: # cpu, power
                 oids = f"<code>{item.get('oid')}</code>"
 

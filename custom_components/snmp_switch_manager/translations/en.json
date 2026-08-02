@@ -227,7 +227,11 @@
           "override_psu": "Override PSU",
           "override_temperature": "Override Temperature",
           "override_poe": "Override PoE",
-          "override_device_info": "Override Device Info"
+          "override_device_info": "Override Device Info",
+          "override_lldp": "Override LLDP",
+          "override_fdb": "Override FDB",
+          "override_arp": "Override ARP",
+          "override_base_mac": "Override Base MAC"
         },
         "title": "Feature OID Overrides"
       },
@@ -583,6 +587,56 @@
       "github_connection_error": {
         "title": "GitHub Connection Error",
         "description": "Failed to communicate with GitHub (could not retrieve authentication device code). Please check your network/internet connection and try again."
+      },
+      "override_lldp": {
+        "data": {
+          "vendor": "Vendor (Brand)",
+          "description": "Description",
+          "attestation": "I attest that I have tested and verified that this OID works as expected.",
+          "share_with_community": "Share this with the community",
+          "back_to_menu": "Go back (discard changes)",
+          "oid_rem_sys_name": "LLDP Remote System Name OID",
+          "oid_cdp_sys_name": "Cisco CDP System Name OID"
+        },
+        "description": "👉 **[📘 Read LLDP Override Guide]({custom_oid_guide_url})**\n\nOverride the LLDP OIDs for this device. Leave these fields blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
+        "title": "Override LLDP"
+      },
+      "override_fdb": {
+        "data": {
+          "vendor": "Vendor (Brand)",
+          "description": "Description",
+          "attestation": "I attest that I have tested and verified that this OID works as expected.",
+          "share_with_community": "Share this with the community",
+          "back_to_menu": "Go back (discard changes)",
+          "oid_fdb_port": "FDB Port OID (Bridge-MIB)",
+          "oid_q_fdb_port": "Q-FDB Port OID (Q-BRIDGE-MIB)"
+        },
+        "description": "👉 **[📘 Read FDB Override Guide]({custom_oid_guide_url})**\n\nOverride the Forwarding Database (FDB) OIDs for this device. Leave these fields blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
+        "title": "Override FDB"
+      },
+      "override_arp": {
+        "data": {
+          "vendor": "Vendor (Brand)",
+          "description": "Description",
+          "attestation": "I attest that I have tested and verified that this OID works as expected.",
+          "share_with_community": "Share this with the community",
+          "back_to_menu": "Go back (discard changes)",
+          "oid_arp_mac": "ARP OID (IP-MIB)"
+        },
+        "description": "👉 **[📘 Read ARP Override Guide]({custom_oid_guide_url})**\n\nOverride the ARP OID for this device. Leave this field blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
+        "title": "Override ARP"
+      },
+      "override_base_mac": {
+        "data": {
+          "vendor": "Vendor (Brand)",
+          "description": "Description",
+          "attestation": "I attest that I have tested and verified that this OID works as expected.",
+          "share_with_community": "Share this with the community",
+          "back_to_menu": "Go back (discard changes)",
+          "oid_base_mac": "Base Bridge MAC OID (Bridge-MIB)"
+        },
+        "description": "👉 **[📘 Read Base MAC Override Guide]({custom_oid_guide_url})**\n\nOverride the Base MAC OID for this device. Leave this field blank to use automatic detection or to clear any existing override.\n\n### Existing Database Entries:\n{existing_entries}",
+        "title": "Override Base MAC"
       }
     }
   },

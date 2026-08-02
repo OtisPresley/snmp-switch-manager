@@ -1,0 +1,10 @@
+{
+  "fdb": [
+    {
+      "oid_fdb_port": "1.3.6.1.2.1.17.4.3.1.2",
+      "oid_q_fdb_port": "1.3.6.1.2.1.17.7.1.2.2.1.2",
+      "vendors": ["Standard", "Cisco", "Dell", "H3C", "HP", "Huawei", "Jt-Com", "Junos", "Mikrotik", "Zyxel"],
+      "description": "Standard Bridge-MIB dot1dTpFdbPort and Q-BRIDGE-MIB dot1qTpFdbPort OIDs"
+    }
+  ]
+}

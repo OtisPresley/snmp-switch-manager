@@ -1,0 +1,664 @@
+{
+  "config": {
+    "error": {
+      "cannot_connect": "无法连接或 SNMP 超时",
+      "required": "必填",
+      "invalid_password_length": "密码长度必须为 8–31 个字符"
+    },
+    "step": {
+      "bandwidth_enable_disable": {
+        "data": {
+          "bw_mode": "带宽数据形式",
+          "enable_bandwidth_sensors": "启用带宽传感器"
+        },
+        "description": "为此设备启用带宽数据收集。\n\n如果选择“属性”，带宽数值将添加到端口实体中（无历史记录）。\n如果选择“传感器”，将创建独立的带宽传感器实体（包含历史记录）。",
+        "title": "带宽传感器"
+      },
+      "bandwidth_poll_interval": {
+        "data": {
+          "bandwidth_poll_interval": "轮询间隔（秒）"
+        },
+        "description": "设置用于计算带宽/流量的轮询间隔。",
+        "title": "带宽传感器"
+      },
+      "bandwidth_sensors": {
+        "description": "为选定的接口启用可选的接收/发送（RX/TX）吞吐量及总流量传感器。",
+        "menu_options": {
+          "back": "返回",
+          "bandwidth_enable_disable": "启用 / 禁用",
+          "bandwidth_exclude_rules": "排除规则",
+          "bandwidth_include_rules": "包含规则",
+          "bandwidth_poll_interval": "轮询间隔"
+        },
+        "title": "带宽传感器"
+      },
+      "environmental_enable_disable": {
+        "data": {
+          "env_enabled": "启用环境传感器",
+          "env_mode": "环境数据形式",
+          "poe_enabled": "启用 PoE 传感器",
+          "poe_mode": "PoE 数据形式",
+          "poe_per_port_power": "创建每个端口的 PoE 功率传感器",
+          "poe_control_loops": "PoE 控制循环"
+        },
+        "description": "为此设备启用环境/PoE 监控。\n\n如果选择“属性”，数值将添加到端口实体中（无历史记录）。\n如果选择“传感器”，将创建独立的传感器实体（包含历史记录）。",
+        "title": "环境传感器"
+      },
+      "environmental_sensors": {
+        "description": "为此设备启用可选的环境与 PoE 监控。",
+        "menu_options": {
+          "back": "返回",
+          "environmental_enable_disable": "启用 / 禁用"
+        },
+        "title": "环境传感器"
+      },
+      "init": {
+        "description": "管理每个设备的重写覆盖及高级设置。",
+        "menu_options": {
+          "bandwidth_sensors": "带宽传感器",
+          "connection_overrides": "连接与命名重写",
+          "environmental_sensors": "环境传感器",
+          "manage_interfaces": "管理接口"
+        },
+        "title": "设备选项"
+      },
+      "manage_interfaces": {
+        "menu_options": {
+          "back": "返回",
+          "builtin_filters": "内置厂商过滤器",
+          "interface_exclude_rules": "排除的接口",
+          "interface_include_rules": "包含的接口",
+          "port_name_rules": "接口命名规则"
+        },
+        "title": "管理接口"
+      },
+      "user": {
+        "data": {
+          "host": "主机/IP",
+          "port": "端口",
+          "snmp_version": "SNMP 版本"
+        },
+        "description": "选择 SNMP 版本并提供连接详细信息。",
+        "title": "连接到您的交换机"
+      },
+      "snmpv2c": {
+        "data": {
+          "community": "SNMP 团体字（读写团体字用于写入别名）"
+        },
+        "description": "提供 SNMP v2c 团体字。\n\n如果出现身份验证错误，请核对设备上的团体字字符串。",
+        "title": "SNMP v2c"
+      },
+      "snmpv3": {
+        "data": {
+          "snmpv3_username": "SNMPv3 用户名",
+          "snmpv3_auth_protocol": "身份验证协议",
+          "snmpv3_auth_password": "身份验证密码",
+          "snmpv3_priv_protocol": "加密协议",
+          "snmpv3_priv_password": "加密密码"
+        },
+        "description": "提供 SNMP v3 凭据。\n\n- **身份验证协议：** HMAC-SHA 或 HMAC-MD5\n- **加密协议：** None（无）或 CBC-DES（取决于设备）\n\n许多设备要求密码长度在 8 至 31 个字符之间，且可能不支持特殊字符。",
+        "title": "SNMP v3"
+      }
+    }
+  },
+  "options": {
+    "error": {
+      "invalid_oid": "OID 格式无效（必须为点分数字 OID）",
+      "invalid_poll_interval": "轮询间隔无效",
+      "invalid_port": "端口无效",
+      "invalid_regex": "正则表达式模式无效",
+      "invalid_uptime_interval": "运行时间刷新间隔无效",
+      "required": "必填",
+      "invalid_password_length": "密码长度必须为 8–31 个字符",
+      "required_attestation": "您必须确认已测试并验证该 OID",
+      "authorization_pending": "等待授权中。请在 GitHub 上输入代码后再试。",
+      "github_error": "无法与 GitHub 通信。请稍后再试。",
+      "required_share": "既然您已验证该 OID，请勾选共享至社区的选项以帮助其他用户。",
+      "required_attestation_to_share": "在与社区共享之前，您必须确认已测试该 OID。",
+      "required_all_attestations_to_share": "您必须勾选全部三个确认复选框才能提交至 GitHub。",
+      "duplicate_oid": "该厂商的数据库中已存在此 OID。",
+      "invalid_float": "数字缩放因子无效（必须为浮点数，如 1.0 或 0.1）",
+      "either_percentage_or_free_total": "请提供内存使用率百分比 OID，或者同时提供空闲和总内存 OID，不能同时提供两者。"
+    },
+    "step": {
+      "bandwidth_enable": {
+        "data": {
+          "enable_bandwidth_sensors": "启用带宽传感器"
+        },
+        "description": "为此设备开启或关闭带宽传感器实体。",
+        "title": "带宽传感器"
+      },
+      "bandwidth_enable_disable": {
+        "data": {
+          "bw_mode": "带宽数据形式",
+          "enable_bandwidth_sensors": "启用带宽收集",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "👉 **[📘 阅读带宽配置指南]({bandwidth_guide_url})**\n\n为此设备启用带宽数据收集。\n\n如果选择**属性**，带宽数值将添加到端口实体中（无历史记录）。\n如果选择**传感器**，将创建独立的带宽传感器实体（包含历史记录）。",
+        "title": "带宽传感器"
+      },
+      "bandwidth_exclude_rules": {
+        "data": {
+          "rule_action": "操作",
+          "rule_existing": "现有规则",
+          "rule_match": "匹配类型",
+          "rule_new_value": "新值",
+          "rule_value": "匹配值",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "👉 **[📘 阅读带宽配置指南]({bandwidth_guide_url})**\n\n添加或删除排除规则。排除规则始终优先生效。",
+        "title": "带宽传感器排除规则"
+      },
+      "bandwidth_icons": {
+        "data": {
+          "bw_rx_throughput_icon": "接收（RX）吞吐量图标",
+          "bw_rx_total_icon": "接收（RX）总流量图标",
+          "bw_tx_throughput_icon": "发送（TX）吞吐量图标",
+          "bw_tx_total_icon": "发送（TX）总流量图标",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "带宽传感器的可选图标重写。留空则使用默认值。",
+        "title": "带宽传感器图标"
+      },
+      "bandwidth_include_rules": {
+        "data": {
+          "rule_action": "操作",
+          "rule_existing": "现有规则",
+          "rule_match": "匹配类型",
+          "rule_new_value": "新值",
+          "rule_value": "匹配值",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "👉 **[📘 阅读带宽配置指南]({bandwidth_guide_url})**\n\n添加或删除包含规则。如果设置了包含规则，则只有匹配的接口才会生成带宽传感器。",
+        "title": "带宽传感器包含规则"
+      },
+      "bandwidth_poll_interval": {
+        "data": {
+          "bandwidth_poll_interval": "轮询间隔（秒）",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "设置带宽传感器的轮询间隔。较短的间隔更新更频繁，但会增加 SNMP 负载。",
+        "title": "带宽传感器"
+      },
+      "bandwidth_sensors": {
+        "description": "👉 **[📘 阅读带宽配置指南]({bandwidth_guide_url})**\n\n为选定的接口启用可选的接收/发送（RX/TX）吞吐量及总流量传感器。",
+        "menu_options": {
+          "back": "返回",
+          "bandwidth_enable_disable": "启用 / 禁用",
+          "bandwidth_exclude_rules": "排除规则",
+          "bandwidth_icons": "带宽传感器图标",
+          "bandwidth_include_rules": "包含规则",
+          "bandwidth_poll_interval": "轮询间隔"
+        },
+        "title": "带宽传感器"
+      },
+      "builtin_filters": {
+        "data": {
+          "disabled_vendor_filter_rule_ids": "已禁用的内置过滤器规则",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "为此设备启用或禁用内置厂商接口过滤规则。\n\n禁用的规则在接口发现期间不会生效。",
+        "title": "内置厂商过滤器"
+      },
+      "connection_and_naming_overrides": {
+        "data": {
+          "snmp_version": "SNMP 版本",
+          "override_community": "SNMP v2c — 团体字重写（可选）",
+          "override_port": "SNMP v2c — 端口重写（可选）",
+          "uptime_poll_interval": "运行时间刷新间隔（秒）",
+          "snmpv3_username": "SNMP v3 — 用户名（可选）",
+          "snmpv3_auth_protocol": "SNMP v3 — 身份验证协议（可选）",
+          "snmpv3_auth_password": "SNMP v3 — 身份验证密码（可选）",
+          "snmpv3_priv_protocol": "SNMP v3 — 加密协议（可选）",
+          "snmpv3_priv_password": "SNMP v3 — 加密密码（可选）",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "👉 **[📘 阅读连接与命名指南]({connection_guide_url})**\n\n可选的单设备重写设置。留空则使用初始设置中的数值。\n\n### SNMP 版本\n受 Home Assistant 限制，所有字段始终可见。仅所选的 **SNMP 版本** 决定将使用哪些字段。\n\n### SNMP v2c\n仅当需要覆盖初始设置值时，才填写 **SNMP 团体字重写** 和 **SNMP 端口重写**。\n\n### SNMP v3\n选择 SNMP v3 时，请填写 **SNMPv3 用户名** 及身份验证/加密设置。许多设备要求密码长度在 8 至 31 个字符之间，且可能不支持特殊字符。",
+        "title": "连接与名称"
+      },
+      "feature_overrides": {
+        "description": "👉 **[📘 阅读自定义 OID 重写指南]({custom_oid_guide_url})**\n\n管理特定功能的自定义 OID 重写。",
+        "menu_options": {
+          "override_power": "重写电源",
+          "back": "返回",
+          "override_cpu": "重写 CPU",
+          "override_memory": "重写内存",
+          "override_fans": "重写风扇",
+          "override_psu": "重写电源供应器（PSU）",
+          "override_temperature": "重写温度",
+          "override_poe": "重写 PoE",
+          "override_device_info": "重写设备信息",
+          "override_lldp": "重写 LLDP",
+          "override_fdb": "重写 FDB",
+          "override_arp": "重写 ARP",
+          "override_base_mac": "重写基础 MAC"
+        },
+        "title": "功能 OID 重写"
+      },
+      "override_cpu": {
+        "data": {
+          "oid": "CPU OID",
+          "vendor": "厂商（品牌）",
+          "method": "方法",
+          "scale": "缩放因子",
+          "unit": "单位",
+          "description": "描述",
+          "attestation": "我确认已测试并验证此 OID 如预期正常工作。",
+          "share_with_community": "与社区共享此项",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "👉 **[📘 阅读 CPU 重写指南]({custom_oid_guide_url})**\n\n重写此设备的 CPU OID。留空此字段以使用自动检测或清除现有重写。\n\n### 数据库现有条目：\n{existing_entries}",
+        "title": "重写 CPU"
+      },
+      "override_memory": {
+        "data": {
+          "oid": "内存使用率百分比 OID",
+          "oid_free": "空闲内存 OID",
+          "oid_total": "总内存 OID",
+          "vendor": "厂商（品牌）",
+          "method": "方法",
+          "attestation": "我确认已测试并验证这些 OID 如预期正常工作。",
+          "share_with_community": "与社区共享此项",
+          "back_to_menu": "返回（放弃更改）",
+          "scale": "缩放因子"
+        },
+        "description": "👉 **[📘 阅读内存重写指南]({custom_oid_guide_url})**\n\n重写此设备的内存 OID。输入单个内存使用率百分比 OID，或同时输入空闲与总内存 OID。留空所有字段以使用自动检测或清除现有重写。\n\n### 数据库现有条目：\n{existing_entries}",
+        "title": "重写内存"
+      },
+      "override_fans": {
+        "data": {
+          "oid_rpm": "风扇转速（RPM）OID（可选）",
+          "oid_status": "风扇状态 OID（可选）",
+          "vendor": "厂商（品牌）",
+          "method": "方法",
+          "attestation": "我确认已测试并验证这些 OID 如预期正常工作。",
+          "share_with_community": "与社区共享此项",
+          "back_to_menu": "返回（放弃更改）",
+          "scale": "缩放因子"
+        },
+        "description": "👉 **[📘 阅读风扇重写指南]({custom_oid_guide_url})**\n\n重写此设备的风扇 OID。两个字段均留空以使用自动检测或清除现有重写。\n\n### 数据库现有条目：\n{existing_entries}",
+        "title": "重写风扇"
+      },
+      "override_psu": {
+        "data": {
+          "oid_status": "PSU 状态 OID",
+          "vendor": "厂商（品牌）",
+          "method": "方法",
+          "oid_label": "标签 OID（可选）",
+          "filter": "过滤器（可选）",
+          "attestation": "我确认已测试并验证这些 OID 如预期正常工作。",
+          "share_with_community": "与社区共享此项",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "👉 **[📘 阅读 PSU 重写指南]({custom_oid_guide_url})**\n\n重写此设备的电源供应器（PSU）OID。留空此字段以使用自动检测或清除现有重写。\n\n### 数据库现有条目：\n{existing_entries}",
+        "title": "重写 PSU"
+      },
+      "override_temperature": {
+        "data": {
+          "oid": "温度 OID",
+          "vendor": "厂商（品牌）",
+          "method": "方法",
+          "oid_state": "状态 OID（可选）",
+          "oid_label": "标签 OID（可选）",
+          "attestation": "我确认已测试并验证这些 OID 如预期正常工作。",
+          "share_with_community": "与社区共享此项",
+          "back_to_menu": "返回（放弃更改）",
+          "scale": "缩放因子"
+        },
+        "description": "👉 **[📘 阅读温度重写指南]({custom_oid_guide_url})**\n\n重写此设备的温度 OID。主温度 OID 字段留空以使用自动检测或清除现有重写。\n\n### 数据库现有条目：\n{existing_entries}",
+        "title": "重写温度"
+      },
+      "ask_pr": {
+        "data": {
+          "submit": "提交重写至 GitHub"
+        },
+        "description": "您是否希望将此重写提交至代码库以帮助其他用户？",
+        "title": "提交至 GitHub？"
+      },
+      "submit_pr": {
+        "description": "👉 **[📘 阅读社区提交指南]({community_guide_url})**\n\n要提交您的重写设置，请在 GitHub 上进行身份验证：\n\n1. 打开 [github.com/login/device]({url})（在新标签页中打开）\n2. 复制并输入代码：`{code}`\n3. 在 GitHub 上看到绿色对勾后，点击“提交”。",
+        "title": "在 GitHub 上的身份验证",
+        "data": {
+          "authorized": "我已在 GitHub 上完成授权",
+          "back_to_menu": "返回（放弃更改）"
+        }
+      },
+      "create_pr": {
+        "description": "{status}",
+        "title": "PR 状态"
+      },
+      "device_options": {
+        "description": "管理每个设备的重写覆盖及高级设置。",
+        "menu_options": {
+          "bandwidth_sensors": "带宽传感器",
+          "connection_and_naming_overrides": "连接与名称",
+          "environmental_sensors": "环境传感器",
+          "feature_overrides": "功能 OID 重写",
+          "manage_interfaces": "管理接口"
+        },
+        "title": "设备选项"
+      },
+      "entity_icon_rules": {
+        "data": {
+          "icon_action": "操作",
+          "icon_existing": "现有规则",
+          "icon_icon": "图标（例如 mdi:ethernet）",
+          "icon_match": "匹配类型",
+          "icon_value": "匹配值",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "根据接口名称匹配重写接口实体的图标。",
+        "title": "实体图标规则"
+      },
+      "environmental_enable_disable": {
+        "data": {
+          "env_enabled": "启用环境传感器",
+          "env_mode": "环境数据形式",
+          "poe_enabled": "启用 PoE 统计数据",
+          "poe_mode": "PoE 数据形式",
+          "poe_per_port_power": "创建每个端口的 PoE 功率传感器",
+          "back_to_menu": "返回（放弃更改）",
+          "poe_control_loops": "PoE 控制循环"
+        },
+        "description": "👉 **[📘 阅读环境传感器指南]({env_guide_url})**\n\n选择环境/PoE 数据是作为属性保存（无历史记录）还是作为独立的传感器保存（包含历史记录）。",
+        "title": "环境传感器"
+      },
+      "environmental_poll_interval": {
+        "data": {
+          "env_poll_interval": "轮询间隔",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "轮询环境数值的频率（以秒为单位）。",
+        "title": "环境轮询间隔"
+      },
+      "environmental_sensors": {
+        "description": "👉 **[📘 阅读环境传感器指南]({env_guide_url})**\n\n为此设备启用可选的环境及 PoE 监控。",
+        "menu_options": {
+          "back": "返回",
+          "environmental_enable_disable": "启用 / 禁用",
+          "environmental_poll_interval": "环境轮询间隔",
+          "poe_poll_interval": "PoE 轮询间隔"
+        },
+        "title": "环境传感器"
+      },
+      "exclude_rules": {
+        "data": {
+          "rule_action": "操作",
+          "rule_existing": "现有规则",
+          "rule_match": "匹配类型",
+          "rule_new_value": "新值",
+          "rule_value": "匹配值",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "添加、编辑或删除接口排除规则。",
+        "title": "排除规则"
+      },
+      "include_rules": {
+        "data": {
+          "rule_action": "操作",
+          "rule_existing": "现有规则",
+          "rule_match": "匹配类型",
+          "rule_new_value": "新值",
+          "rule_value": "匹配值",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "添加、编辑或删除接口包含规则。",
+        "title": "包含规则"
+      },
+      "manage_interfaces": {
+        "description": "👉 **[📘 阅读接口管理指南]({interfaces_guide_url})**\n\n管理在 Home Assistant 中创建为实体的接口。",
+        "menu_options": {
+          "back": "返回",
+          "builtin_vendor_filters": "内置厂商过滤器",
+          "submit_community_interface_rule": "提交社区过滤器/标记",
+          "entity_icon_rules": "实体图标规则",
+          "excluded_interfaces": "排除的接口",
+          "included_interfaces": "包含的接口",
+          "interface_name_rules": "接口命名规则",
+          "interface_ip_display": "接口 IP 显示"
+        },
+        "title": "管理接口"
+      },
+      "poe_poll_interval": {
+        "data": {
+          "poe_poll_interval": "轮询间隔",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "轮询 PoE 功率数值的频率（以秒为单位）。",
+        "title": "PoE 轮询间隔"
+      },
+      "port_name_rules": {
+        "description": "👉 **[📘 阅读接口命名规则指南]({naming_guide_url})**\n\n自定义界面和卡片中接口名称的显示方式。\n\n提供内置规则作为示例，可按设备禁用。",
+        "menu_options": {
+          "manage_interfaces": "返回",
+          "port_rename_custom": "自定义重命名规则",
+          "port_rename_defaults": "内置重命名规则",
+          "port_rename_restore_defaults": "恢复内置规则"
+        },
+        "title": "接口命名规则"
+      },
+      "port_rename_custom": {
+        "title": "自定义重命名规则",
+        "description": "👉 **[📘 阅读接口命名规则指南]({naming_guide_url})**\n\n添加、编辑或删除自定义重命名规则。\n\n规则按顺序依次应用，且优先级高于内置重命名规则。\n\n提示：编辑时将“替换值”留空可保持现有的替换值（若要设置为空替换值，请使用“删除 + 添加”）。",
+        "data": {
+          "rule_action": "操作",
+          "rule_existing": "现有规则",
+          "rule_match": "匹配类型",
+          "rule_value": "匹配值",
+          "rule_replace": "替换值",
+          "back_to_menu": "返回（放弃更改）"
+        }
+      },
+      "port_rename_custom_add": {
+        "data": {
+          "description": "描述（可选）",
+          "pattern": "正则表达式模式",
+          "replace": "替换值"
+        },
+        "description": "创建转换所显示接口名称的正则表达式规则。\n\n示例模式：^Gi(\\\\d+)/0/(\\\\d+)$\n示例替换值：Uplink-\\\\1-\\\\2",
+        "title": "添加重命名规则"
+      },
+      "port_rename_custom_edit": {
+        "data": {
+          "selected": "选择的规则"
+        },
+        "description": "选择现有规则进行编辑。",
+        "title": "编辑自定义命名规则"
+      },
+      "port_rename_custom_remove": {
+        "data": {
+          "remove_index": "规则"
+        },
+        "description": "选择要删除的自定义规则。",
+        "title": "删除重命名规则"
+      },
+      "port_rename_defaults": {
+        "data": {
+          "builtin_link_aggregate_to_po": "规范化链路聚合 → Po",
+          "builtin_loopback_to_lo0": "规范化环回接口 → Lo0",
+          "builtin_port_channel_to_po": "规范化 port-channel → Po",
+          "builtin_portchannel_to_po": "规范化 PortChannel → Po",
+          "builtin_unit_slot_port_100m_to_fa": "规范化 单元/插槽/端口 百兆(100M) → Fa",
+          "builtin_unit_slot_port_10g_to_te": "规范化 单元/插槽/端口 万兆(10G) → Te",
+          "builtin_unit_slot_port_1g_to_gi": "规范化 单元/插槽/端口 千兆(1G) → Gi",
+          "builtin_unit_slot_port_20g_to_tw": "规范化 单元/插槽/端口 20G → Tw",
+          "defaults_action": "操作",
+          "port_rename_disabled_default_ids": "内置重命名规则（禁用）",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "description": "👉 **[📘 阅读接口命名规则指南]({naming_guide_url})**\n\n为此设备启用或禁用内置显示名称规则。\n\n当前内置规则：\n{rules}",
+        "title": "内置重命名规则"
+      },
+      "interface_ip_display": {
+        "title": "接口 IP 显示",
+        "description": "👉 **[📘 阅读接口 IP 显示指南]({ip_guide_url})**\n\n控制如何在接口上显示 IP 地址。",
+        "data": {
+          "hide_ip_on_physical_interfaces": "隐藏物理接口上的 IP 字段",
+          "back_to_menu": "返回（放弃更改）"
+        },
+        "data_description": {
+          "hide_ip_on_physical_interfaces": "启用后，IP 地址将仅在虚拟或逻辑接口（如 VLAN 或管理接口）上显示。"
+        }
+      },
+      "override_power": {
+        "data": {
+          "oid": "电源 OID",
+          "vendor": "厂商（品牌）",
+          "method": "方法",
+          "description": "描述",
+          "attestation": "我确认已测试并验证此 OID 如预期正常工作。",
+          "share_with_community": "与社区共享此项",
+          "back_to_menu": "返回（放弃更改）",
+          "scale": "缩放因子"
+        },
+        "description": "👉 **[📘 阅读电源重写指南]({custom_oid_guide_url})**\n\n重写此设备的电源 OID。留空此字段以使用自动检测或清除现有重写。\n\n### 数据库现有条目：\n{existing_entries}",
+        "title": "重写电源"
+      },
+      "override_poe": {
+        "title": "重写 PoE",
+        "description": "👉 **[📘 阅读 PoE 重写指南]({custom_oid_guide_url})**\n\n重写此设备的以太网供电（PoE）OID。留空所有字段以使用自动检测或清除现有重写。\n\n### 数据库现有条目：\n{existing_entries}",
+        "data": {
+          "oid_budget": "总预算 OID",
+          "oid_used": "已用功率 OID",
+          "oid_port_power": "端口功率 OID",
+          "oid_port_admin": "PoE 端口管理员启用 OID（可选）",
+          "oid_port_priority": "PoE 端口供电优先级 OID（可选）",
+          "vendor": "厂商（品牌）",
+          "method": "方法",
+          "description": "描述",
+          "attestation": "我确认已测试并验证这些 OID 如预期正常工作。",
+          "share_with_community": "与社区共享此项",
+          "back_to_menu": "返回（放弃更改）",
+          "scale": "缩放因子"
+        }
+      },
+      "override_device_info": {
+        "title": "重写设备信息",
+        "description": "👉 **[📘 阅读设备信息重写指南]({custom_oid_guide_url})**\n\n重写此设备的诊断传感器 OID。留空所有字段以使用自动检测或清除现有重写。\n\n### 数据库现有条目：\n{existing_entries}",
+        "data": {
+          "manufacturer_oid": "制造商 OID（可选）",
+          "model_oid": "型号 OID（可选）",
+          "firmware_oid": "固件 OID（可选）",
+          "hostname_oid": "主机名 OID（可选）",
+          "uptime_oid": "运行时间 OID（可选）",
+          "contact_oid": "联系人 OID（可选）",
+          "name_oid": "名称 OID（可选）",
+          "location_oid": "位置 OID（可选）",
+          "vendor": "厂商（品牌）",
+          "back_to_menu": "返回（放弃更改）",
+          "attestation": "我确认已测试并验证这些 OID 如预期正常工作。",
+          "share_with_community": "与社区共享此项"
+        }
+      },
+      "submit_community_interface_rule": {
+        "title": "选择贡献类型",
+        "description": "提交新的接口过滤器或物理/虚拟分类标记至社区仓库，以惠及所有用户。",
+        "data": {
+          "contrib_type": "贡献类型"
+        }
+      },
+      "submit_community_filter": {
+        "title": "提交接口过滤器",
+        "description": "👉 **[📘 阅读社区提交指南]({community_guide_url})**\n\n定义系统级接口过滤器。必须勾选全部 3 个复选框以授权提交。",
+        "data": {
+          "label": "显示标签（例如 Cisco: 跳过 VLAN）",
+          "vendor": "厂商（品牌）",
+          "rule_type": "规则类型 / 操作",
+          "match_type": "匹配类型",
+          "match_value": "匹配值",
+          "share_with_community": "与社区共享此项",
+          "attestation": "我确认已测试并验证这些规则/标记如预期正常工作。",
+          "beneficial_for_everyone": "我确认这些过滤器/标记对所有人都有益、具有通用性，且不包含个人偏好。",
+          "back_to_menu": "返回（放弃更改）"
+        }
+      },
+      "submit_community_token": {
+        "title": "提交分类标记",
+        "description": "👉 **[📘 阅读社区提交指南]({community_guide_url})**\n\n定义物理/虚拟分类标记。必须勾选全部 3 个复选框以授权提交。",
+        "data": {
+          "type": "标记列表",
+          "token": "标记字符串（如 irb, bdi, lag）",
+          "share_with_community": "与社区共享此项",
+          "attestation": "我确认已测试并验证这些规则/标记如预期正常工作。",
+          "beneficial_for_everyone": "我确认这些过滤器/标记对所有人都有益、具有通用性，且不包含个人偏好。",
+          "back_to_menu": "返回（放弃更改）"
+        }
+      },
+      "github_connection_error": {
+        "title": "GitHub 连接错误",
+        "description": "与 GitHub 通信失败（无法获取身份验证设备代码）。请检查您的网络/互联网连接后再试。"
+      },
+      "override_lldp": {
+        "data": {
+          "vendor": "厂商（品牌）",
+          "description": "描述",
+          "attestation": "我确认已测试并验证此 OID 如预期正常工作。",
+          "share_with_community": "与社区共享此项",
+          "back_to_menu": "返回（放弃更改）",
+          "oid_rem_sys_name": "LLDP 远端系统名称 OID",
+          "oid_cdp_sys_name": "Cisco CDP 系统名称 OID"
+        },
+        "description": "👉 **[📘 阅读 LLDP 重写指南]({custom_oid_guide_url})**\n\n重写此设备的 LLDP OID。留空这些字段以使用自动检测或清除现有重写。\n\n### 数据库现有条目：\n{existing_entries}",
+        "title": "重写 LLDP"
+      },
+      "override_fdb": {
+        "data": {
+          "vendor": "厂商（品牌）",
+          "description": "描述",
+          "attestation": "我确认已测试并验证此 OID 如预期正常工作。",
+          "share_with_community": "与社区共享此项",
+          "back_to_menu": "返回（放弃更改）",
+          "oid_fdb_port": "FDB 端口 OID (Bridge-MIB)",
+          "oid_q_fdb_port": "Q-FDB 端口 OID (Q-BRIDGE-MIB)"
+        },
+        "description": "👉 **[📘 阅读 FDB 重写指南]({custom_oid_guide_url})**\n\n重写此设备的转发表（FDB）OID。留空这些字段以使用自动检测或清除现有重写。\n\n### 数据库现有条目：\n{existing_entries}",
+        "title": "重写 FDB"
+      },
+      "override_arp": {
+        "data": {
+          "vendor": "厂商（品牌）",
+          "description": "描述",
+          "attestation": "我确认已测试并验证此 OID 如预期正常工作。",
+          "share_with_community": "与社区共享此项",
+          "back_to_menu": "返回（放弃更改）",
+          "oid_arp_mac": "ARP OID (IP-MIB)"
+        },
+        "description": "👉 **[📘 阅读 ARP 重写指南]({custom_oid_guide_url})**\n\n重写此设备的 ARP OID。留空此字段以使用自动检测或清除现有重写。\n\n### 数据库现有条目：\n{existing_entries}",
+        "title": "重写 ARP"
+      },
+      "override_base_mac": {
+        "data": {
+          "vendor": "厂商（品牌）",
+          "description": "描述",
+          "attestation": "我确认已测试并验证此 OID 如预期正常工作。",
+          "share_with_community": "与社区共享此项",
+          "back_to_menu": "返回（放弃更改）",
+          "oid_base_mac": "基础网桥 MAC OID (Bridge-MIB)"
+        },
+        "description": "👉 **[📘 阅读基础 MAC 重写指南]({custom_oid_guide_url})**\n\n重写此设备的基础 MAC OID。留空此字段以使用自动检测或清除现有重写。\n\n### 数据库现有条目：\n{existing_entries}",
+        "title": "重写基础 MAC"
+      }
+    }
+  },
+  "selector": {
+    "bandwidth_data_as": {
+      "options": {
+        "attributes": "属性（无历史记录）",
+        "sensors": "传感器（历史记录）"
+      }
+    },
+    "env_data_as": {
+      "options": {
+        "attributes": "属性（无历史记录）",
+        "sensors": "传感器（历史记录）"
+      }
+    },
+    "poe_data_as": {
+      "options": {
+        "attributes": "属性（无历史记录）",
+        "sensors": "传感器（历史记录）"
+      }
+    }
+  },
+  "title": "SNMP Switch Manager"
+}
