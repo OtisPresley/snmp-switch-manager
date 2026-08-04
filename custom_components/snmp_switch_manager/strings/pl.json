@@ -1,0 +1,664 @@
+{
+  "config": {
+    "error": {
+      "cannot_connect": "Nie można nawiązać połączenia lub przekroczono limit czasu SNMP",
+      "required": "Wymagane",
+      "invalid_password_length": "Hasło musi mieć od 8 do 31 znaków"
+    },
+    "step": {
+      "bandwidth_enable_disable": {
+        "data": {
+          "bw_mode": "Dane przepustowości jako",
+          "enable_bandwidth_sensors": "Włącz sensory przepustowości"
+        },
+        "description": "Włącz zbieranie danych o przepustowości dla tego urządzenia.\n\nJeśli wybierzesz Atrybuty, wartości przepustowości zostaną dodane do encji portów (brak historii).\nJeśli wybierzesz Sensory, utworzone zostaną osobne sensory przepustowości (z historią).",
+        "title": "Sensory przepustowości"
+      },
+      "bandwidth_poll_interval": {
+        "data": {
+          "bandwidth_poll_interval": "Interwał odpytywania (sekundy)"
+        },
+        "description": "Ustaw interwał odpytywania używany do obliczania przepustowości/ruchu.",
+        "title": "Sensory przepustowości"
+      },
+      "bandwidth_sensors": {
+        "description": "Włącz opcjonalne sensory przepustowości RX/TX i całkowitego ruchu dla wybranych interfejsów.",
+        "menu_options": {
+          "back": "Wstecz",
+          "bandwidth_enable_disable": "Włącz / Wyłącz",
+          "bandwidth_exclude_rules": "Reguły wykluczania",
+          "bandwidth_include_rules": "Reguły uwzględniania",
+          "bandwidth_poll_interval": "Interwał odpytywania"
+        },
+        "title": "Sensory przepustowości"
+      },
+      "environmental_enable_disable": {
+        "data": {
+          "env_enabled": "Włącz sensory środowiskowe",
+          "env_mode": "Dane środowiskowe jako",
+          "poe_enabled": "Włącz sensory PoE",
+          "poe_mode": "Dane PoE jako",
+          "poe_per_port_power": "Utwórz sensory mocy PoE dla poszczególnych portów",
+          "poe_control_loops": "Pętle sterowania PoE"
+        },
+        "description": "Włącz monitorowanie środowiska/PoE dla tego urządzenia.\n\nJeśli wybierzesz Atrybuty, wartości zostaną dodane do encji portów (brak historii).\nJeśli wybierzesz Sensory, utworzone zostaną osobne encje sensorów (z historią).",
+        "title": "Sensory środowiskowe"
+      },
+      "environmental_sensors": {
+        "description": "Włącz opcjonalne monitorowanie środowiska i PoE dla tego urządzenia.",
+        "menu_options": {
+          "back": "Wstecz",
+          "environmental_enable_disable": "Włącz / Wyłącz"
+        },
+        "title": "Sensory środowiskowe"
+      },
+      "init": {
+        "description": "Zarządzaj nadpisaniami dla konkretnych urządzeń i zaawansowanymi ustawieniami.",
+        "menu_options": {
+          "bandwidth_sensors": "Sensory przepustowości",
+          "connection_overrides": "Połączenie i nadpisania nazw",
+          "environmental_sensors": "Sensory środowiskowe",
+          "manage_interfaces": "Zarządzaj interfejsami"
+        },
+        "title": "Opcje urządzenia"
+      },
+      "manage_interfaces": {
+        "menu_options": {
+          "back": "Wstecz",
+          "builtin_filters": "Wbudowane filtry producenta",
+          "interface_exclude_rules": "Wykluczone interfejsy",
+          "interface_include_rules": "Uwzględnione interfejsy",
+          "port_name_rules": "Reguły nazw interfejsów"
+        },
+        "title": "Zarządzaj interfejsami"
+      },
+      "user": {
+        "data": {
+          "host": "Host/IP",
+          "port": "Port",
+          "snmp_version": "Wersja SNMP"
+        },
+        "description": "Wybierz wersję SNMP i podaj szczegóły połączenia.",
+        "title": "Połącz ze swoim switchem"
+      },
+      "snmpv2c": {
+        "data": {
+          "community": "Ciąg community SNMP (RW do zapisu aliasów)"
+        },
+        "description": "Podaj ciąg community SNMP v2c.\n\nJeśli widzisz błąd uwierzytelniania, sprawdź ciąg znaków community na urządzeniu.",
+        "title": "SNMP v2c"
+      },
+      "snmpv3": {
+        "data": {
+          "snmpv3_username": "Nazwa użytkownika SNMPv3",
+          "snmpv3_auth_protocol": "Protokół uwierzytelniania",
+          "snmpv3_auth_password": "Hasło uwierzytelniania",
+          "snmpv3_priv_protocol": "Protokół szyfrowania",
+          "snmpv3_priv_password": "Hasło szyfrowania"
+        },
+        "description": "Podaj poświadczenia SNMP v3.\n\n- **Protokół uwierzytelniania:** HMAC-SHA lub HMAC-MD5\n- **Protokół szyfrowania:** brak lub CBC-DES (zależy od urządzenia)\n\nWiele urządzeń wymaga haseł o długości od 8 do 31 znaków i może odrzucać znaki specjalne.",
+        "title": "SNMP v3"
+      }
+    }
+  },
+  "options": {
+    "error": {
+      "invalid_oid": "Nieprawidłowy format OID (musi być numerycznym OID z kropkami)",
+      "invalid_poll_interval": "Nieprawidłowy interwał odpytywania",
+      "invalid_port": "Nieprawidłowy port",
+      "invalid_regex": "Nieprawidłowy wzorzec wyrażenia regularnego (regex)",
+      "invalid_uptime_interval": "Nieprawidłowy interwał odświeżania czasu pracy (uptime)",
+      "required": "Wymagane",
+      "invalid_password_length": "Hasło musi mieć od 8 do 31 znaków",
+      "required_attestation": "Musisz poświadczyć, że przetestowałeś ten OID",
+      "authorization_pending": "Autoryzacja w toku. Wprowadź kod na GitHubie i spróbuj ponownie.",
+      "github_error": "Nie udało się połączyć z GitHubem. Spróbuj ponownie później.",
+      "required_share": "Ponieważ zweryfikowałeś OID, zaznacz również opcję udostępnienia go społeczności, aby pomóc innym.",
+      "required_attestation_to_share": "Musisz poświadczyć, że przetestowałeś OID przed udostępnieniem go społeczności.",
+      "required_all_attestations_to_share": "Musisz zaznaczyć wszystkie trzy pola poświadczeń, aby przesłać do GitHuba.",
+      "duplicate_oid": "Ten OID już istnieje w bazie danych dla tego producenta.",
+      "invalid_float": "Nieprawidłowy numeryczny współczynnik skali (musi być liczbą zmiennoprzecinkową, np. 1.0 lub 0.1)",
+      "either_percentage_or_free_total": "Podaj ALBO OID procentowego zużycia pamięci, ALBO oba OID pamięci wolnej i całkowitej - nie oba."
+    },
+    "step": {
+      "bandwidth_enable": {
+        "data": {
+          "enable_bandwidth_sensors": "Włącz sensory przepustowości"
+        },
+        "description": "Włącz lub wyłącz encje sensorów przepustowości dla tego urządzenia.",
+        "title": "Sensory przepustowości"
+      },
+      "bandwidth_enable_disable": {
+        "data": {
+          "bw_mode": "Dane przepustowości jako",
+          "enable_bandwidth_sensors": "Włącz zbieranie danych o przepustowości",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "👉 **[📘 Przeczytaj poradnik konfiguracji przepustowości]({bandwidth_guide_url})**\n\nWłącz zbieranie danych o przepustowości dla tego urządzenia.\n\nJeśli wybierzesz **Atrybuty**, wartości przepustowości zostaną dodane do encji portów (brak historii).\nJeśli wybierzesz **Sensory**, utworzone zostaną osobne sensory przepustowości (z historią).",
+        "title": "Sensory przepustowości"
+      },
+      "bandwidth_exclude_rules": {
+        "data": {
+          "rule_action": "Akcja",
+          "rule_existing": "Istniejąca reguła",
+          "rule_match": "Dopasowanie",
+          "rule_new_value": "Nowa wartość",
+          "rule_value": "Wartość",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "👉 **[📘 Przeczytaj poradnik konfiguracji przepustowości]({bandwidth_guide_url})**\n\nDodaj lub usuń reguły wykluczające. Reguły wykluczające zawsze mają pierwszeństwo.",
+        "title": "Reguły wykluczania sensorów przepustowości"
+      },
+      "bandwidth_icons": {
+        "data": {
+          "bw_rx_throughput_icon": "Ikona przepustowości RX",
+          "bw_rx_total_icon": "Ikona całkowitego ruchu RX",
+          "bw_tx_throughput_icon": "Ikona przepustowości TX",
+          "bw_tx_total_icon": "Ikona całkowitego ruchu TX",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "Opcjonalne nadpisanie ikon dla sensorów przepustowości. Zostaw puste, aby użyć domyślnych.",
+        "title": "Ikony sensorów przepustowości"
+      },
+      "bandwidth_include_rules": {
+        "data": {
+          "rule_action": "Akcja",
+          "rule_existing": "Istniejąca reguła",
+          "rule_match": "Dopasowanie",
+          "rule_new_value": "Nowa wartość",
+          "rule_value": "Wartość",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "👉 **[📘 Przeczytaj poradnik konfiguracji przepustowości]({bandwidth_guide_url})**\n\nDodaj lub usuń reguły uwzględniające. Jeśli ustawiono jakiekolwiek reguły uwzględniające, tylko pasujące interfejsy otrzymają sensory przepustowości.",
+        "title": "Reguły uwzględniania sensorów przepustowości"
+      },
+      "bandwidth_poll_interval": {
+        "data": {
+          "bandwidth_poll_interval": "Interwał odpytywania (sekundy)",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "Ustaw interwał odpytywania dla sensorów przepustowości. Niższe wartości aktualizują się częściej, ale zwiększają obciążenie SNMP.",
+        "title": "Sensory przepustowości"
+      },
+      "bandwidth_sensors": {
+        "description": "👉 **[📘 Przeczytaj poradnik konfiguracji przepustowości]({bandwidth_guide_url})**\n\nWłącz opcjonalne sensory przepustowości RX/TX i całkowitego ruchu dla wybranych interfejsów.",
+        "menu_options": {
+          "back": "Wstecz",
+          "bandwidth_enable_disable": "Włącz / Wyłącz",
+          "bandwidth_exclude_rules": "Reguły wykluczania",
+          "bandwidth_icons": "Ikony sensorów przepustowości",
+          "bandwidth_include_rules": "Reguły uwzględniania",
+          "bandwidth_poll_interval": "Interwał odpytywania"
+        },
+        "title": "Sensory przepustowości"
+      },
+      "builtin_filters": {
+        "data": {
+          "disabled_vendor_filter_rule_ids": "Wyłączone wbudowane reguły filtrowania",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "Włącz lub wyłącz wbudowane reguły filtrowania interfejsów producenta dla tego urządzenia.\n\nWyłączone reguły nie będą stosowane podczas wykrywania interfejsów.",
+        "title": "Wbudowane filtry producenta"
+      },
+      "connection_and_naming_overrides": {
+        "data": {
+          "snmp_version": "Wersja SNMP",
+          "override_community": "SNMP v2c — Nadpisanie community (opcjonalnie)",
+          "override_port": "SNMP v2c — Nadpisanie portu (opcjonalnie)",
+          "uptime_poll_interval": "Interwał odświeżania czasu pracy (sekundy)",
+          "snmpv3_username": "SNMP v3 — Nazwa użytkownika (opcjonalnie)",
+          "snmpv3_auth_protocol": "SNMP v3 — Protokół uwierzytelniania (opcjonalnie)",
+          "snmpv3_auth_password": "SNMP v3 — Hasło uwierzytelniania (opcjonalnie)",
+          "snmpv3_priv_protocol": "SNMP v3 — Protokół szyfrowania (opcjonalnie)",
+          "snmpv3_priv_password": "SNMP v3 — Hasło szyfrowania (opcjonalnie)",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "👉 **[📘 Przeczytaj poradnik połączeń i nazw]({connection_guide_url})**\n\nOpcjonalne nadpisania dla danego urządzenia. Zostaw puste, aby użyć wartości z początkowej konfiguracji.\n\n### Wersja SNMP\nWszystkie pola są zawsze widoczne ze względu na ograniczenia Home Assistanta. Tylko wybrana **Wersja SNMP** decyduje, które pola będą brane pod uwagę.\n\n### SNMP v2c\nUżyj **nadpisania community SNMP** oraz **nadpisanie portu SNMP** tylko, jeśli musisz nadpisać początkowe ustawienia.\n\n### SNMP v3\nWypełnij **Nazwa użytkownika SNMPv3** i ustawienia uwierzytelniania/szyfrowania, jeśli wybrano SNMP v3. Wiele urządzeń wymaga haseł o długości od 8 do 31 znaków i może odrzucać znaki specjalne.",
+        "title": "Połączenie i nazwa"
+      },
+      "feature_overrides": {
+        "description": "👉 **[📘 Przeczytaj Poradnik nadpisywania niestandardowych OID]({custom_oid_guide_url})**\n\nZarządzaj niestandardowymi nadpisaniami OID dla konkretnych funkcji.",
+        "menu_options": {
+          "override_power": "Nadpisz zasilanie",
+          "back": "Wstecz",
+          "override_cpu": "Nadpisz CPU",
+          "override_memory": "Nadpisz pamięć",
+          "override_fans": "Nadpisz wentylatory",
+          "override_psu": "Nadpisz zasilacz (PSU)",
+          "override_temperature": "Nadpisz temperaturę",
+          "override_poe": "Nadpisz PoE",
+          "override_device_info": "Nadpisz informacje o urządzeniu",
+          "override_lldp": "Nadpisz LLDP",
+          "override_fdb": "Nadpisz FDB",
+          "override_arp": "Nadpisz ARP",
+          "override_base_mac": "Nadpisz bazowy adres MAC"
+        },
+        "title": "Nadpisania funkcji OID"
+      },
+      "override_cpu": {
+        "data": {
+          "oid": "OID procesora (CPU)",
+          "vendor": "Producent (marka)",
+          "method": "Metoda",
+          "scale": "Skala",
+          "unit": "Jednostka",
+          "description": "Opis",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że ten OID działa zgodnie z oczekiwaniami.",
+          "share_with_community": "Udostępnij to społeczności",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "👉 **[📘 Przeczytaj poradnik nadpisywania CPU]({custom_oid_guide_url})**\n\nNadpisz OID procesora (CPU) dla tego urządzenia. Zostaw to pole puste, aby użyć automatycznego wykrywania lub wyczyścić istniejące nadpisanie.\n\n### Istniejące wpisy w bazie danych:\n{existing_entries}",
+        "title": "Nadpisz CPU"
+      },
+      "override_memory": {
+        "data": {
+          "oid": "OID procentowego zużycia pamięci",
+          "oid_free": "OID wolnej pamięci",
+          "oid_total": "OID całkowitej pamięci",
+          "vendor": "Producent (marka)",
+          "method": "Metoda",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że te OID działają zgodnie z oczekiwaniami.",
+          "share_with_community": "Udostępnij to społeczności",
+          "back_to_menu": "Wstecz (odrzuć zmiany)",
+          "scale": "Skala"
+        },
+        "description": "👉 **[📘 Przeczytaj Poradnik nadpisywania pamięci]({custom_oid_guide_url})**\n\nNadpisz OID pamięci dla tego urządzenia. Wprowadź pojedynczy OID procentowego zużycia pamięci ALBO oba OID dla wolnej i całkowitej pamięci. Zostaw wszystkie pola puste, aby użyć automatycznego wykrywania lub wyczyścić istniejące nadpisanie.\n\n### Istniejące wpisy w bazie danych:\n{existing_entries}",
+        "title": "Nadpisz Pamięć"
+      },
+      "override_fans": {
+        "data": {
+          "oid_rpm": "OID prędkości wentylatora (RPM) (opcjonalnie)",
+          "oid_status": "OID statusu wentylatora (opcjonalnie)",
+          "vendor": "Producent (marka)",
+          "method": "Metoda",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że te OID działają zgodnie z oczekiwaniami.",
+          "share_with_community": "Udostępnij to społeczności",
+          "back_to_menu": "Wstecz (odrzuć zmiany)",
+          "scale": "Skala"
+        },
+        "description": "👉 **[📘 Przeczytaj Poradnik nadpisywania wentylatorów]({custom_oid_guide_url})**\n\nNadpisz OID wentylatorów dla tego urządzenia. Zostaw oba pola puste, aby użyć automatycznego wykrywania lub wyczyścić istniejące nadpisanie.\n\n### Istniejące wpisy w bazie danych:\n{existing_entries}",
+        "title": "Nadpisz Wentylatory"
+      },
+      "override_psu": {
+        "data": {
+          "oid_status": "OID statusu zasilacza (PSU)",
+          "vendor": "Producent (marka)",
+          "method": "Metoda",
+          "oid_label": "OID etykiety (opcjonalnie)",
+          "filter": "Filtr (opcjonalnie)",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że te OID działają zgodnie z oczekiwaniami.",
+          "share_with_community": "Udostępnij to społeczności",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "👉 **[📘 Przeczytaj Poradnik nadpisywania zasilacza (PSU)]({custom_oid_guide_url})**\n\nNadpisz OID zasilacza (PSU) dla tego urządzenia. Zostaw to pole puste, aby użyć automatycznego wykrywania lub wyczyścić istniejące nadpisanie.\n\n### Istniejące wpisy w bazie danych:\n{existing_entries}",
+        "title": "Nadpisz Zasilacz (PSU)"
+      },
+      "override_temperature": {
+        "data": {
+          "oid": "OID temperatury",
+          "vendor": "Producent (marka)",
+          "method": "Metoda",
+          "oid_state": "OID stanu (opcjonalnie)",
+          "oid_label": "OID etykiety (opcjonalnie)",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że te OID działają zgodnie z oczekiwaniami.",
+          "share_with_community": "Udostępnij to społeczności",
+          "back_to_menu": "Wstecz (odrzuć zmiany)",
+          "scale": "Skala"
+        },
+        "description": "👉 **[📘 Przeczytaj Poradnik nadpisywania temperatury]({custom_oid_guide_url})**\n\nNadpisz OID temperatury dla tego urządzenia. Zostaw główne pole OID temperatury puste, aby użyć automatycznego wykrywania lub wyczyścić istniejące nadpisanie.\n\n### Istniejące wpisy w bazie danych:\n{existing_entries}",
+        "title": "Nadpisz Temperaturę"
+      },
+      "ask_pr": {
+        "data": {
+          "submit": "Wyślij nadpisanie do GitHuba"
+        },
+        "description": "Czy chcesz wysłać to nadpisanie do repozytorium, aby pomóc innym użytkownikom?",
+        "title": "Wysłać do GitHuba?"
+      },
+      "submit_pr": {
+        "description": "👉 **[📘 Przeczytaj Poradnik przesyłania do społeczności]({community_guide_url})**\n\nAby przesłać swoje nadpisanie, uwierzytelnij się w serwisie GitHub:\n\n1. Przejdź do [github.com/login/device]({url}) (otworzy się w nowej karcie)\n2. Skopiuj i wprowadź kod: `{code}`\n3. Gdy na GitHubie pojawi się zielony haczyk, kliknij Wyślij (Submit).",
+        "title": "Uwierzytelnianie w serwisie GitHub",
+        "data": {
+          "authorized": "Autoryzowałem to na GitHubie",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        }
+      },
+      "create_pr": {
+        "description": "{status}",
+        "title": "Status PR"
+      },
+      "device_options": {
+        "description": "Zarządzaj nadpisaniami dla konkretnych urządzeń i zaawansowanymi ustawieniami.",
+        "menu_options": {
+          "bandwidth_sensors": "Sensory przepustowości",
+          "connection_and_naming_overrides": "Połączenie i nazwa",
+          "environmental_sensors": "Sensory środowiskowe",
+          "feature_overrides": "Nadpisania funkcji OID",
+          "manage_interfaces": "Zarządzaj interfejsami"
+        },
+        "title": "Opcje urządzenia"
+      },
+      "entity_icon_rules": {
+        "data": {
+          "icon_action": "Akcja",
+          "icon_existing": "Istniejąca reguła",
+          "icon_icon": "Ikona (np. mdi:ethernet)",
+          "icon_match": "Typ dopasowania",
+          "icon_value": "Wartość dopasowania",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "Nadpisz ikony encji interfejsów na podstawie dopasowania nazwy interfejsu.",
+        "title": "Reguły ikon encji"
+      },
+      "environmental_enable_disable": {
+        "data": {
+          "env_enabled": "Włącz sensory środowiskowe",
+          "env_mode": "Dane środowiskowe jako",
+          "poe_enabled": "Włącz statystyki PoE",
+          "poe_mode": "Dane PoE jako",
+          "poe_per_port_power": "Utwórz sensory mocy PoE dla poszczególnych portów",
+          "back_to_menu": "Wstecz (odrzuć zmiany)",
+          "poe_control_loops": "Pętle sterowania PoE"
+        },
+        "description": "👉 **[📘 Przeczytaj Poradnik sensorów środowiskowych]({env_guide_url})**\n\nWybierz, czy dane środowiskowe/PoE mają być przechowywane jako atrybuty (brak historii), czy jako osobne sensory (z historią).",
+        "title": "Sensory środowiskowe"
+      },
+      "environmental_poll_interval": {
+        "data": {
+          "env_poll_interval": "Interwał odpytywania",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "Jak często odpytywać wartości środowiskowe (w sekundach).",
+        "title": "Interwał odpytywania środowiska"
+      },
+      "environmental_sensors": {
+        "description": "👉 **[📘 Przeczytaj Poradnik sensorów środowiskowych]({env_guide_url})**\n\nWłącz opcjonalne monitorowanie środowiska i PoE dla tego urządzenia.",
+        "menu_options": {
+          "back": "Wstecz",
+          "environmental_enable_disable": "Włącz / Wyłącz",
+          "environmental_poll_interval": "Interwał odpytywania środowiska",
+          "poe_poll_interval": "Interwał odpytywania PoE"
+        },
+        "title": "Sensory środowiskowe"
+      },
+      "exclude_rules": {
+        "data": {
+          "rule_action": "Akcja",
+          "rule_existing": "Istniejąca reguła",
+          "rule_match": "Typ dopasowania",
+          "rule_new_value": "Nowa wartość",
+          "rule_value": "Wartość dopasowania",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "Dodaj, edytuj lub usuń reguły wykluczania interfejsów.",
+        "title": "Reguły wykluczania"
+      },
+      "include_rules": {
+        "data": {
+          "rule_action": "Akcja",
+          "rule_existing": "Istniejąca reguła",
+          "rule_match": "Typ dopasowania",
+          "rule_new_value": "Nowa wartość",
+          "rule_value": "Wartość dopasowania",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "Dodaj, edytuj lub usuń reguły uwzględniania interfejsów.",
+        "title": "Reguły uwzględniania"
+      },
+      "manage_interfaces": {
+        "description": "👉 **[📘 Przeczytaj Poradnik zarządzania interfejsami]({interfaces_guide_url})**\n\nZarządzaj tym, które interfejsy zostaną utworzone jako encje w Home Assistant.",
+        "menu_options": {
+          "back": "Wstecz",
+          "builtin_vendor_filters": "Wbudowane filtry producenta",
+          "submit_community_interface_rule": "Prześlij filtr/token do społeczności",
+          "entity_icon_rules": "Reguły ikon encji",
+          "excluded_interfaces": "Wykluczone interfejsy",
+          "included_interfaces": "Uwzględnione interfejsy",
+          "interface_name_rules": "Reguły nazw interfejsów",
+          "interface_ip_display": "Wyświetlanie IP interfejsu"
+        },
+        "title": "Zarządzaj interfejsami"
+      },
+      "poe_poll_interval": {
+        "data": {
+          "poe_poll_interval": "Interwał odpytywania",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "Jak często odpytywać wartości mocy PoE (w sekundach).",
+        "title": "Interwał odpytywania PoE"
+      },
+      "port_name_rules": {
+        "description": "👉 **[📘 Przeczytaj Poradnik reguł nazewnictwa interfejsów]({naming_guide_url})**\n\nDostosuj, w jaki sposób nazwy interfejsów są wyświetlane w interfejsie użytkownika (UI) oraz na karcie.\n\nWbudowane reguły są podane jako przykłady i mogą zostać wyłączone dla poszczególnych urządzeń.",
+        "menu_options": {
+          "manage_interfaces": "Wstecz",
+          "port_rename_custom": "Niestandardowe reguły zmiany nazw",
+          "port_rename_defaults": "Wbudowane reguły zmiany nazw",
+          "port_rename_restore_defaults": "Przywróć wbudowane reguły"
+        },
+        "title": "Reguły nazw interfejsów"
+      },
+      "port_rename_custom": {
+        "title": "Niestandardowe reguły zmiany nazw",
+        "description": "👉 **[📘 Przeczytaj Poradnik reguł nazewnictwa interfejsów]({naming_guide_url})**\n\nDodaj, edytuj lub usuń niestandardowe reguły zmiany nazw.\n\nReguły są stosowane w kolejności i mają priorytet nad wbudowanymi regułami zmiany nazw.\n\nWskazówka: Podczas edycji zostaw Zamiennik (Replacement) pusty, aby zachować istniejący zamiennik (użyj Usuń + Dodaj, aby ustawić pusty zamiennik).",
+        "data": {
+          "rule_action": "Akcja",
+          "rule_existing": "Istniejąca reguła",
+          "rule_match": "Typ dopasowania",
+          "rule_value": "Wartość dopasowania",
+          "rule_replace": "Zamiennik",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        }
+      },
+      "port_rename_custom_add": {
+        "data": {
+          "description": "Opis (opcjonalnie)",
+          "pattern": "Wzorzec regex",
+          "replace": "Zamiennik"
+        },
+        "description": "Utwórz regułę regex, która przetransformuje wyświetlaną nazwę interfejsu.\n\nPrzykładowy wzorzec: ^Gi(\\\\d+)/0/(\\\\d+)$\nPrzykładowy zamiennik: Uplink-\\\\1-\\\\2",
+        "title": "Dodaj regułę zmiany nazwy"
+      },
+      "port_rename_custom_edit": {
+        "data": {
+          "selected": "Wybrana reguła"
+        },
+        "description": "Wybierz istniejącą regułę do edycji.",
+        "title": "Edytuj niestandardową regułę nazwy"
+      },
+      "port_rename_custom_remove": {
+        "data": {
+          "remove_index": "Reguła"
+        },
+        "description": "Wybierz niestandardową regułę do usunięcia.",
+        "title": "Usuń regułę zmiany nazwy"
+      },
+      "port_rename_defaults": {
+        "data": {
+          "builtin_link_aggregate_to_po": "Normalizuj link aggregate → Po",
+          "builtin_loopback_to_lo0": "Normalizuj loopback → Lo0",
+          "builtin_port_channel_to_po": "Normalizuj port-channel → Po",
+          "builtin_portchannel_to_po": "Normalizuj PortChannel → Po",
+          "builtin_unit_slot_port_100m_to_fa": "Normalizuj Unit/Slot/Port 100M → Fa",
+          "builtin_unit_slot_port_10g_to_te": "Normalizuj Unit/Slot/Port 10G → Te",
+          "builtin_unit_slot_port_1g_to_gi": "Normalizuj Unit/Slot/Port 1G → Gi",
+          "builtin_unit_slot_port_20g_to_tw": "Normalizuj Unit/Slot/Port 20G → Tw",
+          "defaults_action": "Akcja",
+          "port_rename_disabled_default_ids": "Wbudowane reguły zmiany nazw (wyłącz)",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "description": "👉 **[📘 Przeczytaj Poradnik reguł nazewnictwa interfejsów]({naming_guide_url})**\n\nWłącz lub wyłącz wbudowane reguły wyświetlania nazw dla tego urządzenia.\n\nObecne wbudowane reguły:\n{rules}",
+        "title": "Wbudowane reguły zmiany nazw"
+      },
+      "interface_ip_display": {
+        "title": "Wyświetlanie IP interfejsu",
+        "description": "👉 **[📘 Przeczytaj Poradnik wyświetlania IP interfejsów]({ip_guide_url})**\n\nKontroluj, w jaki sposób adresy IP są wyświetlane na interfejsach.",
+        "data": {
+          "hide_ip_on_physical_interfaces": "Ukryj adres IP na interfejsach fizycznych",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        },
+        "data_description": {
+          "hide_ip_on_physical_interfaces": "Kiedy ta opcja jest włączona, adresy IP będą wyświetlane tylko na interfejsach wirtualnych lub logicznych (takich jak interfejsy VLAN lub do zarządzania)."
+        }
+      },
+      "override_power": {
+        "data": {
+          "oid": "OID zasilania",
+          "vendor": "Producent (marka)",
+          "method": "Metoda",
+          "description": "Opis",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że ten OID działa zgodnie z oczekiwaniami.",
+          "share_with_community": "Udostępnij to społeczności",
+          "back_to_menu": "Wstecz (odrzuć zmiany)",
+          "scale": "Skala"
+        },
+        "description": "👉 **[📘 Przeczytaj Poradnik nadpisywania zasilania]({custom_oid_guide_url})**\n\nNadpisz OID zasilania dla tego urządzenia. Zostaw to pole puste, aby użyć automatycznego wykrywania lub wyczyścić istniejące nadpisanie.\n\n### Istniejące wpisy w bazie danych:\n{existing_entries}",
+        "title": "Nadpisz Zasilanie"
+      },
+      "override_poe": {
+        "title": "Nadpisz PoE",
+        "description": "👉 **[📘 Przeczytaj Poradnik nadpisywania PoE]({custom_oid_guide_url})**\n\nNadpisz OID zasilania przez Ethernet (PoE) dla tego urządzenia. Zostaw wszystkie pola puste, aby użyć automatycznego wykrywania lub wyczyścić istniejące nadpisanie.\n\n### Istniejące wpisy w bazie danych:\n{existing_entries}",
+        "data": {
+          "oid_budget": "OID całkowitego budżetu mocy",
+          "oid_used": "OID używanej mocy",
+          "oid_port_power": "OID mocy portu",
+          "vendor": "Producent (marka)",
+          "method": "Metoda",
+          "description": "Opis",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że te OID działają zgodnie z oczekiwaniami.",
+          "share_with_community": "Udostępnij to społeczności",
+          "back_to_menu": "Wstecz (odrzuć zmiany)",
+          "scale": "Skala",
+          "oid_port_admin": "OID włączania PoE na porcie (opcjonalnie)",
+          "oid_port_priority": "OID priorytetu zasilania portu PoE (opcjonalnie)"
+        }
+      },
+      "override_device_info": {
+        "title": "Nadpisz informacje o urządzeniu",
+        "description": "👉 **[📘 Przeczytaj Poradnik nadpisywania informacji o urządzeniu]({custom_oid_guide_url})**\n\nNadpisz OID diagnostycznych sensorów dla tego urządzenia. Zostaw wszystkie pola puste, aby użyć automatycznego wykrywania lub wyczyścić istniejące nadpisanie.\n\n### Istniejące wpisy w bazie danych:\n{existing_entries}",
+        "data": {
+          "manufacturer_oid": "OID producenta (opcjonalnie)",
+          "model_oid": "OID modelu (opcjonalnie)",
+          "firmware_oid": "OID oprogramowania sprzętowego (firmware) (opcjonalnie)",
+          "hostname_oid": "OID nazwy hosta (opcjonalnie)",
+          "uptime_oid": "OID czasu pracy (uptime) (opcjonalnie)",
+          "vendor": "Producent (marka)",
+          "back_to_menu": "Wstecz (odrzuć zmiany)",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że te OID działają zgodnie z oczekiwaniami.",
+          "share_with_community": "Udostępnij to społeczności",
+          "contact_oid": "OID kontaktu (opcjonalnie)",
+          "name_oid": "OID nazwy (opcjonalnie)",
+          "location_oid": "OID lokalizacji (opcjonalnie)"
+        }
+      },
+      "submit_community_interface_rule": {
+        "title": "Wybierz typ wkładu",
+        "description": "Prześlij nowy filtr interfejsu lub token klasyfikacji fizycznej/wirtualnej do repozytorium społeczności, z korzyścią dla wszystkich użytkowników.",
+        "data": {
+          "contrib_type": "Typ wkładu"
+        }
+      },
+      "submit_community_filter": {
+        "title": "Prześlij filtr interfejsu",
+        "description": "👉 **[📘 Przeczytaj Poradnik przesyłania do społeczności]({community_guide_url})**\n\nZdefiniuj filtr interfejsów na poziomie systemu. Wszystkie 3 pola wyboru muszą zostać zaznaczone, aby autoryzować przesłanie.",
+        "data": {
+          "label": "Wyświetlana etykieta (np. Cisco: Pomiń sieci VLAN)",
+          "vendor": "Producent (marka)",
+          "rule_type": "Typ reguły / Akcja",
+          "match_type": "Typ dopasowania",
+          "match_value": "Wartość dopasowania",
+          "share_with_community": "Udostępnij to społeczności",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że te reguły/tokeny działają zgodnie z oczekiwaniami.",
+          "beneficial_for_everyone": "Poświadczam, że te filtry/tokeny są korzystne dla wszystkich, uniwersalne i nie zawierają osobistych preferencji.",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        }
+      },
+      "submit_community_token": {
+        "title": "Prześlij token klasyfikacji",
+        "description": "👉 **[📘 Przeczytaj Poradnik przesyłania do społeczności]({community_guide_url})**\n\nZdefiniuj token klasyfikacji fizycznej/wirtualnej. Wszystkie 3 pola wyboru muszą zostać zaznaczone, aby autoryzować przesłanie.",
+        "data": {
+          "type": "Lista tokenów",
+          "token": "Ciąg znaków tokenu (np. irb, bdi, lag)",
+          "share_with_community": "Udostępnij to społeczności",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że te reguły/tokeny działają zgodnie z oczekiwaniami.",
+          "beneficial_for_everyone": "Poświadczam, że te filtry/tokeny są korzystne dla wszystkich, uniwersalne i nie zawierają osobistych preferencji.",
+          "back_to_menu": "Wstecz (odrzuć zmiany)"
+        }
+      },
+      "github_connection_error": {
+        "title": "Błąd połączenia z GitHubem",
+        "description": "Nie udało się połączyć z GitHubem (nie można pobrać kodu urządzenia uwierzytelniającego). Sprawdź swoje połączenie z siecią/internetem i spróbuj ponownie."
+      },
+      "override_lldp": {
+        "data": {
+          "vendor": "Producent (marka)",
+          "description": "Opis",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że ten OID działa zgodnie z oczekiwaniami.",
+          "share_with_community": "Udostępnij to społeczności",
+          "back_to_menu": "Wstecz (odrzuć zmiany)",
+          "oid_rem_sys_name": "OID nazwy zdalnego systemu LLDP",
+          "oid_cdp_sys_name": "OID nazwy systemu Cisco CDP"
+        },
+        "description": "👉 **[📘 Przeczytaj Poradnik nadpisywania LLDP]({custom_oid_guide_url})**\n\nNadpisz OID protokołu LLDP dla tego urządzenia. Zostaw te pola puste, aby użyć automatycznego wykrywania lub wyczyścić istniejące nadpisanie.\n\n### Istniejące wpisy w bazie danych:\n{existing_entries}",
+        "title": "Nadpisz LLDP"
+      },
+      "override_fdb": {
+        "data": {
+          "vendor": "Producent (marka)",
+          "description": "Opis",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że ten OID działa zgodnie z oczekiwaniami.",
+          "share_with_community": "Udostępnij to społeczności",
+          "back_to_menu": "Wstecz (odrzuć zmiany)",
+          "oid_fdb_port": "OID portu FDB (Bridge-MIB)",
+          "oid_q_fdb_port": "OID portu Q-FDB (Q-BRIDGE-MIB)"
+        },
+        "description": "👉 **[📘 Przeczytaj Poradnik nadpisywania FDB]({custom_oid_guide_url})**\n\nNadpisz OID bazy danych przesyłania dalej (FDB) dla tego urządzenia. Zostaw te pola puste, aby użyć automatycznego wykrywania lub wyczyścić istniejące nadpisanie.\n\n### Istniejące wpisy w bazie danych:\n{existing_entries}",
+        "title": "Nadpisz FDB"
+      },
+      "override_arp": {
+        "data": {
+          "vendor": "Producent (marka)",
+          "description": "Opis",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że ten OID działa zgodnie z oczekiwaniami.",
+          "share_with_community": "Udostępnij to społeczności",
+          "back_to_menu": "Wstecz (odrzuć zmiany)",
+          "oid_arp_mac": "OID adresów MAC w ARP (IP-MIB)"
+        },
+        "description": "👉 **[📘 Przeczytaj Poradnik nadpisywania ARP]({custom_oid_guide_url})**\n\nNadpisz OID tablicy ARP dla tego urządzenia. Zostaw to pole puste, aby użyć automatycznego wykrywania lub wyczyścić istniejące nadpisanie.\n\n### Istniejące wpisy w bazie danych:\n{existing_entries}",
+        "title": "Nadpisz ARP"
+      },
+      "override_base_mac": {
+        "data": {
+          "vendor": "Producent (marka)",
+          "description": "Opis",
+          "attestation": "Poświadczam, że przetestowałem i zweryfikowałem, że ten OID działa zgodnie z oczekiwaniami.",
+          "share_with_community": "Udostępnij to społeczności",
+          "back_to_menu": "Wstecz (odrzuć zmiany)",
+          "oid_base_mac": "OID bazowego adresu MAC mostka (Bridge-MIB)"
+        },
+        "description": "👉 **[📘 Przeczytaj Poradnik nadpisywania bazowego adresu MAC]({custom_oid_guide_url})**\n\nNadpisz OID bazowego adresu MAC dla tego urządzenia. Zostaw to pole puste, aby użyć automatycznego wykrywania lub wyczyścić istniejące nadpisanie.\n\n### Istniejące wpisy w bazie danych:\n{existing_entries}",
+        "title": "Nadpisz bazowy adres MAC"
+      }
+    }
+  },
+  "selector": {
+    "bandwidth_data_as": {
+      "options": {
+        "attributes": "Atrybuty (brak historii)",
+        "sensors": "Sensory (z historią)"
+      }
+    },
+    "env_data_as": {
+      "options": {
+        "attributes": "Atrybuty (brak historii)",
+        "sensors": "Sensory (z historią)"
+      }
+    },
+    "poe_data_as": {
+      "options": {
+        "attributes": "Atrybuty (brak historii)",
+        "sensors": "Sensory (z historią)"
+      }
+    }
+  },
+  "title": "SNMP Switch Manager"
+}
