@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.4] - 2026-08-04
 
 ### Added
-- 🌐 **Polish Language Translation Support**: Added full Polish (`pl`) translation and strings files across all configuration and options flow steps in both `strings/` and `translations/` directories.
+- 🌐 **Polish Language Translation Support**: Added full Polish (`pl`) translation and strings files across all configuration and options flow steps in both `strings/` and `translations/` directories. Thanks to @hf7a!
 
 ---
 
