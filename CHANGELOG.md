@@ -7,6 +7,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.5] - 2026-08-27
+
+### Fixed
+- ⚡ **Card DOM Thrashing & Async Concurrency Lock**: Added animation-frame debouncing and an async concurrency render lock with a trailing execution queue to `snmp-switch-manager-card` (`frontend-card/src/card.js`). Resolves severe DOM thrashing, high browser CPU usage, and UI stuttering caused by rapid Home Assistant state updates ([#95](https://github.com/OtisPresley/snmp-switch-manager/issues/95)). Thanks to @hf7a!
+
+---
+
 ## [0.6.4] - 2026-08-04
 
 ### Added

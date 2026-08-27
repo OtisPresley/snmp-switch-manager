@@ -254,12 +254,24 @@ class SnmpSwitchManagerCard extends HTMLElement {
     // Background image aspect cache (for Panel width = 0 autosizing without stretching)
     this._bgAspectByUrl = new Map();   // url -> aspect (w/h)
     this._bgAspectLoading = new Set(); // urls in flight
+
+    // Async render lock and frame debounce
+    this._isRendering = false;
+    this._renderPending = false;
+    this._renderDebounce = null;
 }
 
 
   connectedCallback() {
     // Lazily probe background image aspect ratio in the browser.
     try { this._maybeLoadBgAspect(); } catch (e) {}
+  }
+
+  disconnectedCallback() {
+    if (this._renderDebounce) {
+      cancelAnimationFrame(this._renderDebounce);
+      this._renderDebounce = null;
+    }
   }
 
   _maybeLoadBgAspect() {
@@ -279,7 +291,7 @@ class SnmpSwitchManagerCard extends HTMLElement {
           this._bgAspectByUrl.set(url, w / h);
           // Re-render now that we know the aspect.
           this.requestUpdate?.();
-          this._render?.();
+          this._safeRender();
         }
       } finally {
         this._bgAspectLoading.delete(url);
@@ -501,6 +513,20 @@ _setLayoutEditorSessionClosed() {
 
 
   _safeRender() {
+    if (this._renderDebounce) return;
+    this._renderDebounce = requestAnimationFrame(() => {
+      this._renderDebounce = null;
+      this._executeRender();
+    });
+  }
+
+  async _executeRender() {
+    if (this._isRendering) {
+      this._renderPending = true;
+      return;
+    }
+    this._isRendering = true;
+
     const _showErr = (err) => {
       // eslint-disable-next-line no-console
       console.error("SNMP Switch Manager Card render error:", err);
@@ -513,12 +539,17 @@ _setLayoutEditorSessionClosed() {
           </ha-card>`;
       } catch (e2) {}
     };
+
     try {
-      const p = this._render();
-      // _render() is async — catch post-await errors too (they escape the sync try/catch)
-      if (p && typeof p.catch === "function") p.catch(_showErr);
+      await this._render();
     } catch (err) {
       _showErr(err);
+    } finally {
+      this._isRendering = false;
+      if (this._renderPending) {
+        this._renderPending = false;
+        this._safeRender();
+      }
     }
   }
 
@@ -872,7 +903,7 @@ _setLayoutEditorSessionClosed() {
 
     if (this._config.anchor_entity && !this._anchorDeviceId) {
       await this._resolveAnchorDeviceId();
-      this._render(); // allow re-render
+      this._safeRender(); // allow re-render
     }
 
     // Performance: avoid scanning the *entire* hass.states registry on every render.
@@ -1487,7 +1518,7 @@ _parseSpeedMbps(attrs) {
       this._graphCardEl = null;
       this._freezeRenderWhileGraphOpen = false;
       // Resume normal rendering now that the graph is closed
-      this._render();
+      this._safeRender();
     };
 
     root.querySelector(".ssm-backdrop")?.addEventListener("click", close);
@@ -3563,7 +3594,7 @@ const fitPortsBoxToPorts = () => {
         // Re-render once (temporarily bypassing freeze) so labels + overlays recompute correctly.
         const prevFreeze = this._freezeRenderWhileCalibrationActive;
         this._freezeRenderWhileCalibrationActive = false;
-        this._render();
+        this._safeRender();
         this._freezeRenderWhileCalibrationActive = prevFreeze;
 
         refreshExport();
@@ -3737,7 +3768,7 @@ try { setMsg("Saved"); } catch (e) {}
       refreshExport();
       // snap ports back by forcing a re-render next tick
       this._freezeRenderWhileCalibrationActive = false;
-      this._render();
+      this._safeRender();
       this._calibDirty = true;
       commitUndo();
     });
@@ -3772,7 +3803,7 @@ try { setMsg("Saved"); } catch (e) {}
         this._config = { ...(this._config || {}), calibration_mode: false };
       }
 
-      this._render();
+      this._safeRender();
     });
 
     // Align / distribute helpers
@@ -5975,6 +6006,7 @@ window.customCards.push({
   description: "Auto-discovers SNMP Switch Manager ports with panel/list views, safe modal toggles, and diagnostics.",
   preview: true
 });
+console.info("%c[SNMP Switch Manager Card] %cVersion 0.6.5", "color: #41BDF5; font-weight: bold;", "color: default;");
 
 // ------------------------------------------------------------
 // Embedded GUI editor
