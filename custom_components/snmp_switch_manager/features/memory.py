@@ -1,6 +1,5 @@
 """Memory usage polling."""
 from __future__ import annotations
-import asyncio
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -84,11 +83,11 @@ async def poll_memory(client: "SwitchSnmpClient", vendor: str) -> None:
                     ram_idxs.add(idx)
 
             if ram_idxs:
-                # Fetch all three columns in parallel, then filter
-                alloc_rows, size_rows, used_rows = await asyncio.gather(
-                    client._async_walk(OID_hrStorageAllocationUnits),
-                    client._async_walk(OID_hrStorageSize),
-                    client._async_walk(OID_hrStorageUsed),
+                # All three columns in one GETBULK stream, then filter
+                alloc_rows, size_rows, used_rows = await client._async_walk_many(
+                    OID_hrStorageAllocationUnits,
+                    OID_hrStorageSize,
+                    OID_hrStorageUsed,
                 )
                 alloc_units = _walk_to_int_map(alloc_rows, ram_idxs)
                 sizes = _walk_to_int_map(size_rows, ram_idxs)

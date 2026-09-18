@@ -1,6 +1,5 @@
 """ENTITY-SENSOR-MIB cross-vendor fallback for temps, fans, and power."""
 from __future__ import annotations
-import asyncio
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -67,11 +66,11 @@ async def poll_entity_sensor_fallback(client: "SwitchSnmpClient") -> None:
         if not types:
             return
 
-        value_rows, scale_rows, prec_rows, oper_rows = await asyncio.gather(
-            client._async_walk(_OID_VALUE),
-            client._async_walk(_OID_SCALE),
-            client._async_walk(_OID_PREC),
-            client._async_walk(_OID_OPER),
+        value_rows, scale_rows, prec_rows, oper_rows = await client._async_walk_many(
+            _OID_VALUE,
+            _OID_SCALE,
+            _OID_PREC,
+            _OID_OPER,
         )
 
         values = _rows_to_any_dict(value_rows)
