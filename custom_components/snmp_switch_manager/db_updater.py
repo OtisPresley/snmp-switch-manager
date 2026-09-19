@@ -4,9 +4,10 @@ import json
 from datetime import timedelta
 from typing import Any
 
+import aiohttp
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.event import async_track_time_interval, async_call_later
 from homeassistant.config_entries import ConfigEntry
 from .const import DOMAIN, GITHUB_BRANCH
 
@@ -34,6 +35,7 @@ async def async_check_and_update_db(hass: HomeAssistant) -> bool:
     """Download updated database files from GitHub and save them if changed."""
     session = async_get_clientsession(hass)
     db_path = os.path.join(os.path.dirname(__file__), "database")
+    timeout = aiohttp.ClientTimeout(total=15, connect=5)
     
     updated_any = False
     
@@ -42,7 +44,7 @@ async def async_check_and_update_db(hass: HomeAssistant) -> bool:
         local_path = os.path.join(db_path, filename)
         
         try:
-            async with session.get(url, timeout=10) as response:
+            async with session.get(url, timeout=timeout) as response:
                 if response.status != 200:
                     _LOGGER.debug("Skipping update check for %s: HTTP %s", filename, response.status)
                     continue
@@ -78,8 +80,15 @@ async def async_check_and_update_db(hass: HomeAssistant) -> bool:
                     )
                     updated_any = True
                     
+        except aiohttp.ClientConnectorError as e:
+            _LOGGER.warning("Cannot connect to GitHub for database updates: %s", e)
+            break
+        except (TimeoutError, aiohttp.ClientError) as e:
+            err_msg = str(e) or type(e).__name__
+            _LOGGER.warning("Could not check database update for %s (%s)", filename, err_msg)
         except Exception as e:
-            _LOGGER.error("Failed to check database update for %s: %s", filename, e)
+            err_msg = str(e) or type(e).__name__
+            _LOGGER.warning("Failed to check database update for %s: %s", filename, err_msg)
             
     return updated_any
 
@@ -117,8 +126,7 @@ async def async_setup_db_updater(hass: HomeAssistant, entry: ConfigEntry) -> Non
     def deferred_start(_: Any) -> None:
         hass.add_job(run_update())
         
-    from homeassistant.helpers.event import async_call_later
-    async_call_later(hass, 10, deferred_start)
+    async_call_later(hass, 60, deferred_start)
 
 
 def async_unload_db_updater(hass: HomeAssistant, entry: ConfigEntry) -> None:
