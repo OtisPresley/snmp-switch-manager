@@ -10,4 +10,5 @@ scratch.py
 deploy.sh
 deploy*.sh
 
-
+# Local tests
+tests/
