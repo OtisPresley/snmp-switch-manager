@@ -50,13 +50,13 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
             alias_rows,
             iftype_rows,
             connector_rows,
-        ) = await asyncio.gather(
-            client._async_walk(OID_ifIndex),
-            client._async_walk(OID_ifDescr),
-            client._async_walk(OID_ifName),
-            client._async_walk(OID_ifAlias),
-            client._async_walk(OID_ifType),
-            client._async_walk(OID_ifConnectorPresent),
+        ) = await client._async_walk_many(
+            OID_ifIndex,
+            OID_ifDescr,
+            OID_ifName,
+            OID_ifAlias,
+            OID_ifType,
+            OID_ifConnectorPresent,
         )
 
         # Indexes
@@ -236,11 +236,13 @@ async def poll_interfaces(client: SwitchSnmpClient, dynamic_only: bool = False) 
             )
             rec["is_bridge_port"] = is_bridge_port
 
-    admin_rows, oper_rows, speed_rows, hispeed_rows = await asyncio.gather(
-        client._async_walk(OID_ifAdminStatus),
-        client._async_walk(OID_ifOperStatus),
-        client._async_walk(OID_ifSpeed),
-        client._async_walk(OID_ifHighSpeed),
+    # The every-poll part: four columns of the interface table, walked
+    # together in one GETBULK stream.
+    admin_rows, oper_rows, speed_rows, hispeed_rows = await client._async_walk_many(
+        OID_ifAdminStatus,
+        OID_ifOperStatus,
+        OID_ifSpeed,
+        OID_ifHighSpeed,
     )
 
     for oid, val in admin_rows:

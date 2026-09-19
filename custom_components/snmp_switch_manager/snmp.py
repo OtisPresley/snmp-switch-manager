@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import time
 import logging
 import os
@@ -29,7 +28,9 @@ from .snmp_compat import (
     UdpTransportTarget,
     ContextData,
     _do_get_one,
+    _do_get_many,
     _do_next_walk,
+    _do_bulk_walk,
     _do_set_alias,
     _do_set_admin_status,
     _do_set_poe_admin,
@@ -284,6 +285,18 @@ class SwitchSnmpClient:
         await self._ensure_target()
         return await _do_next_walk(self.engine, self.auth_data, self.target, self.context, base_oid)
 
+    async def _async_walk_many(self, *base_oids: str) -> list[list[tuple[str, Any]]]:
+        """Walk several columns of one table together, one GETBULK stream for all.
+
+        Returns one result list per base, in argument order - a drop-in for
+        ``asyncio.gather(self._async_walk(a), self._async_walk(b), ...)``,
+        which ran a separate stream per column.
+        """
+        await self._ensure_engine()
+        await self._ensure_target()
+        got = await _do_bulk_walk(self.engine, self.auth_data, self.target, self.context, list(base_oids))
+        return [got[b] for b in base_oids]
+
 
 
 
@@ -331,13 +344,20 @@ class SwitchSnmpClient:
         syscontact_oid = self._custom_oid("contact") or OID_sysContact
         syslocation_oid = self._custom_oid("location") or OID_sysLocation
 
-        sysdescr, sysname, sysuptime, syscontact, syslocation = await asyncio.gather(
-            _do_get_one(self.engine, self.auth_data, self.target, self.context, OID_sysDescr),
-            _do_get_one(self.engine, self.auth_data, self.target, self.context, sysname_oid),
-            _do_get_one(self.engine, self.auth_data, self.target, self.context, uptime_oid) if poll_uptime else asyncio.sleep(0, result=None),
-            _do_get_one(self.engine, self.auth_data, self.target, self.context, syscontact_oid),
-            _do_get_one(self.engine, self.auth_data, self.target, self.context, syslocation_oid),
-        )
+        # Description, name, contact and location change when someone edits
+        # them, not every ten seconds. They were re-read on every poll; now
+        # they ride along with uptime (default every 5 min), in ONE request
+        # rather than five. Edits made through this integration update the
+        # cache directly (set_system_string), so they still show at once.
+        static_known = all(k in self.cache for k in ("sysDescr", "sysName", "sysContact", "sysLocation"))
+        sysdescr = sysname = sysuptime = syscontact = syslocation = None
+        if poll_uptime or not static_known:
+            got = await _do_get_many(
+                self.engine, self.auth_data, self.target, self.context,
+                [OID_sysDescr, sysname_oid, uptime_oid, syscontact_oid, syslocation_oid],
+            )
+            sysdescr, sysname, sysuptime = got.get(OID_sysDescr), got.get(sysname_oid), got.get(uptime_oid)
+            syscontact, syslocation = got.get(syscontact_oid), got.get(syslocation_oid)
         if (not poll_uptime) and ("sysUpTime" in self.cache):
             sysuptime = self.cache.get("sysUpTime")
         if sysdescr is not None:
