@@ -329,6 +329,12 @@ async def async_setup_entry(
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # Every switch is set up in the same second and would poll in the same
+    # second forever after; move this one to its own slot in the interval.
+    from .stagger import async_stagger_switch
+
+    async_stagger_switch(hass, entry, coordinator)
+
     # Clean up duplicate legacy device registry entries if they exist
     try:
         from homeassistant.helpers import device_registry as dr
