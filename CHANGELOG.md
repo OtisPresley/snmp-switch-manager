@@ -7,6 +7,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.6] - 2026-09-19
+
+### Improved
+- ⚡ **GETBULK Table Walking (`_do_bulk_walk` & `_async_walk_many`)**: Replaced one-row-at-a-time GETNEXT walks with multi-row, multi-column GETBULK requests for interface tables, entity sensors, and storage metrics. Features adaptive budget halving for agents returning `tooBig`/`genErr`, seamless GETNEXT fallback from the current cursor for agents lacking GETBULK support, and protection against subtree bleeding and non-advancing loops. System info (`sysDescr`, `sysName`, `sysContact`, `sysLocation`) is now batched with `sysUpTime` (every 5 min) in a single request instead of five individual GETs every 10 seconds. Dramatically reduces SNMP round-trips (e.g. 756 to 13 requests on 188-port switches) and Home Assistant event loop CPU decoding load ([#96](https://github.com/OtisPresley/snmp-switch-manager/pull/96)). Huge thanks to @davidcoulson!
+- ⏱️ **Staggered Multi-Switch Polling (`stagger.py`)**: Evenly distributes coordinator poll schedules across the update interval when multiple switches are configured, preventing them from synchronizing their SNMP queries in the same second at startup. Eliminates multi-switch event loop decoding stalls ([#97](https://github.com/OtisPresley/snmp-switch-manager/pull/97)). Huge thanks to @davidcoulson!
+
+---
+
 ## [0.6.5] - 2026-08-27
 
 ### Fixed
