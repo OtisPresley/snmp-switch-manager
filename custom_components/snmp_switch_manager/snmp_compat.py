@@ -183,6 +183,14 @@ async def _do_get_many(engine, community, target, context, oids: list[str]) -> D
         if err_ind:
             if _is_auth_error(err_ind):
                 raise SnmpAuthError(str(err_ind))
+            if len(chunk) > 1:
+                chunk_res = {}
+                for oid in chunk:
+                    try:
+                        chunk_res[oid] = await _do_get_one(engine, community, target, context, oid)
+                    except Exception:
+                        chunk_res[oid] = None
+                return chunk_res
             raise SnmpConnectionError(str(err_ind))
         if err_stat:
             return {oid: None for oid in chunk}
@@ -300,7 +308,13 @@ async def _do_bulk_walk(
             lookupMib=False,
         )
         if err_ind:
-            _raise_for(err_ind)
+            if _is_auth_error(err_ind):
+                raise SnmpAuthError(str(err_ind))
+            # Agent timed out or dropped GETBULK: fall back to GETNEXT and remember
+            _remember(engine, "_ssm_no_bulk", True)
+            for b in live:
+                out[b].extend(await _do_next_walk_one(engine, community, target, context, b, cursor[b]))
+            break
         if err_stat:
             if reps > 1:
                 budget = max(1, reps // 2) * width

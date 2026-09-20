@@ -77,7 +77,7 @@ OID_ifName = "1.3.6.1.2.1.31.1.1.1.1"
 OID_ifHighSpeed = "1.3.6.1.2.1.31.1.1.1.15"  # Mbps by RFC, but some devices report bps
 OID_ifHCInOctets = "1.3.6.1.2.1.31.1.1.1.6"
 OID_ifHCOutOctets = "1.3.6.1.2.1.31.1.1.1.10"
-OID_ifConnectorPresent = "1.3.6.1.2.1.31.1.1.1.10"
+OID_ifConnectorPresent = "1.3.6.1.2.1.31.1.1.1.17"
 
 # BRIDGE-MIB (PVID / VLAN)
 OID_dot1qPvid = "1.3.6.1.2.1.17.7.1.4.5.1.1"

@@ -7,6 +7,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.7] - 2026-09-20
+
+### Fixed
+- ⚡ **GETBULK Timeout Fallback (`snmp_compat.py`)**: Fixed an issue where switches whose firmware silently drops SNMPv2c `GetBulkRequest` packets (such as Realtek-based models like the Intellinet 560559 V3) would encounter repeated request timeouts and fail to initialize. The table walk engine now catches non-auth timeouts, remembers that bulk requests are unsupported on the agent, and seamlessly falls back to standard GETNEXT walks. Also added single-OID fallback for chunked GET requests ([#100](https://github.com/OtisPresley/snmp-switch-manager/issues/100)).
+- 🐛 **`ifConnectorPresent` OID Typo**: Corrected `OID_ifConnectorPresent` in `const.py` from `1.3.6.1.2.1.31.1.1.1.10` (`ifHCOutOctets`) to the standard RFC 2863 OID `1.3.6.1.2.1.31.1.1.1.17`. Restores accurate connector presence detection for physical switch ports ([#98](https://github.com/OtisPresley/snmp-switch-manager/issues/98)). Thanks to @hf7a!
+- 🕒 **Database Updater Startup & Network Resilience**: Deferred the initial database update check from 10s to 60s after Home Assistant startup to allow network and DNS services to settle, added request timeouts (15s total, 5s connect), and converted transient offline/timeout errors to warnings.
+
+### Added
+- 🎛️ **Intellinet Vendor Detection & Private PoE MIB Support**: Added enterprise OID mapping for Intellinet Network Solutions (`45855` / `1.3.6.1.4.1.45855`) to `vendors.json` and support for Intellinet private per-port PoE power reporting (`1.3.6.1.4.1.54367.1.2.2.4.4.1.3`) to `poe.json` ([#99](https://github.com/OtisPresley/snmp-switch-manager/issues/99)). Thanks to @jamesleroy03!
+
+---
+
 ## [0.6.6] - 2026-09-19
 
 ### Improved

@@ -33,6 +33,12 @@
       "keywords": ["huawei"]
     },
     {
+      "name": "Intellinet",
+      "enterprise_number": "45855",
+      "sys_object_id_prefix": "1.3.6.1.4.1.45855",
+      "keywords": ["intellinet"]
+    },
+    {
       "name": "Jt-Com",
       "enterprise_number": "",
       "sys_object_id_prefix": "",
