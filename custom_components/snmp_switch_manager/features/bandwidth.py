@@ -9,6 +9,9 @@ if TYPE_CHECKING:
 
 from ..const import (
     CONF_BW_ENABLE,
+    CONF_BW_MODE,
+    BW_MODE_SENSORS,
+    BW_MODE_ATTRIBUTES,
     CONF_BANDWIDTH_POLL_INTERVAL,
     DEFAULT_BANDWIDTH_POLL_INTERVAL,
     OID_ifHCInOctets,
@@ -45,7 +48,16 @@ def _counter_delta(cur: int, prev: int, use_hc: bool) -> int | None:
 
 async def poll_bandwidth(client: "SwitchSnmpClient") -> None:
     """Poll per-interface bandwidth counters."""
-    if not bool(client._bandwidth_options.get(CONF_BW_ENABLE, False)):
+    enabled = bool(client._bandwidth_options.get(CONF_BW_ENABLE, False))
+    mode = str(client._bandwidth_options.get(CONF_BW_MODE) or BW_MODE_SENSORS).strip().lower()
+    if mode not in (BW_MODE_SENSORS, BW_MODE_ATTRIBUTES):
+        mode = BW_MODE_SENSORS
+
+    client.cache["bw_enabled"] = enabled
+    client.cache["bw_mode"] = mode
+
+    if not enabled:
+        client.cache["bandwidth"] = {}
         return
 
     poll_interval = int(

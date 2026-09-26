@@ -7,6 +7,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.8] - 2026-09-26
+
+### Fixed
+- 📊 **Bandwidth Attributes Mode (`features/bandwidth.py`)**: Fixed an issue where interface entities did not expose RX/TX throughput and total attributes when configured in `attributes` mode because `bw_enabled` and `bw_mode` were not set in the coordinator cache. In addition, clearing stale bandwidth data when bandwidth polling is disabled and defaulting `CONF_BW_MODE` to `BW_MODE_SENSORS` ensures reliable mode handling ([#101](https://github.com/OtisPresley/snmp-switch-manager/issues/101)).
+- 🌡️ **Temperature Polling `invalid_values` & Range Validation (`features/temperature.py`)**: Added support for filtering raw sensor sentinel values specified in `invalid_values` (such as `65535` for disconnected H3C sensors) and added strict `[-20.0, 100.0]` °C temperature range validation (with support for item-specific range overrides) across both table walk and single GET polling paths ([#102](https://github.com/OtisPresley/snmp-switch-manager/issues/102)).
+- 🔄 **Database Updater Missing Topology Files (`db_updater.py`)**: Updated the automatic database updater to include topology files (`arp.json`, `base_mac.json`, `fdb.json`, `lldp.json`) and dynamically discover any JSON database files present in the `database/` directory, ensuring all current and future definitions receive upstream updates ([#103](https://github.com/OtisPresley/snmp-switch-manager/issues/103)).
+
+---
+
 ## [0.6.7] - 2026-09-20
 
 ### Fixed

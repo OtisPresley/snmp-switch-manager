@@ -31,6 +31,7 @@ from .const import (
     DEFAULT_UPTIME_POLL_INTERVAL,
     CONF_BW_ENABLE,
     CONF_BW_MODE,
+    BW_MODE_SENSORS,
     CONF_BW_INCLUDE_STARTS_WITH,
     CONF_BW_INCLUDE_CONTAINS,
     CONF_BW_INCLUDE_ENDS_WITH,
@@ -194,7 +195,7 @@ async def async_setup_entry(
     host = snmp_settings.get("host")
 
     bandwidth_options = {
-        CONF_BW_MODE: entry.options.get(CONF_BW_MODE, None),
+        CONF_BW_MODE: entry.options.get(CONF_BW_MODE) or BW_MODE_SENSORS,
         CONF_BW_ENABLE: entry.options.get(CONF_BW_ENABLE, False),
         CONF_BW_INCLUDE_STARTS_WITH: entry.options.get(CONF_BW_INCLUDE_STARTS_WITH, [])
         or [],
