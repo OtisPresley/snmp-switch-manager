@@ -70,7 +70,9 @@ async def initialize_device_info(client: "SwitchSnmpClient") -> None:
             client.cache["model"] = pfs["model"]
             model_hint = client.cache["model"]
     elif sd:
-        manufacturer, firmware = _parse_sysdescr_generic(sd, model_hint)
+        generic_mfg, generic_fw = _parse_sysdescr_generic(sd, model_hint)
+        manufacturer = manufacturer or generic_mfg
+        firmware = firmware or generic_fw
 
     # Vendor-specific OID overrides from database
     vendor = client.cache.get("vendor", "Unknown")
@@ -82,6 +84,8 @@ async def initialize_device_info(client: "SwitchSnmpClient") -> None:
                 client.cache["model"] = val or client.cache.get("model")
         if oid_mfg := item.get("oid_mfg"):
             manufacturer = await _fetch_oid_str(client, oid_mfg) or manufacturer
+
+    client._vendor_oids_fetched = True
 
     if not manufacturer:
         manufacturer = vendor_info.get("manufacturer_fallback")
@@ -114,7 +118,9 @@ async def refresh_device_info(client: "SwitchSnmpClient") -> None:
         return
 
     model_hint = client.cache.get("model")
-    manufacturer, firmware = _parse_sysdescr_generic(sd, model_hint)
+    generic_mfg, generic_fw = _parse_sysdescr_generic(sd, model_hint)
+    manufacturer = client.cache.get("manufacturer") or generic_mfg
+    firmware = client.cache.get("firmware") or generic_fw
 
     vendor = client.cache.get("vendor", "Unknown")
 

@@ -181,10 +181,14 @@ async def poll_ipv4(client: SwitchSnmpClient) -> None:
     if route_prefixes and ip_index:
         route_prefixes.sort(key=lambda t: t[1], reverse=True)
         for ip in list(ip_index.keys()):
+            if ip in ip_mask:
+                continue
             ip_int = _ip_to_int(ip)
             for net_int, bits in route_prefixes:
-                mask_int = (0xFFFFFFFF << (32 - bits)) & 0xFFFFFFFF if bits else 0
-                if bits == 0 or (ip_int & mask_int) == (net_int & mask_int):
+                if bits == 0:
+                    continue
+                mask_int = (0xFFFFFFFF << (32 - bits)) & 0xFFFFFFFF
+                if (ip_int & mask_int) == (net_int & mask_int):
                     ip_mask[ip] = _bits_to_mask(bits)
                     break
 

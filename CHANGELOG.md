@@ -7,6 +7,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.9] - 2026-09-29
+
+### Fixed
+- 🌐 **IPv4 Route Subnet Netmask Precedence & Default Route Exclusion (`features/ipv4.py`)**: Route-based netmask inference now preserves valid interface masks previously parsed from `ipAdEntNetMask` rather than unconditionally overwriting them. Additionally, default routes (`0.0.0.0/0`, `bits == 0`) are ignored so interface addresses without a more specific route are no longer assigned an invalid `/0` netmask ([#104](https://github.com/OtisPresley/snmp-switch-manager/issues/104)).
+- 🏷️ **Vendor Firmware & Manufacturer Preservation (`features/device_info.py`)**: Prevented subsequent coordinator poll cycles from overwriting vendor-specific firmware versions and manufacturers obtained via private/standard OIDs with `None` or inaccurate generic `sysDescr` parsing. Cached vendor-specific values now take precedence over generic comma-split fallback parsing, and `_vendor_oids_fetched` is marked properly upon initialization ([#105](https://github.com/OtisPresley/snmp-switch-manager/issues/105)).
+
+---
+
 ## [0.6.8] - 2026-09-26
 
 ### Fixed
