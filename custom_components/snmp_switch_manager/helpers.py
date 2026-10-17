@@ -159,7 +159,7 @@ _VIRTUAL_NAME_TOKENS = (
 _PHYSICAL_NAME_TOKENS = (
     "gigabit", "gige", "gi", "fastethernet", "fa",
     "ethernet", "eth", "tengig", "ten", "te", "ge", "xe",
-    "tw", "fi", "hu",
+    "tw", "fi", "hu", "sfp",
 )
 
 

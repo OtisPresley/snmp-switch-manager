@@ -196,6 +196,7 @@ _setLayoutEditorSessionClosed() {
         : (Number.isFinite(config.ports_scale) ? Number(config.ports_scale) : 1),
       port_positions: (config.port_positions && typeof config.port_positions === "object") ? config.port_positions : null,
       virtual_overrides: Array.isArray(config.virtual_overrides) ? config.virtual_overrides : ((typeof config.virtual_overrides === "string") ? config.virtual_overrides.split(",").map(s=>s.trim()).filter(Boolean) : null),
+      physical_overrides: Array.isArray(config.physical_overrides) ? config.physical_overrides : ((typeof config.physical_overrides === "string") ? config.physical_overrides.split(",").map(s=>s.trim()).filter(Boolean) : null),
       physical_prefixes: (typeof config.physical_prefixes === "string") ? config.physical_prefixes : null,
       physical_regex: (typeof config.physical_regex === "string") ? config.physical_regex : null,
 
@@ -752,6 +753,7 @@ _setLayoutEditorSessionClosed() {
     const phys = [], virt = [];
     const _hideSet = _ssmNormListToSet(this._config?.hide_ports);
     const _virtSet = _ssmNormListToSet(this._config?.virtual_overrides);
+    const _physSet = _ssmNormListToSet(this._config?.physical_overrides);
     for (const [id, st] of entries) {
       const nRaw = String(st.attributes?.Name || id.split(".")[1] || "");
       const idKey = String(id).trim().toLowerCase();
@@ -766,6 +768,14 @@ _setLayoutEditorSessionClosed() {
         const nKey2 = String(n).trim().toLowerCase();
         if (_virtSet.has(nKey2) || _virtSet.has(idKey)) {
           virt.push([id, st]);
+          continue;
+        }
+      }
+      // Physical overrides (force as physical, independent of port type classification)
+      if (_physSet && _physSet.size) {
+        const nKey2 = String(n).trim().toLowerCase();
+        if (_physSet.has(nKey2) || _physSet.has(idKey)) {
+          phys.push([id, st]);
           continue;
         }
       }
@@ -5791,7 +5801,7 @@ window.customCards.push({
   description: "Auto-discovers SNMP Switch Manager ports with panel/list views, safe modal toggles, and diagnostics.",
   preview: true
 });
-console.info("%c[SNMP Switch Manager Card] %cVersion 0.6.5", "color: #41BDF5; font-weight: bold;", "color: default;");
+console.info("%c[SNMP Switch Manager Card] %cVersion 0.6.10", "color: #41BDF5; font-weight: bold;", "color: default;");
 
 // ------------------------------------------------------------
 // Embedded GUI editor

@@ -7,6 +7,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.10] - 2026-10-17
+
+### Fixed
+- 🔌 **MikroTik SFP/SFP+ Port Classification (`helpers.py` & `database/interface_classification.json`)**: Added `"sfp"` to `physical_tokens` and fallback `_PHYSICAL_NAME_TOKENS`. Fixes an issue where MikroTik RouterOS SFP+ ports outside of a bridge (e.g. `sfp-sfpplus1`, routed trunks, or unpopulated cages) were classified as `Port Type: unknown` and omitted from the frontend card ([#106](https://github.com/OtisPresley/snmp-switch-manager/issues/106)).
+
+### Added
+- 🎛️ **Card Physical Interfaces Override (`physical_overrides`)**: Added `physical_overrides` configuration option and visual editor controls to `snmp-switch-manager-card`. Allows users to explicitly designate interfaces as physical, forcing them to render on the switch faceplate even if the device's SNMP MIB or heuristic classifies them as `unknown` or virtual.
+
+---
+
 ## [0.6.9] - 2026-09-29
 
 ### Fixed

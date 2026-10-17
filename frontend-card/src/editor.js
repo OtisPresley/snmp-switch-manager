@@ -839,6 +839,7 @@ _listDevicesFromHass() {
         const hidePortsArr = _alphaSort(normLower(c.hide_ports));
         const uplinkPortsArr = _alphaSort(normLower(c.uplink_ports));
         const virtualOverridesArr = _alphaSort(normLower(c.virtual_overrides));
+        const physicalOverridesArr = _alphaSort(normLower(c.physical_overrides));
 
         const portDatalistHtml = portNameChoices.length
           ? portNameChoices.slice().sort((a,b)=>_ssmNaturalPortCompare(a,b)).map(n => `<option value="${this._escape(n)}"></option>`).join("")
@@ -880,6 +881,14 @@ _listDevicesFromHass() {
           <div class="chipadd">
             <input id="virtual_overrides_add" class="chipinput" type="text" list="ssm_ports_datalist" placeholder="Add virtual interface…">
             <button type="button" class="chipbtn" id="virtual_overrides_add_btn">Add</button>
+          </div>
+        `;
+
+        const physicalOverridesHtml = `
+          ${renderSelectList(physicalOverridesArr, "physical_overrides")}
+          <div class="chipadd">
+            <input id="physical_overrides_add" class="chipinput" type="text" list="ssm_ports_datalist" placeholder="Add physical interface…">
+            <button type="button" class="chipbtn" id="physical_overrides_add_btn">Add</button>
           </div>
         `;
 
@@ -1278,6 +1287,12 @@ ${c.view === "panel" ? `
 
                   ${virtualOverridesHtml}
                 `}
+
+                <div class="row">
+                  <div class="rowhead"><label>Physical interfaces (override)</label><div class="helpiconbtn" icon="mdi:help-circle-outline" data-help-title="Physical interfaces (override)" data-help="physical_overrides"><ha-icon icon="mdi:help-circle-outline"></ha-icon></div></div>
+                </div>
+
+                ${physicalOverridesHtml}
 
                 <div class="divider"></div>
 
@@ -1796,6 +1811,7 @@ root.getElementById("label_outline")?.addEventListener("change", (ev) => {
         bindChipAdd("hide_ports", "hide_ports_add", "hide_ports_add_btn");
         bindChipAdd("uplink_ports", "uplink_ports_add", "uplink_ports_add_btn");
         bindChipAdd("virtual_overrides", "virtual_overrides_add", "virtual_overrides_add_btn");
+        bindChipAdd("physical_overrides", "physical_overrides_add", "physical_overrides_add_btn");
 
         this._ssmConvertHintsToHelp(root);
 
@@ -1840,6 +1856,7 @@ root.getElementById("label_outline")?.addEventListener("change", (ev) => {
             if (kind === "hide_ports") removeFromList("hide_ports", val);
             if (kind === "uplink_ports") removeFromList("uplink_ports", val);
             if (kind === "virtual_overrides") removeFromList("virtual_overrides", val);
+            if (kind === "physical_overrides") removeFromList("physical_overrides", val);
             if (kind === "physical_prefixes") removePrefix(val);
           });
         });
@@ -1953,6 +1970,8 @@ root.getElementById("label_outline")?.addEventListener("change", (ev) => {
       const helpText = {
         virtual_overrides:
           "Interfaces listed here are treated as Virtual. All others are treated as Physical. This affects classification even if the Virtual panel is hidden.",
+        physical_overrides:
+          "Interfaces listed here are treated as Physical, overriding integration classification and unhiding unknown interfaces.",
         uplink_ports: "Select uplink ports so they can be placed separately from the main port grid in the layout.",
         hide_ports: "Hidden ports are removed from both Panel and List views.",
       };
@@ -2005,6 +2024,10 @@ root.getElementById("label_outline")?.addEventListener("change", (ev) => {
   virtual_overrides: {
     title: "Virtual interfaces (override)",
     text: "Interfaces listed here are treated as Virtual. All others are treated as Physical. This affects classification even if the Virtual panel is hidden."
+  },
+  physical_overrides: {
+    title: "Physical interfaces (override)",
+    text: "Interfaces listed here are treated as Physical, overriding integration classification and unhiding unknown interfaces."
   },
   uplink_ports: {
     title: "Uplink ports",
