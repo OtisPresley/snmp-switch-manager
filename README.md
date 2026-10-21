@@ -15,6 +15,7 @@ SNMP Switch Manager discovers and monitors SNMP-enabled managed switches and net
 ## 📖 Table of Contents
 
 - [✨ Core Highlights](#-core-highlights)
+- [🗺️ Companion: Interactive Topology Mapping](#️-companion-interactive-topology-mapping)
 - [🛠️ Requirements](#️-requirements)
 - [📦 Installation](#-installation)
   - [HACS (Recommended)](#hacs-recommended)
@@ -44,6 +45,14 @@ SNMP Switch Manager discovers and monitors SNMP-enabled managed switches and net
 ---
 
 <img alt="image" src="https://github.com/user-attachments/assets/311582d4-f186-4efe-9d5c-28a84878ee4d" />
+
+---
+
+## 🗺️ Companion: Interactive Topology Mapping
+
+Looking to visualize your network connections and endpoints? Check out **[SNMP Network Manager](https://github.com/OtisPresley/snmp-network-manager)**!
+
+Built to integrate natively with SNMP Switch Manager, it uses your switch forwarding databases (FDB), ARP tables, and LLDP data to generate an interactive, real-time hierarchical topology map with live client tracking directly on your Home Assistant dashboard.
 
 ---
 
