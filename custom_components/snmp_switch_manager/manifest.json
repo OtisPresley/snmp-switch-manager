@@ -12,7 +12,7 @@
     "frontend",
     "http"
   ],
-  "documentation": "https://github.com/OtisPresley/snmp-switch-manager/wiki",
+  "documentation": "https://github.com/OtisPresley/snmp-switch-manager",
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/OtisPresley/snmp-switch-manager/issues",

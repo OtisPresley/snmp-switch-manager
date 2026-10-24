@@ -226,25 +226,31 @@ async def create_pull_request(token: str, repo: str, base: str, head: str, title
             _LOGGER.error("Error creating PR: %s", e)
     return False
 
+def _normalize_vendor_casing(raw_vendor: str) -> str:
+    """Pre-normalize casing against existing vendors.json in executor."""
+    vendors_path = os.path.join(os.path.dirname(__file__), "database", "vendors.json")
+    if os.path.exists(vendors_path):
+        try:
+            with open(vendors_path, "r", encoding="utf-8") as f:
+                v_data = json.load(f)
+                for v_item in v_data.get("vendors", []):
+                    if v_item.get("name", "").lower().strip() == raw_vendor.lower():
+                        return v_item["name"]
+        except Exception:
+            pass
+    return raw_vendor
+
+
 async def submit_override(token: str, feature: str, override_data: Dict[str, Any]) -> bool:
     """Full flow to submit an override as a PR."""
     repo = GITHUB_REPO
     base_branch = GITHUB_BASE_BRANCH
     
-    # Pre-normalize casing against existing vendors.json
+    # Pre-normalize casing against existing vendors.json in executor
     raw_vendor = override_data.get("vendor", "").strip()
     if raw_vendor:
-        vendors_path = os.path.join(os.path.dirname(__file__), "database", "vendors.json")
-        if os.path.exists(vendors_path):
-            try:
-                with open(vendors_path, "r", encoding="utf-8") as f:
-                    v_data = json.load(f)
-                    for v_item in v_data.get("vendors", []):
-                        if v_item["name"].lower().strip() == raw_vendor.lower():
-                            override_data["vendor"] = v_item["name"]
-                            break
-            except Exception:
-                pass
+        loop = asyncio.get_running_loop()
+        override_data["vendor"] = await loop.run_in_executor(None, _normalize_vendor_casing, raw_vendor)
 
     
     # 1. Get user info
