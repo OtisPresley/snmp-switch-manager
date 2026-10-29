@@ -1,7 +1,0 @@
-{
-  "name": "SNMP Switch Manager",
-  "domains": ["snmp-switch-manager"],
-  "homeassistant": "2025.11.2",
-  "render_readme": true,
-  "iot_class": "local_polling"
-}
