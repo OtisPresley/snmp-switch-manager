@@ -7,6 +7,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.11] - 2026-10-31
+
+### Fixed
+- ⚡ **Graceful SNMP End-of-MIB Boundary Timeout Handling (`snmp_compat.py`)**: Fixed an issue where switches with buggy SNMP agent firmware (such as MikroTik CSS326 running SwOS v2.18) drop requests or time out when advancing past the final entry of a MIB table (e.g. `ifAlias`) instead of returning `endOfMibView`. Single-row GETNEXT walks (`_do_next_walk_one`) now recognize trailing timeouts when rows have already been collected, treating them as the natural end of the table and preserving all retrieved data rather than aborting with `SnmpConnectionError` ([#108](https://github.com/OtisPresley/snmp-switch-manager/issues/108)).
+
+---
+
 ## [0.6.10] - 2026-10-17
 
 ### Fixed

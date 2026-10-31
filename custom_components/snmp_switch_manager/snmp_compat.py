@@ -1,4 +1,4 @@
-# ruff: noqa: F401
+# ruff: noqa: F401, E402
 """Compatibility layer for PySNMP to ensure forward compatibility with PySNMP 7+ and legacy versions."""
 
 # Prefer new API (PySNMP >= 7, v3arch asyncio)
@@ -120,7 +120,10 @@ __all__ = [
     "_do_set_system_string",
 ]
 
+import logging
 from typing import Any, Optional, Dict, Tuple, List
+
+_LOGGER = logging.getLogger(__name__)
 
 # OIDs required for sets
 from .const import (
@@ -252,6 +255,17 @@ async def _do_next_walk_one(
             engine, community, target, context, ObjectType(ObjectIdentity(current_oid)), lookupMib=False
         )
         if err_ind:
+            if _is_auth_error(err_ind):
+                raise SnmpAuthError(str(err_ind))
+            # If rows were already retrieved, the agent likely hung at the end of its
+            # MIB rather than returning endOfMibView (e.g. MikroTik SwOS v2.18 on ifAlias).
+            if results or (start_oid is not None and start_oid != base_oid):
+                _LOGGER.debug(
+                    "SNMP walk for %s timed out at %s after collecting data; treating as end of table",
+                    base_oid,
+                    current_oid,
+                )
+                break
             _raise_for(err_ind)
         if err_stat or not vbs:
             break
