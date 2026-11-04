@@ -20,7 +20,8 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
     """Register the frontend resources."""
     # 1. Register the static path
     frontend_dir = Path(__file__).parent / "frontend"
-    if not frontend_dir.exists():
+    dir_exists = await hass.async_add_executor_job(frontend_dir.exists)
+    if not dir_exists:
         _LOGGER.warning("Frontend directory not found at %s", frontend_dir)
         return
 
