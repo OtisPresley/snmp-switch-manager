@@ -2174,6 +2174,22 @@ _parseSpeedMbps(attrs) {
       _add("tx", "TX:", txLine);
     }
 
+    // Interface error & discard counters (supports both attributes and sensors mode)
+    const _readCounter = (attrKey, sensorSuffix) => {
+      if (!_isBlank(attrs[attrKey])) return attrs[attrKey];
+      if (!baseObj) return null;
+      const stx = hass?.states?.[`sensor.${baseObj}_${sensorSuffix}`];
+      if (!stx) return null;
+      const s = String(stx.state ?? "").trim();
+      const sl = s.toLowerCase();
+      if (!s || sl === "unknown" || sl === "unavailable") return null;
+      return s;
+    };
+    _add("rx errors", "RX Errors:", _readCounter("RX Errors", "rx_errors"));
+    _add("tx errors", "TX Errors:", _readCounter("TX Errors", "tx_errors"));
+    _add("rx discards", "RX Discards:", _readCounter("RX Discards", "rx_discards"));
+    _add("tx discards", "TX Discards:", _readCounter("TX Discards", "tx_discards"));
+
 
     // VLAN / trunk fields (use normalized computed values where available)
     _add("vlan id", "VLAN ID:", vlanId);
@@ -6016,7 +6032,7 @@ window.customCards.push({
   description: "Auto-discovers SNMP Switch Manager ports with panel/list views, safe modal toggles, and diagnostics.",
   preview: true
 });
-console.info("%c[SNMP Switch Manager Card] %cVersion 0.6.10", "color: #41BDF5; font-weight: bold;", "color: default;");
+console.info("%c[SNMP Switch Manager Card] %cVersion 0.6.12", "color: #41BDF5; font-weight: bold;", "color: default;");
 
 // ------------------------------------------------------------
 // Embedded GUI editor

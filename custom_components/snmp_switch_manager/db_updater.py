@@ -21,6 +21,7 @@ DEFAULT_DB_FILES = [
     "fans.json",
     "fdb.json",
     "interface_classification.json",
+    "interface_errors.json",
     "interface_filters.json",
     "lldp.json",
     "memory.json",

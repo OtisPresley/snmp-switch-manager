@@ -250,6 +250,27 @@ CONF_BW_TX_THROUGHPUT_ICON = "bw_tx_throughput_icon"
 CONF_BW_RX_TOTAL_ICON = "bw_rx_total_icon"
 CONF_BW_TX_TOTAL_ICON = "bw_tx_total_icon"
 
+# Interface error & discard counter options (per-device)
+CONF_IF_ERRORS_ENABLE = "enable_interface_error_sensors"
+CONF_IF_ERRORS_MODE = "if_errors_mode"
+IF_ERRORS_MODE_SENSORS = "sensors"
+IF_ERRORS_MODE_ATTRIBUTES = "attributes"
+CONF_IF_ERRORS_INCLUDE_DISCARDS = "if_errors_include_discards"
+CONF_IF_ERRORS_POLL_INTERVAL = "if_errors_poll_interval"
+DEFAULT_IF_ERRORS_POLL_INTERVAL = 30  # seconds
+
+CONF_IF_ERRORS_INCLUDE_STARTS_WITH = "if_errors_include_starts_with"
+CONF_IF_ERRORS_INCLUDE_CONTAINS = "if_errors_include_contains"
+CONF_IF_ERRORS_INCLUDE_ENDS_WITH = "if_errors_include_ends_with"
+CONF_IF_ERRORS_EXCLUDE_STARTS_WITH = "if_errors_exclude_starts_with"
+CONF_IF_ERRORS_EXCLUDE_CONTAINS = "if_errors_exclude_contains"
+CONF_IF_ERRORS_EXCLUDE_ENDS_WITH = "if_errors_exclude_ends_with"
+
+CONF_IF_ERRORS_RX_ICON = "if_errors_rx_icon"
+CONF_IF_ERRORS_TX_ICON = "if_errors_tx_icon"
+CONF_IF_ERRORS_RX_DISCARDS_ICON = "if_errors_rx_discards_icon"
+CONF_IF_ERRORS_TX_DISCARDS_ICON = "if_errors_tx_discards_icon"
+
 # The __all__ list should be at the bottom. 
 # List every constant name here as a string.
 __all__ = [

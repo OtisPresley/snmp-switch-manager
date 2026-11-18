@@ -38,6 +38,18 @@ from .const import (
     CONF_BW_EXCLUDE_STARTS_WITH,
     CONF_BW_EXCLUDE_CONTAINS,
     CONF_BW_EXCLUDE_ENDS_WITH,
+    CONF_IF_ERRORS_ENABLE,
+    CONF_IF_ERRORS_MODE,
+    IF_ERRORS_MODE_SENSORS,
+    CONF_IF_ERRORS_INCLUDE_DISCARDS,
+    CONF_IF_ERRORS_POLL_INTERVAL,
+    DEFAULT_IF_ERRORS_POLL_INTERVAL,
+    CONF_IF_ERRORS_INCLUDE_STARTS_WITH,
+    CONF_IF_ERRORS_INCLUDE_CONTAINS,
+    CONF_IF_ERRORS_INCLUDE_ENDS_WITH,
+    CONF_IF_ERRORS_EXCLUDE_STARTS_WITH,
+    CONF_IF_ERRORS_EXCLUDE_CONTAINS,
+    CONF_IF_ERRORS_EXCLUDE_ENDS_WITH,
     CONF_PORT_RENAME_USER_RULES,
     CONF_PORT_RENAME_DISABLED_DEFAULT_IDS,
     CONF_POE_ENABLE,
@@ -212,6 +224,21 @@ async def async_setup_entry(
         ),
     }
 
+    interface_error_options = {
+        CONF_IF_ERRORS_MODE: entry.options.get(CONF_IF_ERRORS_MODE) or IF_ERRORS_MODE_SENSORS,
+        CONF_IF_ERRORS_ENABLE: entry.options.get(CONF_IF_ERRORS_ENABLE, False),
+        CONF_IF_ERRORS_INCLUDE_DISCARDS: entry.options.get(CONF_IF_ERRORS_INCLUDE_DISCARDS, False),
+        CONF_IF_ERRORS_INCLUDE_STARTS_WITH: entry.options.get(CONF_IF_ERRORS_INCLUDE_STARTS_WITH, []) or [],
+        CONF_IF_ERRORS_INCLUDE_CONTAINS: entry.options.get(CONF_IF_ERRORS_INCLUDE_CONTAINS, []) or [],
+        CONF_IF_ERRORS_INCLUDE_ENDS_WITH: entry.options.get(CONF_IF_ERRORS_INCLUDE_ENDS_WITH, []) or [],
+        CONF_IF_ERRORS_EXCLUDE_STARTS_WITH: entry.options.get(CONF_IF_ERRORS_EXCLUDE_STARTS_WITH, []) or [],
+        CONF_IF_ERRORS_EXCLUDE_CONTAINS: entry.options.get(CONF_IF_ERRORS_EXCLUDE_CONTAINS, []) or [],
+        CONF_IF_ERRORS_EXCLUDE_ENDS_WITH: entry.options.get(CONF_IF_ERRORS_EXCLUDE_ENDS_WITH, []) or [],
+        CONF_IF_ERRORS_POLL_INTERVAL: entry.options.get(
+            CONF_IF_ERRORS_POLL_INTERVAL, DEFAULT_IF_ERRORS_POLL_INTERVAL
+        ),
+    }
+
     # Always provide a non-None default for mode values.
     # If the option key exists but its value is None, dict.get() will return None
     # (not the provided default), which breaks downstream comparisons.
@@ -239,6 +266,7 @@ async def async_setup_entry(
         custom_oids=(entry.options.get(CONF_FEATURE_OVERRIDES) or {}).get("device_info")
         or {},
         bandwidth_options=bandwidth_options,
+        interface_error_options=interface_error_options,
         poe_options=poe_options,
         env_options=env_options,
         feature_overrides=entry.options.get(CONF_FEATURE_OVERRIDES) or {},

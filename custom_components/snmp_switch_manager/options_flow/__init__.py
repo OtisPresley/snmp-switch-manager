@@ -36,6 +36,7 @@ from .interfaces import InterfacesOptionsMixin
 from .naming import InterfacesNamingMixin
 from .icons import InterfacesIconsMixin
 from .bandwidth import BandwidthOptionsMixin
+from .interface_errors import InterfaceErrorsOptionsMixin
 from .overrides_basic import OverridesBasicMixin
 from .overrides_hardware import OverridesHardwareMixin
 from .overrides_power import OverridesPowerMixin
@@ -50,6 +51,7 @@ class OptionsFlowHandler(
     InterfacesNamingMixin,
     InterfacesIconsMixin,
     BandwidthOptionsMixin,
+    InterfaceErrorsOptionsMixin,
     OverridesBasicMixin,
     OverridesHardwareMixin,
     OverridesPowerMixin,
@@ -175,6 +177,12 @@ class OptionsFlowHandler(
         elif feature == "base_mac":
             defaults["oid_base_mac"] = existing.get("oid_base_mac", first_db.get("oid_base_mac", ""))
             defaults["description"] = existing.get("description", first_db.get("description", ""))
+        elif feature == "interface_errors":
+            defaults["oid_in_errors"] = existing.get("oid_in_errors", first_db.get("oid_in_errors", ""))
+            defaults["oid_out_errors"] = existing.get("oid_out_errors", first_db.get("oid_out_errors", ""))
+            defaults["oid_in_discards"] = existing.get("oid_in_discards", first_db.get("oid_in_discards", ""))
+            defaults["oid_out_discards"] = existing.get("oid_out_discards", first_db.get("oid_out_discards", ""))
+            defaults["description"] = existing.get("description", first_db.get("description", ""))
             
         return defaults
 
@@ -279,6 +287,17 @@ class OptionsFlowHandler(
                 oids = f"ARP MAC: <code>{item.get('oid_arp_mac')}</code>"
             elif feature == "base_mac":
                 oids = f"Base MAC: <code>{item.get('oid_base_mac')}</code>"
+            elif feature == "interface_errors":
+                parts = []
+                if item.get("oid_in_errors"):
+                    parts.append(f"In Errors: <code>{item.get('oid_in_errors')}</code>")
+                if item.get("oid_out_errors"):
+                    parts.append(f"Out Errors: <code>{item.get('oid_out_errors')}</code>")
+                if item.get("oid_in_discards"):
+                    parts.append(f"In Discards: <code>{item.get('oid_in_discards')}</code>")
+                if item.get("oid_out_discards"):
+                    parts.append(f"Out Discards: <code>{item.get('oid_out_discards')}</code>")
+                oids = "<br>".join(parts)
             else: # cpu, power
                 oids = f"<code>{item.get('oid')}</code>"
 

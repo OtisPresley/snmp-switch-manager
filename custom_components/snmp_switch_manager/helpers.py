@@ -620,3 +620,22 @@ async def get_sysname(
     from .const import OID_sysName
     client = SwitchSnmpClient(hass, host, _make_settings(host, community, port, snmp_settings))
     return await client._async_get_one(OID_sysName)
+
+
+def clean_rule_list(options: dict[str, Any], key: str) -> tuple[str, ...]:
+    """Normalize a list of interface filter rule strings to lowercase non-empty tuples."""
+    return tuple(str(s).strip().lower() for s in (options.get(key, []) or []) if str(s).strip())
+
+
+def matches_interface_rules(
+    name_l: str,
+    starts: tuple[str, ...],
+    contains: tuple[str, ...],
+    ends: tuple[str, ...],
+) -> bool:
+    """Return True if lowercase interface name matches any starts/contains/ends tuple."""
+    if starts and name_l.startswith(starts):
+        return True
+    if ends and name_l.endswith(ends):
+        return True
+    return bool(contains and any(x in name_l for x in contains))

@@ -43,6 +43,7 @@ class InterfacesOptionsMixin:
                 "interface_name_rules",
                 "interface_ip_display",
                 "entity_icon_rules",
+                "interface_errors",
                 "back",
             ],
         )

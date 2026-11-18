@@ -7,6 +7,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.12] - 2026-11-17
+
+### Added
+- 🛡️ **Interface Error & Discard Counters (`ifInErrors` / `ifOutErrors` & optional `ifInDiscards` / `ifOutDiscards`)**: Added vendor-agnostic per-interface error and discard counter polling (`features/interface_errors.py`), diagnostic `TOTAL_INCREASING` sensors (`sensor/interface_errors.py`), port entity attributes (`switch/admin.py`), `database/interface_errors.json`, Options Flow submenu under **Manage Interfaces → Interface Errors** (with enable/mode, discards toggle, poll interval, include/exclude rules, icon overrides, and OID override + community GitHub PR submission), and Lovelace card port details display ([#109](https://github.com/OtisPresley/snmp-switch-manager/issues/109)).
+
+---
+
 ## [0.6.11] - 2026-10-31
 
 ### Fixed

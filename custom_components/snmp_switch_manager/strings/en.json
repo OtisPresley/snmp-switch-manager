@@ -415,9 +415,89 @@
           "excluded_interfaces": "Excluded Interfaces",
           "included_interfaces": "Included Interfaces",
           "interface_name_rules": "Interface Name Rules",
-          "interface_ip_display": "Interface IP Display"
+          "interface_ip_display": "Interface IP Display",
+          "interface_errors": "Interface Errors"
         },
         "title": "Manage Interfaces"
+      },
+      "interface_errors": {
+        "description": "Collect per-interface error (ifInErrors / ifOutErrors) and optional discard (ifInDiscards / ifOutDiscards) counters.",
+        "menu_options": {
+          "interface_errors_enable_disable": "Enable / Disable",
+          "interface_errors_poll_interval": "Poll interval",
+          "interface_errors_include_rules": "Include Rules",
+          "interface_errors_exclude_rules": "Exclude Rules",
+          "interface_errors_icons": "Icons",
+          "interface_errors_oid_override": "OID Override & Share",
+          "back_to_manage_interfaces": "Back"
+        },
+        "title": "Interface Errors"
+      },
+      "interface_errors_enable_disable": {
+        "data": {
+          "enable_interface_error_sensors": "Enable interface error counters",
+          "if_errors_mode": "Interface error data as",
+          "if_errors_include_discards": "Also collect interface discards (ifInDiscards / ifOutDiscards)",
+          "back_to_menu": "Go back (discard changes)"
+        },
+        "description": "Enable interface error collection for this device.\n\nIf you choose Attributes, error counts are added to port entities (no history).\nIf you choose Sensors, separate diagnostic sensors are created (history).",
+        "title": "Interface Errors"
+      },
+      "interface_errors_poll_interval": {
+        "data": {
+          "if_errors_poll_interval": "Poll interval (seconds)",
+          "back_to_menu": "Go back (discard changes)"
+        },
+        "description": "Set the polling interval for interface error and discard counters.",
+        "title": "Interface Errors Poll Interval"
+      },
+      "interface_errors_include_rules": {
+        "data": {
+          "rule_action": "Action",
+          "rule_existing": "Existing rule (for Edit/Remove)",
+          "rule_match": "Match",
+          "rule_value": "Text",
+          "back_to_menu": "Go back (discard changes)"
+        },
+        "description": "Only collect interface error counters for interfaces matching these rules (leave empty for all allowed interfaces).\n\nCurrent rules:\n{current}",
+        "title": "Interface Errors Include Rules"
+      },
+      "interface_errors_exclude_rules": {
+        "data": {
+          "rule_action": "Action",
+          "rule_existing": "Existing rule (for Edit/Remove)",
+          "rule_match": "Match",
+          "rule_value": "Text",
+          "back_to_menu": "Go back (discard changes)"
+        },
+        "description": "Exclude interfaces matching these rules from interface error collection (exclude always wins).\n\nCurrent rules:\n{current}",
+        "title": "Interface Errors Exclude Rules"
+      },
+      "interface_errors_icons": {
+        "data": {
+          "if_errors_rx_icon": "RX Errors Icon",
+          "if_errors_tx_icon": "TX Errors Icon",
+          "if_errors_rx_discards_icon": "RX Discards Icon",
+          "if_errors_tx_discards_icon": "TX Discards Icon",
+          "back_to_menu": "Go back (discard changes)"
+        },
+        "description": "Optional MDI icon overrides (e.g., mdi:alert-circle-outline). Leave blank to use defaults.",
+        "title": "Interface Errors Icons"
+      },
+      "interface_errors_oid_override": {
+        "data": {
+          "oid_in_errors": "Inbound Errors OID (ifInErrors)",
+          "oid_out_errors": "Outbound Errors OID (ifOutErrors)",
+          "oid_in_discards": "Inbound Discards OID (ifInDiscards)",
+          "oid_out_discards": "Outbound Discards OID (ifOutDiscards)",
+          "vendor": "Vendor",
+          "description": "Description",
+          "attestation": "I confirm these OIDs are tested and work on this vendor/device",
+          "share_with_community": "Share with the community (submit GitHub PR)",
+          "back_to_menu": "Go back (discard changes)"
+        },
+        "description": "Override the IF-MIB error/discard OIDs if your platform uses non-standard OIDs. Leave all OID fields blank to clear the override.\n\n**Existing Database Entries:**\n{existing_entries}",
+        "title": "Interface Errors OID Override"
       },
       "poe_poll_interval": {
         "data": {
@@ -642,6 +722,12 @@
   },
   "selector": {
     "bandwidth_data_as": {
+      "options": {
+        "attributes": "Attributes (no history)",
+        "sensors": "Sensors (history)"
+      }
+    },
+    "interface_errors_data_as": {
       "options": {
         "attributes": "Attributes (no history)",
         "sensors": "Sensors (history)"

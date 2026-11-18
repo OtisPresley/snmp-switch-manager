@@ -383,6 +383,13 @@ async def submit_override(token: str, feature: str, override_data: Dict[str, Any
             db_item["oid_firmware"] = normalize(override_data.get("firmware"))
             db_item["oid_hostname"] = normalize(override_data.get("hostname"))
             db_item["oid_uptime"] = normalize(override_data.get("uptime"))
+        elif feature == "interface_errors":
+            db_item["oid_in_errors"] = normalize(override_data.get("oid_in_errors"))
+            db_item["oid_out_errors"] = normalize(override_data.get("oid_out_errors"))
+            if override_data.get("oid_in_discards"):
+                db_item["oid_in_discards"] = normalize(override_data.get("oid_in_discards"))
+            if override_data.get("oid_out_discards"):
+                db_item["oid_out_discards"] = normalize(override_data.get("oid_out_discards"))
 
         db_item["vendors"] = [new_vendor]
         db_item["method"] = override_data.get("method", "get")
@@ -425,6 +432,13 @@ async def submit_override(token: str, feature: str, override_data: Dict[str, Any
                     (bool(db_item.get("oid_firmware")) and normalize(item.get("oid_firmware")) == normalize(db_item.get("oid_firmware"))) or
                     (bool(db_item.get("oid_hostname")) and normalize(item.get("oid_hostname")) == normalize(db_item.get("oid_hostname"))) or
                     (bool(db_item.get("oid_uptime")) and normalize(item.get("oid_uptime")) == normalize(db_item.get("oid_uptime")))
+                )
+            elif feature == "interface_errors":
+                match = (
+                    bool(db_item.get("oid_in_errors"))
+                    and normalize(item.get("oid_in_errors")) == normalize(db_item.get("oid_in_errors"))
+                    and bool(db_item.get("oid_out_errors"))
+                    and normalize(item.get("oid_out_errors")) == normalize(db_item.get("oid_out_errors"))
                 )
             else:
                 match = False

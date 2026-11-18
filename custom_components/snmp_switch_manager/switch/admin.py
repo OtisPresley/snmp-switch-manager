@@ -11,6 +11,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from ..const import (
     POE_MODE_ATTRIBUTES,
     BW_MODE_ATTRIBUTES,
+    IF_ERRORS_MODE_ATTRIBUTES,
 )
 from ..snmp import SwitchSnmpClient
 
@@ -274,4 +275,23 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
                     attrs['TX Total (bytes)'] = int(tx_oct)
             except Exception:
                 pass
+
+        # Interface error & discard attributes (optional)
+        if (
+            data.get("if_errors_enabled")
+            and data.get("if_errors_mode") == IF_ERRORS_MODE_ATTRIBUTES
+        ):
+            err_row = (data.get("interface_errors") or {}).get(self._if_index) or {}
+            for key, attr_name in (
+                ("rx_errors", "RX Errors"),
+                ("tx_errors", "TX Errors"),
+                ("rx_discards", "RX Discards"),
+                ("tx_discards", "TX Discards"),
+            ):
+                val = err_row.get(key)
+                if val is not None:
+                    try:
+                        attrs[attr_name] = int(val)
+                    except Exception:
+                        pass
         return attrs

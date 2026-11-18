@@ -19,6 +19,17 @@ from ..const import (
     CONF_BW_EXCLUDE_STARTS_WITH,
     CONF_BW_EXCLUDE_CONTAINS,
     CONF_BW_EXCLUDE_ENDS_WITH,
+    CONF_IF_ERRORS_ENABLE,
+    CONF_IF_ERRORS_MODE,
+    CONF_IF_ERRORS_INCLUDE_DISCARDS,
+    IF_ERRORS_MODE_SENSORS,
+    IF_ERRORS_MODE_ATTRIBUTES,
+    CONF_IF_ERRORS_INCLUDE_STARTS_WITH,
+    CONF_IF_ERRORS_INCLUDE_CONTAINS,
+    CONF_IF_ERRORS_INCLUDE_ENDS_WITH,
+    CONF_IF_ERRORS_EXCLUDE_STARTS_WITH,
+    CONF_IF_ERRORS_EXCLUDE_CONTAINS,
+    CONF_IF_ERRORS_EXCLUDE_ENDS_WITH,
     CONF_POE_ENABLE,
     CONF_POE_MODE,
     CONF_POE_PER_PORT_POWER,
@@ -30,9 +41,10 @@ from ..const import (
     ENV_MODE_SENSORS,
 )
 from ..snmp import SwitchSnmpClient
-from ..helpers import check_interface_filter_rules, uptime_human
+from ..helpers import check_interface_filter_rules, clean_rule_list, matches_interface_rules, uptime_human
 
 from .bandwidth import BandwidthRateSensor, BandwidthTotalSensor
+from .interface_errors import InterfaceErrorSensor
 from .environmental import (
     EnvironmentPowerSensor,
     EnvironmentSystemPowerSensor,
@@ -302,6 +314,88 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 ent_reg.async_remove(eid)
 
     entities.extend(bw_entities)
+
+    # Interface error & discard sensor entities (optional; per-device)
+    iferr_enabled = bool(entry.options.get(CONF_IF_ERRORS_ENABLE, False))
+    iferr_mode = str(entry.options.get(CONF_IF_ERRORS_MODE, IF_ERRORS_MODE_SENSORS)).strip().lower()
+    if iferr_mode not in (IF_ERRORS_MODE_SENSORS, IF_ERRORS_MODE_ATTRIBUTES):
+        iferr_mode = IF_ERRORS_MODE_SENSORS
+    iferr_entities_enabled = bool(iferr_enabled) and (iferr_mode == IF_ERRORS_MODE_SENSORS)
+    iferr_include_discards = bool(entry.options.get(CONF_IF_ERRORS_INCLUDE_DISCARDS, False))
+    desired_iferr_unique_ids: set[str] = set()
+    iferr_entities: list[SensorEntity] = []
+
+    if iferr_entities_enabled:
+        iftable = coordinator.data.get("ifTable", {}) or {}
+        ip_index = client.cache.get("ipIndex", {}) or {}
+        disabled_vendor_filter_ids = set(entry.options.get("disabled_vendor_filter_rule_ids", []) or [])
+        vendor = client.cache.get("vendor", "Unknown")
+        manufacturer_str = client.cache.get("manufacturer") or ""
+        sys_descr = client.cache.get("sysDescr") or ""
+        db_filters = client._database if hasattr(client, "_database") else None
+
+        ip_by_ifindex = {}
+        for ip, idx in ip_index.items():
+            try:
+                ip_by_ifindex[int(idx)] = ip
+            except Exception:
+                pass
+
+        err_inc_s = clean_rule_list(entry.options, CONF_IF_ERRORS_INCLUDE_STARTS_WITH)
+        err_inc_c = clean_rule_list(entry.options, CONF_IF_ERRORS_INCLUDE_CONTAINS)
+        err_inc_e = clean_rule_list(entry.options, CONF_IF_ERRORS_INCLUDE_ENDS_WITH)
+        err_exc_s = clean_rule_list(entry.options, CONF_IF_ERRORS_EXCLUDE_STARTS_WITH)
+        err_exc_c = clean_rule_list(entry.options, CONF_IF_ERRORS_EXCLUDE_CONTAINS)
+        err_exc_e = clean_rule_list(entry.options, CONF_IF_ERRORS_EXCLUDE_ENDS_WITH)
+        has_err_inc = bool(err_inc_s or err_inc_c or err_inc_e)
+
+        metrics = ["rx_errors", "tx_errors"]
+        if iferr_include_discards:
+            metrics.extend(["rx_discards", "tx_discards"])
+
+        for if_index, row in iftable.items():
+            try:
+                idx_i = int(if_index)
+            except Exception:
+                continue
+            raw_name = str(row.get("name") or row.get("descr") or f"if{idx_i}").strip()
+            if not raw_name:
+                continue
+            nl = raw_name.lower()
+
+            include_iface, _ = check_interface_filter_rules(
+                normalized_name=nl,
+                raw_name=raw_name,
+                admin=row.get("admin"),
+                oper=row.get("oper"),
+                has_ip=bool(ip_by_ifindex.get(idx_i)),
+                vendor=vendor,
+                manufacturer=manufacturer_str,
+                sys_descr=sys_descr,
+                disabled_vendor_filter_ids=disabled_vendor_filter_ids,
+                classification_db=db_filters,
+            )
+            if not include_iface:
+                continue
+            if has_err_inc and not matches_interface_rules(nl, err_inc_s, err_inc_c, err_inc_e):
+                continue
+            if matches_interface_rules(nl, err_exc_s, err_exc_c, err_exc_e):
+                continue
+
+            for metric in metrics:
+                iferr_entities.append(
+                    InterfaceErrorSensor(coordinator, entry, idx_i, metric, device_info, host_label)
+                )
+                desired_iferr_unique_ids.add(f"{entry.entry_id}-iferr-{idx_i}-{metric}")
+
+    for ent in list(er.async_entries_for_config_entry(ent_reg, entry.entry_id)):
+        if ent.domain != "sensor" or not ent.unique_id:
+            continue
+        if ent.unique_id.startswith(f"{entry.entry_id}-iferr-"):
+            if (not iferr_entities_enabled) or (ent.unique_id not in desired_iferr_unique_ids):
+                ent_reg.async_remove(ent.entity_id)
+
+    entities.extend(iferr_entities)
 
     # Environmental sensors (optional)
     env_enabled = entry.options.get(CONF_ENV_ENABLE, False)

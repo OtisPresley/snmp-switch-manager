@@ -18,6 +18,7 @@ from .features.psu import poll_psu
 from .features.temperature import poll_temperature
 from .features.entity_sensor import poll_entity_sensor_fallback
 from .features.bandwidth import poll_bandwidth
+from .features.interface_errors import poll_interface_errors
 from .features.poe import poll_poe
 from .features.h3c import poll_h3c_environment
 from .features.engine import ensure_engine
@@ -52,6 +53,12 @@ from .const import (
     CONF_BW_EXCLUDE_STARTS_WITH,
     CONF_BW_EXCLUDE_CONTAINS,
     CONF_BW_EXCLUDE_ENDS_WITH,
+    CONF_IF_ERRORS_INCLUDE_STARTS_WITH,
+    CONF_IF_ERRORS_INCLUDE_CONTAINS,
+    CONF_IF_ERRORS_INCLUDE_ENDS_WITH,
+    CONF_IF_ERRORS_EXCLUDE_STARTS_WITH,
+    CONF_IF_ERRORS_EXCLUDE_CONTAINS,
+    CONF_IF_ERRORS_EXCLUDE_ENDS_WITH,
     CONF_ENV_ENABLE,
     CONF_ENV_MODE,
     CONF_ENV_POLL_INTERVAL,
@@ -73,6 +80,7 @@ class SwitchSnmpClient:
         snmp_settings: Dict[str, Any],
         custom_oids: Optional[Dict[str, str]] = None,
         bandwidth_options: Optional[Dict[str, Any]] = None,
+        interface_error_options: Optional[Dict[str, Any]] = None,
         poe_options: Optional[Dict[str, Any]] = None,
         env_options: Optional[Dict[str, Any]] = None,
         feature_overrides: Optional[Dict[str, Any]] = None,
@@ -97,6 +105,19 @@ class SwitchSnmpClient:
         self._bw_exclude_starts = _clean_list(CONF_BW_EXCLUDE_STARTS_WITH)
         self._bw_exclude_contains = _clean_list(CONF_BW_EXCLUDE_CONTAINS)
         self._bw_exclude_ends = _clean_list(CONF_BW_EXCLUDE_ENDS_WITH)
+
+        self._if_errors_options: Dict[str, Any] = dict(interface_error_options or {})
+
+        def _clean_err_list(key: str) -> tuple[str, ...]:
+            return tuple(str(s).strip().lower() for s in (self._if_errors_options.get(key, []) or []) if str(s).strip())
+
+        self._if_errors_include_starts = _clean_err_list(CONF_IF_ERRORS_INCLUDE_STARTS_WITH)
+        self._if_errors_include_contains = _clean_err_list(CONF_IF_ERRORS_INCLUDE_CONTAINS)
+        self._if_errors_include_ends = _clean_err_list(CONF_IF_ERRORS_INCLUDE_ENDS_WITH)
+        self._if_errors_exclude_starts = _clean_err_list(CONF_IF_ERRORS_EXCLUDE_STARTS_WITH)
+        self._if_errors_exclude_contains = _clean_err_list(CONF_IF_ERRORS_EXCLUDE_CONTAINS)
+        self._if_errors_exclude_ends = _clean_err_list(CONF_IF_ERRORS_EXCLUDE_ENDS_WITH)
+        self._if_errors_last_poll = None
 
         self._poe_options = poe_options or {}
         self._poe_last_poll: float = 0.0
@@ -382,6 +403,9 @@ class SwitchSnmpClient:
 
         # Bandwidth counters (optional; per-device)
         await poll_bandwidth(self)
+
+        # Interface error & discard counters (optional; per-device)
+        await poll_interface_errors(self)
 
         # PoE (optional)
         try:
