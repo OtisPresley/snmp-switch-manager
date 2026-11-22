@@ -44,7 +44,7 @@ from ..snmp import SwitchSnmpClient
 from ..helpers import check_interface_filter_rules, clean_rule_list, matches_interface_rules, uptime_human
 
 from .bandwidth import BandwidthRateSensor, BandwidthTotalSensor
-from .interface_errors import InterfaceErrorSensor
+from .interface_errors import InterfaceErrorRateSensor, InterfaceErrorSensor
 from .environmental import (
     EnvironmentPowerSensor,
     EnvironmentSystemPowerSensor,
@@ -383,10 +383,18 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 continue
 
             for metric in metrics:
-                iferr_entities.append(
-                    InterfaceErrorSensor(coordinator, entry, idx_i, metric, device_info, host_label)
+                iferr_entities.extend(
+                    [
+                        InterfaceErrorSensor(coordinator, entry, idx_i, metric, device_info, host_label),
+                        InterfaceErrorRateSensor(coordinator, entry, idx_i, metric, device_info, host_label),
+                    ]
                 )
-                desired_iferr_unique_ids.add(f"{entry.entry_id}-iferr-{idx_i}-{metric}")
+                desired_iferr_unique_ids.update(
+                    {
+                        f"{entry.entry_id}-iferr-{idx_i}-{metric}",
+                        f"{entry.entry_id}-iferr-{idx_i}-{metric}_rate",
+                    }
+                )
 
     for ent in list(er.async_entries_for_config_entry(ent_reg, entry.entry_id)):
         if ent.domain != "sensor" or not ent.unique_id:

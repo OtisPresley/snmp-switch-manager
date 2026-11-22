@@ -118,6 +118,7 @@ class SwitchSnmpClient:
         self._if_errors_exclude_contains = _clean_err_list(CONF_IF_ERRORS_EXCLUDE_CONTAINS)
         self._if_errors_exclude_ends = _clean_err_list(CONF_IF_ERRORS_EXCLUDE_ENDS_WITH)
         self._if_errors_last_poll = None
+        self._if_errors_last: Dict[int, Dict[str, Any]] = {}
 
         self._poe_options = poe_options or {}
         self._poe_last_poll: float = 0.0

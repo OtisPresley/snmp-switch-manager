@@ -1401,8 +1401,15 @@ _parseSpeedMbps(attrs) {
 
 
 
-  async _openBandwidthGraphDialog(title, rxEntityId, txEntityId, force = false) {
+  async _openBandwidthGraphDialog(title, rxEntityId, txEntityId, force = false, graphOpts = null) {
     if (!this._hass || !rxEntityId || !txEntityId) return;
+
+    const modes = Array.isArray(graphOpts?.modes) && graphOpts.modes.length
+      ? graphOpts.modes
+      : [{ key: "bandwidth", label: "Bandwidth", rx: rxEntityId, tx: txEntityId, kind: "bandwidth" }];
+    const activeModeKey = graphOpts?.activeMode || modes[0].key;
+    const activeModeObj = modes.find((m) => m.key === activeModeKey) || modes[0];
+    const isBandwidth = activeModeObj.kind === "bandwidth";
 
     // Bandwidth entities update frequently. If we allow the main card to
     // re-render while this modal is open, the statistics-graph element gets
@@ -1425,10 +1432,19 @@ _parseSpeedMbps(attrs) {
     // otherwise wipe the dialog after a second or two when HA pushes state.
     this._bandwidthGraphModalRoot = root;
 
+    const modeOptionsHtml = modes.length > 1
+      ? `<div class="ssm-graph-refresh-wrap" style="margin-left:12px;">
+           <span class="ssm-graph-refresh-label">Metric</span>
+           <select class="ssm-graph-scale" data-graph-mode="1">
+             ${modes.map((m) => `<option value="${m.key}"${m.key === activeModeObj.key ? " selected" : ""}>${m.label}</option>`).join("")}
+           </select>
+         </div>`
+      : "";
+
     root.innerHTML = `
       <div class="ssm-backdrop"></div>
       <div class="ssm-modal" role="dialog" aria-modal="true" style="position: relative;">
-        <div class="ssm-modal-title">${title} – Bandwidth</div>
+        <div class="ssm-modal-title">${title} – ${activeModeObj.label}</div>
         <div class="ssm-modal-body" style="position: relative; min-height: 260px;">
           <div class="ssm-graph-host">Loading…</div>
           <div class="ssm-graph-tooltip" style="position: absolute; display: none; background: color-mix(in srgb, var(--ha-card-background, var(--card-background-color, #1e1e24)) 95%, transparent); border: 1px solid color-mix(in srgb, var(--divider-color, rgba(255, 255, 255, 0.15)) 40%, transparent); border-radius: 8px; padding: 8px 12px; pointer-events: none; font-size: 11px; z-index: 12005; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4); font-family: var(--primary-font-family, sans-serif); color: var(--primary-text-color); white-space: nowrap; line-height: 1.4;"></div>
@@ -1445,7 +1461,8 @@ _parseSpeedMbps(attrs) {
               <option value="300">5m</option>
             </select>
           </div>
-          <div class="ssm-graph-scale-wrap" style="display:flex;align-items:center;gap:6px;margin-right:auto;margin-left:12px;">
+          ${modeOptionsHtml}
+          <div class="ssm-graph-scale-wrap" style="display:${isBandwidth ? "flex" : "none"};align-items:center;gap:6px;margin-right:auto;margin-left:12px;">
             <span class="ssm-graph-scale-label" style="font-size:12px;opacity:.85;">Scale</span>
             <select class="ssm-graph-scale" data-graph-scale="1">
               <option value="auto">Auto</option>
@@ -1455,6 +1472,7 @@ _parseSpeedMbps(attrs) {
               <option value="Gbit/s">Gbps</option>
             </select>
           </div>
+          ${isBandwidth ? "" : `<div style="margin-right:auto;"></div>`}
           <button class="btn" data-refresh-graph="1">Refresh</button>
           <button class="btn subtle" data-close-graph="1">Close</button>
         </div>
@@ -1535,9 +1553,21 @@ _parseSpeedMbps(attrs) {
     root.querySelector('[data-close-graph="1"]')?.addEventListener("click", close);
     root
       .querySelector('[data-refresh-graph="1"]')
-      ?.addEventListener("click", () =>
-        this._openBandwidthGraphDialog(title, rxEntityId, txEntityId, true)
-      );
+      ?.addEventListener("click", () => {
+        this._cachedGraphHistory = null;
+        this._openBandwidthGraphDialog(title, rxEntityId, txEntityId, true, { modes, activeMode: activeModeObj.key });
+      });
+
+    const selMode = root.querySelector('[data-graph-mode="1"]');
+    if (selMode) {
+      selMode.addEventListener("change", (ev) => {
+        const nextKey = ev.currentTarget.value;
+        const nextMode = modes.find((m) => m.key === nextKey);
+        if (!nextMode) return;
+        this._cachedGraphHistory = null;
+        this._openBandwidthGraphDialog(title, nextMode.rx, nextMode.tx, true, { modes, activeMode: nextMode.key });
+      });
+    }
 
     const host = root.querySelector(".ssm-graph-host");
 
@@ -1580,61 +1610,68 @@ _parseSpeedMbps(attrs) {
           return;
         }
 
-        const rxUnit = this._hass?.states?.[rxEntityId]?.attributes?.unit_of_measurement || "bit/s";
-        const txUnit = this._hass?.states?.[txEntityId]?.attributes?.unit_of_measurement || "bit/s";
+        const rxUnit = this._hass?.states?.[rxEntityId]?.attributes?.unit_of_measurement || (isBandwidth ? "bit/s" : "errors/s");
+        const txUnit = this._hass?.states?.[txEntityId]?.attributes?.unit_of_measurement || (isBandwidth ? "bit/s" : "errors/s");
 
-        const convertToBits = (val, unit) => {
-          const isBytes = /B|byte|octet/i.test(unit);
-          return isBytes ? val * 8 : val;
-        };
+        let rxScaled, txScaled, scaleLabel;
+        if (isBandwidth) {
+          const convertToBits = (val, unit) => {
+            const isBytes = /B|byte|octet/i.test(unit);
+            return isBytes ? val * 8 : val;
+          };
 
-        // Determine max bits value to select Auto scale
-        let maxBitsVal = 0;
-        for (const p of rxPoints) {
-          maxBitsVal = Math.max(maxBitsVal, convertToBits(p.val, rxUnit));
-        }
-        for (const p of txPoints) {
-          maxBitsVal = Math.max(maxBitsVal, convertToBits(p.val, txUnit));
-        }
-
-        let selectedScale = this._selectedGraphScale || "auto";
-        let activeScale = selectedScale;
-        if (selectedScale === "auto") {
-          if (maxBitsVal >= 1000000000) activeScale = "Gbit/s";
-          else if (maxBitsVal >= 1000000) activeScale = "Mbit/s";
-          else if (maxBitsVal >= 1000) activeScale = "kbit/s";
-          else activeScale = "bit/s";
-        }
-
-        const convertValue = (val, fromUnit, targetScale) => {
-          let valNum = parseFloat(val);
-          if (!Number.isFinite(valNum)) return 0;
-          const bits = convertToBits(valNum, fromUnit);
-          switch (targetScale) {
-            case "kbit/s": return bits / 1000;
-            case "Mbit/s": return bits / 1000000;
-            case "Gbit/s": return bits / 1000000000;
-            case "bit/s":
-            default: return bits;
+          // Determine max bits value to select Auto scale
+          let maxBitsVal = 0;
+          for (const p of rxPoints) {
+            maxBitsVal = Math.max(maxBitsVal, convertToBits(p.val, rxUnit));
           }
-        };
+          for (const p of txPoints) {
+            maxBitsVal = Math.max(maxBitsVal, convertToBits(p.val, txUnit));
+          }
 
-        const rxScaled = rxPoints.map(p => ({
-          val: convertValue(p.val, rxUnit, activeScale),
-          time: p.time
-        }));
-        const txScaled = txPoints.map(p => ({
-          val: convertValue(p.val, txUnit, activeScale),
-          time: p.time
-        }));
+          let selectedScale = this._selectedGraphScale || "auto";
+          let activeScale = selectedScale;
+          if (selectedScale === "auto") {
+            if (maxBitsVal >= 1000000000) activeScale = "Gbit/s";
+            else if (maxBitsVal >= 1000000) activeScale = "Mbit/s";
+            else if (maxBitsVal >= 1000) activeScale = "kbit/s";
+            else activeScale = "bit/s";
+          }
 
-        const scaleDisplayLabels = {
-          "bit/s": "bps",
-          "kbit/s": "Kbps",
-          "Mbit/s": "Mbps",
-          "Gbit/s": "Gbps"
-        };
-        const scaleLabel = scaleDisplayLabels[activeScale] || activeScale;
+          const convertValue = (val, fromUnit, targetScale) => {
+            let valNum = parseFloat(val);
+            if (!Number.isFinite(valNum)) return 0;
+            const bits = convertToBits(valNum, fromUnit);
+            switch (targetScale) {
+              case "kbit/s": return bits / 1000;
+              case "Mbit/s": return bits / 1000000;
+              case "Gbit/s": return bits / 1000000000;
+              case "bit/s":
+              default: return bits;
+            }
+          };
+
+          rxScaled = rxPoints.map(p => ({
+            val: convertValue(p.val, rxUnit, activeScale),
+            time: p.time
+          }));
+          txScaled = txPoints.map(p => ({
+            val: convertValue(p.val, txUnit, activeScale),
+            time: p.time
+          }));
+
+          const scaleDisplayLabels = {
+            "bit/s": "bps",
+            "kbit/s": "Kbps",
+            "Mbit/s": "Mbps",
+            "Gbit/s": "Gbps"
+          };
+          scaleLabel = scaleDisplayLabels[activeScale] || activeScale;
+        } else {
+          rxScaled = rxPoints;
+          txScaled = txPoints;
+          scaleLabel = rxUnit || txUnit || "";
+        }
 
         // Sort data points
         const rxSorted = rxScaled.sort((a, b) => a.time - b.time);
@@ -1657,7 +1694,7 @@ _parseSpeedMbps(attrs) {
         let maxYVal = 0;
         for (const p of rxScaled) maxYVal = Math.max(maxYVal, p.val);
         for (const p of txScaled) maxYVal = Math.max(maxYVal, p.val);
-        maxYVal = maxYVal > 0 ? maxYVal * 1.15 : 10;
+        maxYVal = maxYVal > 0 ? maxYVal * 1.15 : (isBandwidth ? 10 : 1);
 
         // Grid lines
         const yGridLines = [];
@@ -1986,10 +2023,18 @@ _parseSpeedMbps(attrs) {
     //   sensor.switch_study_gi1_0_1_rx_throughput
     // Only show RX/TX/Graph if the sensors exist *and* have numeric state.
     const baseObj = (entity_id || "").split(".")[1] || "";
-    const rxRateE = baseObj ? `sensor.${baseObj}_rx_throughput` : null;
-    const txRateE = baseObj ? `sensor.${baseObj}_tx_throughput` : null;
-    const rxTotE = baseObj ? `sensor.${baseObj}_rx_total` : null;
-    const txTotE = baseObj ? `sensor.${baseObj}_tx_total` : null;
+    const _findPortSensor = (suffix) => {
+      if (!baseObj) return null;
+      const states = this._hass?.states || {};
+      const exact = `sensor.${baseObj}_${suffix}`;
+      if (states[exact]) return exact;
+      const needle = `_${baseObj}_${suffix}`;
+      return Object.keys(states).find((k) => k.startsWith("sensor.") && k.endsWith(needle)) || null;
+    };
+    const rxRateE = _findPortSensor("rx_throughput");
+    const txRateE = _findPortSensor("tx_throughput");
+    const rxTotE = _findPortSensor("rx_total");
+    const txTotE = _findPortSensor("tx_total");
 
     const _numState = (eid) => {
       if (!eid) return null;
@@ -2012,7 +2057,33 @@ _parseSpeedMbps(attrs) {
     const txRate = (txBps != null) ? this._formatBitsPerSecond(txBps) : "-";
     const rxTotS = (rxTot != null) ? this._formatBytes(rxTot) : "-";
     const txTotS = (txTot != null) ? this._formatBytes(txTot) : "-";
-    const canGraph = hasRates;
+
+    const graphModes = [];
+    if (hasRates && rxRateE && txRateE) {
+      graphModes.push({ key: "bandwidth", label: "Bandwidth", rx: rxRateE, tx: txRateE, kind: "bandwidth" });
+    }
+    if (baseObj) {
+      const rxErrRateE = _findPortSensor("rx_errors_rate");
+      const txErrRateE = _findPortSensor("tx_errors_rate");
+      const rxErrTotE = _findPortSensor("rx_errors");
+      const txErrTotE = _findPortSensor("tx_errors");
+      if (rxErrRateE && txErrRateE) {
+        graphModes.push({ key: "errors", label: "Errors", rx: rxErrRateE, tx: txErrRateE, kind: "errors" });
+      } else if (rxErrTotE && txErrTotE) {
+        graphModes.push({ key: "errors", label: "Errors", rx: rxErrTotE, tx: txErrTotE, kind: "errors" });
+      }
+
+      const rxDiscRateE = _findPortSensor("rx_discards_rate");
+      const txDiscRateE = _findPortSensor("tx_discards_rate");
+      const rxDiscTotE = _findPortSensor("rx_discards");
+      const txDiscTotE = _findPortSensor("tx_discards");
+      if (rxDiscRateE && txDiscRateE) {
+        graphModes.push({ key: "discards", label: "Discards", rx: rxDiscRateE, tx: txDiscRateE, kind: "discards" });
+      } else if (rxDiscTotE && txDiscTotE) {
+        graphModes.push({ key: "discards", label: "Discards", rx: rxDiscTotE, tx: txDiscTotE, kind: "discards" });
+      }
+    }
+    const canGraph = graphModes.length > 0;
 
     // remove any prior modal/style
     this._modalEl?.remove(); this._modalStyle?.remove();
@@ -2177,18 +2248,31 @@ _parseSpeedMbps(attrs) {
     // Interface error & discard counters (supports both attributes and sensors mode)
     const _readCounter = (attrKey, sensorSuffix) => {
       if (!_isBlank(attrs[attrKey])) return attrs[attrKey];
-      if (!baseObj) return null;
-      const stx = hass?.states?.[`sensor.${baseObj}_${sensorSuffix}`];
+      const eid = _findPortSensor(sensorSuffix);
+      if (!eid) return null;
+      const stx = hass?.states?.[eid];
       if (!stx) return null;
       const s = String(stx.state ?? "").trim();
       const sl = s.toLowerCase();
       if (!s || sl === "unknown" || sl === "unavailable") return null;
       return s;
     };
-    _add("rx errors", "RX Errors:", _readCounter("RX Errors", "rx_errors"));
-    _add("tx errors", "TX Errors:", _readCounter("TX Errors", "tx_errors"));
-    _add("rx discards", "RX Discards:", _readCounter("RX Discards", "rx_discards"));
-    _add("tx discards", "TX Discards:", _readCounter("TX Discards", "tx_discards"));
+    const _formatCounter = (attrKey, sensorSuffix, labelKey, label) => {
+      const total = _readCounter(attrKey, sensorSuffix);
+      const rate = _readCounter(`${attrKey}/s`, `${sensorSuffix}_rate`);
+      used.add(`${labelKey}/s`);
+      if (rate != null && total != null) {
+        _add(labelKey, label, `${rate}/s (${total})`);
+      } else if (rate != null) {
+        _add(labelKey, label, `${rate}/s`);
+      } else if (total != null) {
+        _add(labelKey, label, total);
+      }
+    };
+    _formatCounter("RX Errors", "rx_errors", "rx errors", "RX Errors:");
+    _formatCounter("TX Errors", "tx_errors", "tx errors", "TX Errors:");
+    _formatCounter("RX Discards", "rx_discards", "rx discards", "RX Discards:");
+    _formatCounter("TX Discards", "tx_discards", "tx discards", "TX Discards:");
 
 
     // VLAN / trunk fields (use normalized computed values where available)
@@ -2454,7 +2538,11 @@ _parseSpeedMbps(attrs) {
       graphBtn.addEventListener("click", (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
-        this._openBandwidthGraphDialog(name, rxRateE, txRateE);
+        this._cachedGraphHistory = null;
+        this._openBandwidthGraphDialog(name, graphModes[0].rx, graphModes[0].tx, false, {
+          modes: graphModes,
+          activeMode: graphModes[0].key,
+        });
       });
     }
 
@@ -6032,7 +6120,7 @@ window.customCards.push({
   description: "Auto-discovers SNMP Switch Manager ports with panel/list views, safe modal toggles, and diagnostics.",
   preview: true
 });
-console.info("%c[SNMP Switch Manager Card] %cVersion 0.6.12", "color: #41BDF5; font-weight: bold;", "color: default;");
+console.info("%c[SNMP Switch Manager Card] %cVersion 0.6.15", "color: #41BDF5; font-weight: bold;", "color: default;");
 
 // ------------------------------------------------------------
 // Embedded GUI editor

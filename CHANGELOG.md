@@ -7,6 +7,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.15] - 2026-11-22
+
+### Added
+- 📈 **Interface Error & Discard Rate Sensors & Attributes (`errors/s`, `packets/s`)**: Added delta/rate tracking (`_counter32_delta` with reset vs. 32-bit wrap guard) in `features/interface_errors.py`, `InterfaceErrorRateSensor` (`MEASUREMENT` in `errors/s` / `packets/s`, plus `delta` attribute) in `sensor/interface_errors.py`, `RX Errors/s` / `TX Errors/s` / `RX Discards/s` / `TX Discards/s` attributes in `switch/admin.py`, and combined `<rate>/s (<total>)` display + a **Metric** selector in the Lovelace card Graph modal to switch between **Bandwidth**, **Errors**, and **Discards** ([#109](https://github.com/OtisPresley/snmp-switch-manager/issues/109)).
+
+---
+
 ## [0.6.12] - 2026-11-17
 
 ### Added

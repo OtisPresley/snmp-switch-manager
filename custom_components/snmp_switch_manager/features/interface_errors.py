@@ -34,6 +34,20 @@ def _safe_int(val: Any) -> int | None:
         return None
 
 
+def _counter32_delta(cur: int, prev: int) -> int | None:
+    """Compute a monotonic delta for 32-bit Counter32 values.
+
+    Applies 32-bit wrap-around only when prev is in the upper half (>= 2**31);
+    otherwise treats cur < prev as a counter reset/reboot and returns None.
+    """
+    delta = cur - prev
+    if delta < 0:
+        if prev >= (1 << 31):
+            return delta + (1 << 32)
+        return None
+    return delta
+
+
 def _resolve_error_oids(client: "SwitchSnmpClient") -> tuple[str, str, str, str]:
     """Resolve error/discard OIDs from overrides, database, or IF-MIB defaults."""
     vendor = client._get_vendor() if hasattr(client, "_get_vendor") else "Standard"
@@ -56,7 +70,7 @@ def _resolve_error_oids(client: "SwitchSnmpClient") -> tuple[str, str, str, str]
 
 
 async def poll_interface_errors(client: "SwitchSnmpClient") -> None:
-    """Poll per-interface error (and optional discard) counters."""
+    """Poll per-interface error (and optional discard) counters and compute rates."""
     opts = getattr(client, "_if_errors_options", {}) or {}
     enabled = bool(opts.get(CONF_IF_ERRORS_ENABLE, False))
     mode = str(opts.get(CONF_IF_ERRORS_MODE) or IF_ERRORS_MODE_SENSORS).strip().lower()
@@ -128,24 +142,43 @@ async def poll_interface_errors(client: "SwitchSnmpClient") -> None:
         got = await _do_get_many(client.engine, client.auth_data, client.target, client.context, oids)
         now_ts = time.time()
 
+        if not hasattr(client, "_if_errors_last") or client._if_errors_last is None:
+            client._if_errors_last = {}
+
         out: Dict[int, Dict[str, Any]] = {}
         for idx_i in selected:
-            rx_err = _safe_int(got.get(f"{oid_in_err}.{idx_i}"))
-            tx_err = _safe_int(got.get(f"{oid_out_err}.{idx_i}"))
-            rx_disc = _safe_int(got.get(f"{oid_in_disc}.{idx_i}")) if include_discards else None
-            tx_disc = _safe_int(got.get(f"{oid_out_disc}.{idx_i}")) if include_discards else None
-
-            if rx_err is None and tx_err is None and rx_disc is None and tx_disc is None:
-                continue
-
-            row_out: Dict[str, Any] = {
-                "ts": now_ts,
-                "rx_errors": rx_err,
-                "tx_errors": tx_err,
+            vals: Dict[str, int | None] = {
+                "rx_errors": _safe_int(got.get(f"{oid_in_err}.{idx_i}")),
+                "tx_errors": _safe_int(got.get(f"{oid_out_err}.{idx_i}")),
             }
             if include_discards:
-                row_out["rx_discards"] = rx_disc
-                row_out["tx_discards"] = tx_disc
+                vals["rx_discards"] = _safe_int(got.get(f"{oid_in_disc}.{idx_i}"))
+                vals["tx_discards"] = _safe_int(got.get(f"{oid_out_disc}.{idx_i}"))
+
+            if all(v is None for v in vals.values()):
+                continue
+
+            last = client._if_errors_last.get(idx_i) or {}
+            last_ts = float(last.get("ts") or 0.0)
+            dt = (now_ts - last_ts) if last_ts else 0.0
+
+            row_out: Dict[str, Any] = {"ts": now_ts}
+            last_snapshot: Dict[str, Any] = {"ts": now_ts}
+
+            for metric, cur_val in vals.items():
+                row_out[metric] = cur_val
+                last_snapshot[metric] = cur_val
+                delta_val = None
+                rate_val = None
+                prev_val = last.get(metric)
+                if dt > 0 and cur_val is not None and prev_val is not None:
+                    delta_val = _counter32_delta(cur_val, int(prev_val))
+                    if delta_val is not None:
+                        rate_val = round(delta_val / dt, 3)
+                row_out[f"{metric}_delta"] = delta_val
+                row_out[f"{metric}_rate"] = rate_val
+
+            client._if_errors_last[idx_i] = last_snapshot
             out[idx_i] = row_out
 
         client.cache["interface_errors"] = out

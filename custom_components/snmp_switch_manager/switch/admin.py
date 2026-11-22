@@ -294,4 +294,10 @@ class IfAdminSwitch(CoordinatorEntity, SwitchEntity):
                         attrs[attr_name] = int(val)
                     except Exception:
                         pass
+                rate_val = err_row.get(f"{key}_rate")
+                if rate_val is not None:
+                    try:
+                        attrs[f"{attr_name}/s"] = round(float(rate_val), 3)
+                    except Exception:
+                        pass
         return attrs
