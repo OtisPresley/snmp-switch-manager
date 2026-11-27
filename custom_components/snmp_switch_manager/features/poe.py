@@ -107,8 +107,15 @@ async def poll_poe(client: "SwitchSnmpClient") -> None:
     else:
         tasks.extend([asyncio.sleep(0, result=[]), asyncio.sleep(0, result=[])])
 
-    results = await asyncio.gather(*tasks)
-    
+    # Execute PoE requests sequentially.
+    results = []
+    try:
+        for task in tasks:
+            results.append(await task)
+    finally:
+        for task in tasks:
+            task.close()
+
     if poe_enabled and method_total == "get":
         budget_rows = [(oid_budget, results[0])] if results[0] is not None else []
         used_rows = [(oid_used, results[1])] if results[1] is not None else []
